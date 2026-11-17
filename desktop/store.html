@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'; style-src 'self'; script-src 'self'; img-src 'self'; connect-src 'none'"/>
+<title>W1 Capital · Central de Aplicativos</title>
+<link rel="stylesheet" href="./store.css"/>
+</head>
+<body>
+<main class="shell">
+<header class="topbar">
+ <div class="identity"><img src="./branding/w1-wordmark.svg" width="190" height="45" alt="W1 Capital"/><span>Central de Aplicativos</span></div>
+ <span class="offline" aria-label="Loja local sem scripts externos">Loja instalada no seu computador</span>
+</header>
+<section class="hero">
+ <div class="hero-label">W1 CAPITAL / SOFTWARE</div>
+ <h1>Aplicativos conectados.<br><span>Controle independente.</span></h1>
+ <p>Inicie o que já está instalado e acompanhe os projetos da W1 Capital. Esta loja abre direto no EXE, sem acessar o CRM ou depender da Vercel.</p>
+</section>
+<section class="products" aria-label="Aplicativos">
+ <article class="app-card featured">
+  <div class="application-icon"><img src="./branding/infinitum-symbol.svg" alt="Símbolo do INFINITUM" width="80" height="47"/></div>
+  <div class="app-description">
+   <div class="meta"><span class="eyebrow">CRM JURÍDICO</span><span class="chip ready">Incluso neste EXE</span></div>
+   <h2>INFINITUM</h2>
+   <p>Clientes, processos, atendimento, agentes e integração com o banco autorizado. O servidor Next.js é executado localmente.</p>
+   <div class="actions"><button id="open-infinitum" class="button main">Abrir INFINITUM</button>
+   <button id="infinitum-releases" class="button outline">Ver versões oficiais</button></div>
+  </div>
+ </article>
+ <article class="app-card">
+  <div class="application-icon lexis" aria-label="LexisPredict"><span>Lexis<span class="star">◆</span></span></div>
+  <div class="app-description">
+   <div class="meta"><span class="eyebrow">INTELIGÊNCIA JURÍDICA</span><span class="chip pending">EXE independente em preparação</span></div>
+   <h2>LexisPredict</h2>
+   <p>Automação jurídica, Hermes e acompanhamento processual. O repositório existe; esta edição da loja ainda não inclui instalador do LexisPredict.</p>
+   <div class="actions"><button id="lexis-repository" class="button outline">Ver projeto oficial</button></div>
+  </div>
+ </article>
+</section>
+<p id="store-status" class="status" role="status" aria-live="polite">As atualizações automáticas do INFINITUM permanecem no launcher W1 Capital.</p>
+<footer><span>© 2026 W1 Capital</span><span>Nenhum dado de clientes ou token é carregado nesta loja</span></footer>
+</main>
+<script src="./store-ui.js"></script>
+</body></html>

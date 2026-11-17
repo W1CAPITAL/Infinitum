@@ -152,3 +152,8 @@ O bootstrap do executável consulta o endpoint público do Supabase `/functions/
 As releases confiáveis vêm exclusivamente de `W1CAPITAL/Infinitum` no GitHub. O verificador continua exigindo assinatura Ed25519 própria, hash SHA-512 e nome de pacote autorizado. Manifestos assinados da origem antiga são recusados após a migração, mesmo quando sua assinatura criptográfica é válida.
 
 O aplicativo Electron empacota `desktop/public-origin.mjs`, utilizado no processo principal e também na política das rotas Next. Uma dependência JavaScript fora de `desktop/` não seria incluída automaticamente pelo electron-builder.
+
+
+## Central de Aplicativos independente do CRM
+
+O botão **Abrir Killa AI Store** no launcher agora abre uma segunda janela local, carregada de `desktop/store.html`. Ela não abre `/app-store` nem depende de login do CRM para consultar os aplicativos disponíveis no instalador. A loja contém o INFINITUM (embutido e instalável pelo próprio setup) e o LexisPredict (repositório disponível; EXE ainda não incluído). Os links externos são restritos, e a janela não pode navegar para sites arbitrários nem executar JavaScript remoto. O acesso administrativo do superadmin continua protegido por MFA na rota separada do CRM e não é desbloqueado pela loja local.

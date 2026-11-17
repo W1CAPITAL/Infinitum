@@ -13,7 +13,7 @@ import {safeLauncherSnapshot,normalizeUpdateProgress,canInstallSignedUpdate,isSi
 import {secondInstanceAction,canReuseLocalServer} from './lifecycle-policy.mjs';
 
 const CONFIG_ENDPOINT='https://segjskjlbeydlljnefai.supabase.co/functions/v1/infinitum-desktop-config';
-let nextProcess=null,port=0,desktopConfig=null,window=null,launcherWindow=null,zapFastWindow=null,shuttingDown=false,localNonce='';
+let nextProcess=null,port=0,desktopConfig=null,window=null,launcherWindow=null,storeWindow=null,zapFastWindow=null,shuttingDown=false,localNonce='';
 let updater=null,freeUpdater=null,updateCheck=null,appOpen=null;
 let autoUpdateEnabled=true;
 let launcherState=safeLauncherSnapshot({phase:'loading',version:app.getVersion(),message:'Inicializando canal de atualizações seguro.',signed:false,autoInstall:true});
@@ -349,9 +349,52 @@ ipcMain.handle('launcher:open-zapfast',event=>{
  expectTrustedLauncher(event);
  return openZapFastWindow();
 });
+// Independent W1 Capital Store runs entirely from signed, bundled HTML, not the CRM.
+function isTrustedStoreEvent(event){
+ return !!(storeWindow&&!storeWindow.isDestroyed()&&
+  event?.sender===storeWindow.webContents&&
+  event?.senderFrame?.url===pathToFileURL(join(app.getAppPath(),'store.html')).href);
+}
+async function openStoreWindow(){
+ if(storeWindow&&!storeWindow.isDestroyed()){
+  storeWindow.show();storeWindow.focus();return {opened:true};
+ }
+ const target=new BrowserWindow({
+  width:1040,height:740,minWidth:780,minHeight:570,
+  show:false,backgroundColor:'#110d16',autoHideMenuBar:true,
+  title:'W1 Capital · Central de Aplicativos',
+  webPreferences:{
+   preload:join(app.getAppPath(),'store-preload.cjs'),
+   contextIsolation:true,nodeIntegration:false,sandbox:true,
+   webSecurity:true,webviewTag:false,allowRunningInsecureContent:false
+  }
+ });
+ storeWindow=target;
+ target.webContents.session.setPermissionRequestHandler((_sender,_permission,done)=>done(false));
+ target.webContents.setWindowOpenHandler(()=>({action:'deny'}));
+ target.webContents.on('will-navigate',event=>event.preventDefault());
+ target.on('closed',()=>{if(storeWindow===target)storeWindow=null});
+ await target.loadFile(join(app.getAppPath(),'store.html'));
+ target.show();
+ return {opened:true};
+}
 ipcMain.handle('launcher:open-store',event=>{
  expectTrustedLauncher(event);
- return launchLocalCRM('/app-store');
+ return openStoreWindow();
+});
+ipcMain.handle('store:launch-infinitum',event=>{
+ if(!isTrustedStoreEvent(event))throw Error('Janela da loja não autorizada.');
+ return launchLocalCRM(DESKTOP_ENTRY_PATH);
+});
+ipcMain.handle('store:open-repo',async(event,product)=>{
+ if(!isTrustedStoreEvent(event))throw Error('Janela da loja não autorizada.');
+ const known={
+  lexis:'https://github.com/W1CAPITAL/LexisPredict',
+  infinitum:'https://github.com/W1CAPITAL/Infinitum/releases'
+ };
+ if(typeof product!=='string'||!Object.hasOwn(known,product))throw Error('Produto desconhecido.');
+ await shell.openExternal(known[product]);
+ return {opened:true};
 });
 async function launchLocalCRM(target=DESKTOP_ENTRY_PATH){
  if(window&&!window.isDestroyed()){
