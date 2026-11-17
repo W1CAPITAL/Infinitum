@@ -22,6 +22,8 @@ NEXT_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 ```
 
+Next.js embeds `NEXT_PUBLIC_*` values in the browser bundle at build time. If either public value changes, rebuild the image. These values are public by design; they are not substitutes for RLS or server-side authorization.
+
 Add server-only variables from `.env.example` as needed. Never put `SUPABASE_SERVICE_ROLE_KEY`, OAuth client secrets, Composio keys or signing keys in a `NEXT_PUBLIC_*` variable.
 
 ## Build and start
