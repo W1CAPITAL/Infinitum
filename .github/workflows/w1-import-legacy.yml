@@ -50,15 +50,15 @@ jobs:
 
           git config user.name "W1 Capital Migration"
           git config user.email "230652126+W1CAPITAL@users.noreply.github.com"
-
-          # Preserve the destination's initial commit and the full source history.
           git merge --allow-unrelated-histories --no-commit --no-ff -s ours "${SOURCE_SHA}"
-
-          # Replace only the index/worktree with the source tree; MERGE_HEAD stays intact.
           git read-tree --reset -u "${SOURCE_SHA}"
 
+          # The migration App token cannot add other workflow files. Recreate
+          # the CI workflows with the connected GitHub integration afterward.
+          rm -rf .github/workflows
           mkdir -p .github/workflows
           cp /tmp/w1-import-legacy.yml .github/workflows/w1-import-legacy.yml
+
           cat > MIGRATION.md <<'EOF'
           # INFINITUM repository migration
 
@@ -71,8 +71,9 @@ jobs:
           source history and the destination's initial commit. The original
           repository remains untouched as a recovery source.
 
-          Runtime hosting is not tied to Vercel. See Dockerfile,
-          docker-compose.yml, and docs/SELF-HOSTING.md.
+          CI workflows are recreated in this destination. Runtime hosting is
+          not tied to Vercel; see Dockerfile, docker-compose.yml, and
+          docs/SELF-HOSTING.md.
           EOF
 
           git add -A
