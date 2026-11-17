@@ -5,13 +5,10 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/w1-import-legacy.yml"
-  pull_request:
-    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 permissions:
   contents: write
-  pull-requests: read
 
 concurrency:
   group: infinitum-one-time-import
@@ -19,7 +16,7 @@ concurrency:
 
 jobs:
   import:
-    if: github.repository == 'W1CAPITAL/Infinitum' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
+    if: github.repository == 'W1CAPITAL/Infinitum'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -54,22 +51,25 @@ jobs:
           git config user.name "W1 Capital Migration"
           git config user.email "230652126+W1CAPITAL@users.noreply.github.com"
 
+          # Preserve the destination's initial commit and the full source history.
           git merge --allow-unrelated-histories --no-commit --no-ff -s ours "${SOURCE_SHA}"
-          git read-tree -u "${SOURCE_SHA}"
+
+          # Replace only the index/worktree with the source tree; MERGE_HEAD stays intact.
+          git read-tree --reset -u "${SOURCE_SHA}"
 
           mkdir -p .github/workflows
           cp /tmp/w1-import-legacy.yml .github/workflows/w1-import-legacy.yml
           cat > MIGRATION.md <<'EOF'
           # INFINITUM repository migration
 
-          The canonical repository is now W1CAPITAL/Infinitum.
+          Canonical repository: W1CAPITAL/Infinitum.
 
-          The initial import was made from ProjectW1SC/INFINITUM at commit
+          Imported from ProjectW1SC/INFINITUM at commit
           f6026c205dfdc71f660aedbeecdbe4edba41df1e.
 
-          The import uses a merge commit with both repository histories as
-          parents. The original repository remains untouched as a recovery
-          source; it is not the deployment source of truth.
+          The import is a two-parent merge commit, preserving the original
+          source history and the destination's initial commit. The original
+          repository remains untouched as a recovery source.
 
           Runtime hosting is not tied to Vercel. See Dockerfile,
           docker-compose.yml, and docs/SELF-HOSTING.md.
