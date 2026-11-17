@@ -1,3 +1,4 @@
+import {validatedPublicOrigin} from '../lib/openbot-public-origin.mjs';
 // Main CRM route renders login through SecuredWorkspace; /login does not exist.
 export const DESKTOP_ENTRY_PATH='/';
 // Independent ZapFast web session, never an implicit WA.Auto/CRM account.
@@ -19,7 +20,10 @@ export function validateDesktopConfig(config){
  if(!isPublicKey(String(config.publishableKey||'')))
   throw Error('É necessária somente chave pública publishable/anon; credencial secreta é proibida.');
  if(config.bridgeOrigin!==WA)throw Error('WA.Auto exige o endpoint HTTPS fixo e autorizado.');
- return Object.freeze({supabaseUrl:PROJECT,publishableKey:config.publishableKey,bridgeOrigin:WA});
+ const specified=String(config.remoteOrigin||'').trim();
+ const remoteOrigin=validatedPublicOrigin(specified);
+ if(specified&&!remoteOrigin)throw Error('Origem HTTPS do CRM inválida: domínio Vercel, porta e endereço privado são bloqueados.');
+ return Object.freeze({supabaseUrl:PROJECT,publishableKey:config.publishableKey,bridgeOrigin:WA,remoteOrigin});
 }
 export function safeStandaloneEnvironment(config,port,systemEnv=process.env){
  const allowed=validateDesktopConfig(config);
@@ -37,7 +41,7 @@ export function safeStandaloneEnvironment(config,port,systemEnv=process.env){
   NEXT_PUBLIC_SUPABASE_URL:allowed.supabaseUrl,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:allowed.publishableKey,
   NEXT_PUBLIC_LEXIS_SHARED_DB:'1',
-  OPENBOT_DESKTOP_REMOTE:'https://agentinfinitum.vercel.app',
+  ...(allowed.remoteOrigin?{OPENBOT_DESKTOP_REMOTE:allowed.remoteOrigin}:{}),
   WA_AUTO_URL:allowed.bridgeOrigin
  };
 }
@@ -57,7 +61,6 @@ export function isSafeExternalNavigation(value){
   return ['github.com','docs.github.com','supabase.com','www.supabase.com',
    'whatsapp.com','www.whatsapp.com','wa.me','accounts.google.com',
    'www.facebook.com','facebook.com',
-   'agentinfinitum.vercel.app','projectw1sc-crm.vercel.app',
    // Open only this exact separately authenticated ZapFast site in the system browser.
    'zapfast-cloudflare-web.daviconcentrix.workers.dev'].includes(host)
    ||(host.endsWith('.supabase.co')&&/^[a-z0-9-]+\.supabase\.co$/.test(host));

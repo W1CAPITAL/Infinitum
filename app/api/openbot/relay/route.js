@@ -1,15 +1,16 @@
 import {officeAuth,safeOfficeError} from '../../../../lib/office-server.mjs';
+import {validatedPublicOrigin} from '../../../../lib/openbot-public-origin.mjs';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 // This relay exists ONLY inside the 127.0.0.1 Windows build, whose local
 // Node process does not have the private online AI/OAuth service credentials.
-const REMOTE='https://agentinfinitum.vercel.app';
+const REMOTE=validatedPublicOrigin(process.env.OPENBOT_DESKTOP_REMOTE);
 const READABLE=new Set(['/api/openbot/models','/api/openbot/integrations','/api/openbot/composio',
  '/api/openbot/integrations/data','/api/openbot/crm/search','/api/openbot/mcp/settings','/api/openbot/mcp/edits']);
 const WRITABLE=new Set(['/api/openbot/integrations','/api/openbot/composio','/api/openbot/integrations/oauth/start',
  '/api/openbot/mcp/settings','/api/openbot/mcp/edits','/api/superagente']);
 function assertDesktopRequest(request){
- if(process.env.OPENBOT_DESKTOP_REMOTE!==REMOTE)
+ if(!REMOTE||process.env.OPENBOT_DESKTOP_REMOTE!==REMOTE)
   throw Object.assign(Error('O relay só está habilitado no aplicativo Windows.'),{status:404});
  const url=new URL(request.url);
  if(url.hostname!=='127.0.0.1'||!/^127\.0\.0\.1:\d{4,5}$/.test(url.host))

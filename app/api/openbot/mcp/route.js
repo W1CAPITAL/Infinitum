@@ -1,20 +1,25 @@
 import {officeAuth,safeOfficeError} from '../../../../lib/office-server.mjs';
 import {readConnectedData} from '../integrations/data/route.js';
 import {validateEditProposal} from '../../../../lib/openbot-mcp-edit-policy.mjs';
-import {adminClient} from '../../../../lib/openbot-connection-server.mjs';
+import {adminClient,publicOAuthOrigin} from '../../../../lib/openbot-connection-server.mjs';
 import {listComposioToolkits,searchComposioTools,executeComposioTool,isComposioWriteTool} from '../../../../lib/openbot-composio.mjs';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
 
-const ORIGIN='https://agentinfinitum.vercel.app';
-const METADATA=ORIGIN+'/.well-known/oauth-protected-resource/api/openbot/mcp';
-const AUTH='https://segjskjlbeydlljnefai.supabase.co/auth/v1';
+// NEXT_PUBLIC_SITE_URL provides the canonical OAuth/MCP resource origin.
+const metadataUrl=()=>publicOAuthOrigin()+'/.well-known/oauth-protected-resource/api/openbot/mcp';
 const resp=(id,result)=>Response.json({jsonrpc:'2.0',id,result},{headers:{
  'Cache-Control':'no-store','Content-Type':'application/json; charset=utf-8','X-Content-Type-Options':'nosniff'}});
 const err=(id,code,message,status=200)=>Response.json({jsonrpc:'2.0',id,error:{code,message}},{status,headers:{
  'Cache-Control':'no-store','Content-Type':'application/json; charset=utf-8'}});
-const unauthorized=()=>Response.json({error:'Faça login e autorize um cliente OAuth no OpenBot.'},{
- status:401,headers:{'WWW-Authenticate':'Bearer resource_metadata="'+METADATA+'"','Cache-Control':'no-store'}});
+const unauthorized=()=>{
+ let metadata;
+ try{metadata=metadataUrl()}catch{
+  return Response.json({error:'Origem HTTPS oficial do MCP não configurada.'},{status:503,headers:{'Cache-Control':'no-store'}});
+ }
+ return Response.json({error:'Faça login e autorize um cliente OAuth no OpenBot.'},{
+  status:401,headers:{'WWW-Authenticate':'Bearer resource_metadata="'+metadata+'"','Cache-Control':'no-store'}});
+};
 const bad=(message,status=403)=>Object.assign(Error(message),{status});
 const norm=text=>String(text||'').replace(/[^\p{L}\p{N} .-]/gu,' ').replace(/\s+/g,' ').trim().slice(0,80);
 const toContent=value=>({content:[{type:'text',text:JSON.stringify(value)}],isError:false});
@@ -109,7 +114,7 @@ async function proposeEdit(ctx,args){
  }).select('id,target_table,target_id,field_name,new_value,reason,status,expires_at').single();
  if(proposal.error||!proposal.data)throw bad('Não foi possível criar a proposta: '+(proposal.error?.message||'erro de acesso'),503);
  return {proposal:proposal.data,applied:false,approvalRequired:true,
-  reviewUrl:'https://agentinfinitum.vercel.app/openbot?integrations=mcp',
+  reviewUrl:publicOAuthOrigin()+'/openbot?integrations=mcp',
   notice:'Aguardando confirmação humana com MFA. Nenhum registro foi alterado.'};
 }
 async function pendingEdits(ctx){
@@ -181,7 +186,7 @@ export async function POST(request){
  }catch(e){
   if(e.status===401||!request.headers.get('authorization'))return unauthorized();
   if(e.status===403)return Response.json({error:'Cliente MCP sem autorização ativa.'},{status:403,
-   headers:{'Cache-Control':'no-store','WWW-Authenticate':'Bearer resource_metadata="'+METADATA+'"'}});
+   headers:{'Cache-Control':'no-store','WWW-Authenticate':'Bearer resource_metadata="'+metadataUrl()+'"'}});
   console.error('openbot-mcp-call',String(e?.message||e).slice(0,80));
   return err(rpc?.id??null,-32000,'Operação MCP não concluída.',500);
  }

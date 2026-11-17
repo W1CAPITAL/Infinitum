@@ -1,12 +1,14 @@
-import {adminClient,decryptOAuthState,encryptToken,decryptToken,providerCredentials,oauthRedirectUri}
+import {adminClient,decryptOAuthState,encryptToken,decryptToken,providerCredentials,oauthRedirectUri,publicOAuthOrigin}
  from '../../../../../../lib/openbot-connection-server.mjs';
 import {getGoogleScopes,META_OAUTH_SCOPES} from '../../../../../../lib/openbot-connectors.mjs';
 export const runtime='nodejs';
 export const dynamic='force-dynamic';
-const ROOT='https://agentinfinitum.vercel.app';
+// NEXT_PUBLIC_SITE_URL determines the official OAuth return site.
 const timeout=()=>AbortSignal.timeout(16000);
 const safeRedirect=(code,provider='')=>{
- const u=new URL('/openbot',ROOT);
+ let root;
+ try{root=publicOAuthOrigin()}catch{return Response.json({error:'Origem pública do OpenBot não configurada.'},{status:503})}
+ const u=new URL('/openbot',root);
  u.searchParams.set('integrations','1');
  u.searchParams.set(code==='connected'?'connected':'oauth_error',code==='connected'?provider:code);
  return Response.redirect(u.toString(),303);

@@ -12,7 +12,7 @@ import {validateDesktopConfig,safeStandaloneEnvironment,isLocalAppNavigation,
 import {safeLauncherSnapshot,normalizeUpdateProgress,canInstallSignedUpdate,isSignedUpdateConfiguration} from './launcher-policy.mjs';
 import {secondInstanceAction,canReuseLocalServer} from './lifecycle-policy.mjs';
 
-const CONFIG_ENDPOINT='https://agentinfinitum.vercel.app/api/openbot/desktop-config';
+const CONFIG_ENDPOINT='https://segjskjlbeydlljnefai.supabase.co/functions/v1/killa-mcp/desktop-config';
 let nextProcess=null,port=0,desktopConfig=null,window=null,launcherWindow=null,zapFastWindow=null,shuttingDown=false,localNonce='';
 let updater=null,freeUpdater=null,updateCheck=null,appOpen=null;
 let autoUpdateEnabled=true;
@@ -281,7 +281,7 @@ ipcMain.handle('launcher:check-update',event=>{
 });
 ipcMain.handle('launcher:open-downloads',async event=>{
  expectTrustedLauncher(event);
- await shell.openExternal('https://github.com/ProjectW1SC/INFINITUM/releases');
+ await shell.openExternal('https://github.com/W1CAPITAL/Infinitum/releases');
  return launcherState;
 });
 ipcMain.handle('launcher:install-update',event=>{
@@ -396,7 +396,7 @@ async function launchLocalCRM(target=DESKTOP_ENTRY_PATH){
    const message=error?.code==='DESKTOP_BUNDLE_INCOMPLETE'
     ?'Instalação incompleta: dependências Next.js ausentes. Baixe e instale uma versão corrigida.'
     :desktopConfig===null
-     ?'Não foi possível carregar a configuração pública do OpenBot. Verifique a internet e o domínio agentinfinitum.vercel.app.'
+     ?'Não foi possível carregar a configuração pública do OpenBot pelo Supabase. Verifique a internet ou o serviço independente.'
      :'Servidor Next.js local não iniciou. Verifique o pacote e a porta local; nenhum dado de cliente foi exposto.';
    return pushLauncher({phase:'error',message});
   }finally{appOpen=null}
