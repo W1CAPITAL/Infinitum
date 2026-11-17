@@ -1,0 +1,82 @@
+name: One-time INFINITUM repository migration
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/w1-import-legacy.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: infinitum-one-time-import
+  cancel-in-progress: false
+
+jobs:
+  import:
+    if: github.repository == 'W1CAPITAL/Infinitum'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout destination repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Preserve migration workflow
+        run: cp .github/workflows/w1-import-legacy.yml /tmp/w1-import-legacy.yml
+
+      - name: Fetch original repository history
+        env:
+          SOURCE_SHA: f6026c205dfdc71f660aedbeecdbe4edba41df1e
+        run: |
+          git remote add legacy https://github.com/ProjectW1SC/INFINITUM.git
+          git fetch --no-tags legacy main
+          git cat-file -e "${SOURCE_SHA}^{commit}"
+          git merge-base --is-ancestor "${SOURCE_SHA}" legacy/main
+
+      - name: Import source tree and preserve both Git histories
+        env:
+          SOURCE_SHA: f6026c205dfdc71f660aedbeecdbe4edba41df1e
+        run: |
+          set -euo pipefail
+          if git merge-base --is-ancestor "${SOURCE_SHA}" HEAD; then
+            echo "The pinned source commit is already part of this repository."
+            exit 0
+          fi
+
+          git config user.name "W1 Capital Migration"
+          git config user.email "230652126+W1CAPITAL@users.noreply.github.com"
+
+          # Create a two-parent merge commit, preserving the original repository
+          # history and the destination's initial commit.
+          git merge --allow-unrelated-histories --no-commit --no-ff -s ours "${SOURCE_SHA}"
+
+          # The source tree becomes the application tree; the source commit
+          # remains a parent of the new destination commit.
+          git read-tree -u "${SOURCE_SHA}"
+
+          mkdir -p .github/workflows
+          cp /tmp/w1-import-legacy.yml .github/workflows/w1-import-legacy.yml
+          cat > MIGRATION.md <<'EOF'
+          # INFINITUM repository migration
+
+          The canonical repository is now W1CAPITAL/Infinitum.
+
+          The initial import was made from ProjectW1SC/INFINITUM at commit
+          f6026c205dfdc71f660aedbeecdbe4edba41df1e.
+
+          The import uses a merge commit with both repository histories as
+          parents. The original repository remains untouched as a recovery
+          source; it is not the deployment source of truth.
+
+          Runtime hosting is not tied to Vercel. See Dockerfile,
+          docker-compose.yml, and docs/SELF-HOSTING.md.
+          EOF
+
+          git add -A
+          git commit -m "chore(infinitum): import original repository history"
+          git push origin HEAD:main
