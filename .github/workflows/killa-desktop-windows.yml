@@ -10,6 +10,10 @@ on:
       - '.github/workflows/killa-desktop-windows.yml'
       - 'next.config.mjs'
       - 'tests/killa-desktop-shared-wallet-build.test.mjs'
+      - 'tests/independent-hosting.test.mjs'
+      - 'tests/independent-desktop-bootstrap.test.mjs'
+      - 'tests/canonical-releases.test.mjs'
+      - 'supabase/functions/infinitum-desktop-config/**'
   push:
     branches:
       - feat/infinitum-windows-desktop-20261116
@@ -25,6 +29,10 @@ on:
       - 'lib/killa-realtime.mjs'
       - 'components/workspace-session-provider.jsx'
       - 'tests/killa-desktop-shared-wallet-build.test.mjs'
+      - 'tests/independent-hosting.test.mjs'
+      - 'tests/independent-desktop-bootstrap.test.mjs'
+      - 'tests/canonical-releases.test.mjs'
+      - 'supabase/functions/infinitum-desktop-config/**'
 
 permissions:
   contents: read
