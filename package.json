@@ -1,0 +1,33 @@
+{
+  "name": "projectw1sc-crm",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "node --test --test-concurrency=4 tests/*.test.mjs",
+    "typecheck": "tsc --project tsconfig.typecheck.json --noEmit",
+    "test:dom": "node --test tests/*.dom.test.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "dependencies": {
+    "next": "15.5.29",
+    "react": "19.1.2",
+    "react-dom": "19.1.2",
+    "@supabase/supabase-js": "2.119.0",
+    "google-auth-library": "9.15.1",
+    "lucide-react": "0.468.0",
+    "read-excel-file": "9.3.10",
+    "qrcode": "1.5.4",
+    "firebase": "13.3.0"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/node": "22.18.0",
+    "jsdom": "26.1.0"
+  }
+}

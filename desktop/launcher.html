@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; base-uri 'none'; form-action 'none'; object-src 'none'; frame-src 'none'; style-src 'self'; script-src 'self'; img-src 'self' data:; connect-src 'none'"/>
+<title>W1 Capital · Killa Launcher</title>
+<link rel="stylesheet" href="./launcher.css"/>
+</head>
+<body>
+<div class="window">
+<header>
+  <div class="logo"><img class="w1-brand" src="./branding/w1-wordmark.svg" alt="W1 Capital — Estratégia e Tecnologia" width="230" height="52"/><span class="shop-label">CENTRAL DE APLICATIVOS</span></div>
+  <span class="badge"><span aria-hidden="true">●</span> Canal seguro</span>
+</header>
+<main class="layout">
+<section class="product">
+  <div class="eyebrow">INSTALADO NO SEU COMPUTADOR</div>
+  <div class="art"><div class="inf-mark" role="img" aria-label="Símbolo original de infinito do INFINITUM">
+ <img src="./branding/infinitum-symbol.svg" width="216" height="100" alt="INFINITUM — símbolo próprio de infinito"/>
+ </div></div>
+  <div class="label">INFINITUM <strong>KILLA AI</strong></div>
+  <h1>Seu escritório.<br/>Sua inteligência.</h1>
+  <p>Inicie o CRM direto no Windows. Suas conversas e processos permanecem vinculados ao login individual e ao Supabase.</p>
+  <div class="feature"><span>✓</span> Roda localmente, sem Vercel</div>
+  <div class="feature"><span>✓</span> Dados sincronizados por usuário</div>
+  <div class="feature"><span>✓</span> MCP protegido no Supabase</div>
+  <div class="feature"><span>✓</span> ZapFast em janela separada com login próprio</div>
+</section>
+<section class="update-panel" aria-label="Gerenciador de atualizações">
+  <div class="section-top"><h2>Central de atualizações</h2><span class="chip">WINDOWS</span></div>
+  <div class="app">
+    <div class="app-icon"><img src="./branding/infinitum-symbol.svg" alt="INFINITUM" width="44" height="28"/></div><div><h3>INFINITUM · Killa AI</h3><span id="installed-version">Versão instalada: ...</span></div>
+  </div>
+  <div class="status">
+    <span class="label-small">ESTADO DO APLICATIVO</span>
+    <div class="state-line"><span class="state-indicator" id="state-light"></span><strong id="state-title">Verificando instalação...</strong></div>
+    <p id="state-message" role="status" aria-live="polite">Aguardando...</p>
+    <div id="progress-block" class="progress-block" hidden>
+     <div class="progress-track"><div id="progress-fill"></div></div>
+     <span id="progress-text">0%</span>
+    </div>
+  </div>
+  <div class="buttons">
+    <button id="install-update" class="primary" hidden>Instalar atualização verificada</button>
+    <button id="launch" class="primary">Abrir INFINITUM</button>
+    <button id="store" class="secondary">Abrir Killa AI Store</button>
+    <button id="zapfast" class="secondary">Abrir ZapFast · WhatsApp no desktop</button>
+    <button id="check" class="secondary">Verificar atualizações</button>
+    <button id="releases" class="link">Ver versões publicadas</button>
+    <button id="admin-diagnostics" class="link">Killa AI Store · Administração (MFA)</button>
+    <label class="automatic"><input type="checkbox" id="auto-updates" checked/> Atualizar automaticamente somente versões aprovadas pela W1 Capital</label>
+  </div>
+  <div class="security"><span class="shield">◆</span>
+    <p><strong>Distribuição protegida.</strong> Atualizações gratuitas: manifesto Ed25519 da W1 Capital e hash SHA-512 verificados antes de executar. Uma assinatura reconhecida pelo Windows é opcional e evita alguns avisos do SmartScreen. O launcher não executa códigos recebidos por chat, WhatsApp ou Supabase.</p>
+  </div>
+</section>
+</main>
+<footer><span>© 2026 W1 Capital · Killa Launcher</span><span>Sem dados de clientes no launcher</span></footer>
+</div>
+<script src="./launcher-ui.js"></script>
+</body></html>

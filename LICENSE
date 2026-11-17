@@ -1,0 +1,41 @@
+W1 CAPITAL — INFINITUM / KILLA AI
+LICENÇA DE SOFTWARE PROPRIETÁRIO E CÓDIGO-FONTE DISPONÍVEL
+Edição 1.0 — 16 de novembro de 2026
+
+Copyright © 2026 W1 Capital e titulares dos respectivos direitos.
+Todos os direitos reservados, exceto licenças de terceiros e concessões anteriores expressamente preservadas.
+
+1. ÂMBITO E TITULARIDADE
+Esta licença rege novas versões e contribuições originais do INFINITUM / Killa AI distribuídas com esta edição, dentro dos direitos efetivamente detidos pelos licenciantes. Abrange código-fonte, interfaces, serviços e documentação original, sem presumir titularidade de código de terceiros. O acesso público ao repositório não constitui licença de uso, reprodução, modificação, exploração comercial ou redistribuição do novo material proprietário.
+
+2. LICENÇA DE USO DE SERVIÇO
+O acesso ao serviço hospedado é pessoal e limitado à organização, contas, módulos, prazo e finalidade autorizados em contrato escrito com o titular. Nenhum código-fonte é transferido ao contratante ou usuário por mera assinatura, login, demonstração, teste, API ou acesso MCP.
+
+3. RESTRIÇÕES AO NOVO MATERIAL PROPRIETÁRIO
+Salvo permissão escrita ou direito que não possa ser afastado pela legislação aplicável, são vedados: copiar, modificar, sublicenciar, distribuir, revender, hospedar clones ou produtos derivados do material original protegido; remover avisos de autoria; extrair segredos ou código de servidor; contornar controles de acesso; e realizar engenharia reversa de componentes proprietários fora dos limites permitidos por lei. Tais restrições não prevalecem sobre direitos concedidos anteriormente por licença livre, sobre componentes de terceiros ou sobre exceções legais obrigatórias.
+
+4. CLIENTES, EMPRESAS E DADOS
+Cada empresa mantém seus dados, documentos e carteira conforme contrato e LGPD. Login não autoriza acessar a carteira de outra organização. Chaves de serviço, tokens, QR de WhatsApp, credenciais e informações privadas não são licenciados para redistribuição. Cada integração de IA exige autorização, segregação de usuários e finalidade legítima.
+
+5. INTEGRAÇÃO MCP E AGENTES
+Conectores ChatGPT, Grok, Claude, OpenCode, FreeBuff e outros não adquirem licença sobre código ou carteira de clientes. Operações ficam restritas às permissões autenticadas, consentimento individual, papel de usuário e políticas da organização. A capacidade de um agente produzir código ou comandos não autoriza alteração de infraestrutura nem envio automático de mensagens sem os controles estabelecidos pelo serviço.
+
+6. LICENÇAS DE TERCEIROS E MARCAS
+Bibliotecas, modelos, componentes e trabalhos de terceiros mantêm suas licenças próprias. A licença de código não permite usar marcas INFINITUM, W1 Capital, LexisPredict, logotipos ou marcas de parceiros fora das autorizações expressas. Quando houver incompatibilidade, componentes de terceiros devem ser tratados e redistribuídos de acordo com seus termos, não por esta licença.
+
+7. AVISO DE LICENCIAMENTO ANTERIOR — MIT
+Versões e partes do INFINITUM originalmente oferecidas sob a Licença MIT permanecem sob os direitos validamente concedidos naquela distribuição. ESTA EDIÇÃO NÃO CANCELA NEM REVOGA RETROATIVAMENTE DIREITOS JÁ CONCEDIDOS PELA MIT. O titular somente pode adotar termos mais restritivos para nova expressão autoral ou material para o qual possua direitos suficientes. Cópias prévias podem continuar a circular conforme seus respectivos avisos e termos. Consulte os históricos Git e o NOTICE.
+
+8. SEGURANÇA E RESPONSABILIDADE
+O software é fornecido no estado em que se encontra, na máxima medida admitida pela legislação aplicável, sem garantia de disponibilidade ininterrupta, infalibilidade de modelos de IA ou inexistência de vulnerabilidades. Os titulares não se eximem de obrigações legais indisponíveis. Manter backup, autenticação robusta e revisar resultados jurídicos continua necessário. Aceite de uma mensagem pelo provedor não comprova entrega ou leitura.
+
+9. SUSPENSÃO E REVOGAÇÃO
+O acesso ao serviço pode ser suspenso nos limites contratuais e legais por uso indevido, comprometimento de contas ou risco à segurança. Encerrar o acesso à instância hospedada não altera direitos previamente adquiridos sobre material MIT.
+
+10. LEI APLICÁVEL E INTERPRETAÇÃO
+Aplica-se a legislação brasileira, ressalvados direitos obrigatórios de terceiros, proteção do consumidor quando cabível, propriedade intelectual e LGPD. Nenhuma disposição deverá ser interpretada como bloqueio a auditorias ou a direitos inderrogáveis previstos em lei.
+
+11. LICENCIAMENTO
+Licenças comerciais, redistribuição de material proprietário ou uso de marca dependem de autorização escrita do titular. Esta licença não substitui contratos individuais nem constitui parecer jurídico.
+
+FIM — INFINITUM / KILLA AI — W1 CAPITAL

@@ -1,0 +1,33 @@
+{
+  "manifest_version": 3,
+  "name": "INFINITUM • Ponte Local WhatsApp Web",
+  "version": "0.1.0",
+  "description": "Usa somente a aba WhatsApp Web explicitamente autorizada no Chrome: leitura limitada e rascunhos, sem envio automático nem QR adicional.",
+  "permissions": [
+    "scripting",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://web.whatsapp.com/*",
+    "https://agentinfinitum.vercel.app/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "INFINITUM • Compartilhar aba do WhatsApp Web"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://agentinfinitum.vercel.app/*"
+      ],
+      "js": [
+        "crm-bridge.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ]
+}

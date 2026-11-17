@@ -1,0 +1,4 @@
+{
+  "enabled": false,
+  "reason": "Pilot unsigned. Enable only after verified Windows publisher signing."
+}

@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>INFINITUM • Ponte WhatsApp Web</title><style>
+body{font:13px system-ui,sans-serif;width:325px;min-height:220px;background:#211a25;color:#f8eef5;margin:0;padding:16px;box-sizing:border-box}
+h1{font-size:17px;margin:0 0 9px;color:#fff}p{line-height:1.5}small{color:#bfb1c2}
+button{padding:9px 12px;border:1px solid #a5809c;border-radius:8px;background:#622244;color:#fff;cursor:pointer}
+button:disabled{opacity:.45;cursor:not-allowed}.outline{background:transparent}
+#tabs{display:grid;gap:8px;margin:12px 0}label{display:flex;gap:7px;align-items:center;background:#33263a;border-radius:8px;padding:9px}
+#notice{min-height:25px}.actions{display:flex;gap:8px;flex-wrap:wrap}
+</style></head><body><h1>INFINITUM · Ponte Local</h1>
+<p>Escolha a aba do WhatsApp Web já conectada. A autorização dura uma hora e vale somente para essa aba.</p>
+<div id="tabs" role="group" aria-label="Abas WhatsApp Web"></div>
+<div class="actions"><button id="grant" disabled>Autorizar aba escolhida</button><button id="revoke" class="outline">Desconectar</button></div>
+<p id="notice" role="status"></p>
+<small>Somente leitura da conversa aberta e preparação de rascunhos. Nenhuma mensagem é enviada automaticamente. Sem novo QR, servidor ou acesso a cookies.</small>
+<script src="popup.js"></script></body></html>

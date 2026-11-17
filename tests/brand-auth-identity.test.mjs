@@ -1,0 +1,38 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync,existsSync} from 'node:fs';
+const file=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
+
+test('brand assets are included in the repository as actual images',()=>{
+ assert.ok(existsSync(new URL('../public/branding/blackhole-symbol.svg',import.meta.url)));
+ assert.ok(existsSync(new URL('../public/branding/blackhole-logo.svg',import.meta.url)));
+ assert.ok(file('public/branding/blackhole-symbol.svg').includes('<ellipse'));
+ assert.ok(file('public/branding/blackhole-logo.svg').includes('<ellipse'));
+});
+
+test('sidebar uses compact and extended brand marks, not old text lockup',()=>{
+ const shell=file('components/crm-shell.jsx');
+ assert.match(shell,/blackhole-symbol\.svg/);
+ assert.match(shell,/blackhole-logo\.svg/);
+ assert.match(shell,/app-brand-compact/);
+ assert.match(shell,/app-brand-full/);
+});
+
+test('login and recovery retain the same authentication handlers with a shared professional layout',()=>{
+ const home=file('components/secured-workspace.jsx');
+ const auth=file('components/professional-auth.jsx');
+ assert.match(home,/onSubmit=\{registration\?signup:login\}/);
+ assert.match(home,/onSubmit=\{reset\}/);
+ assert.match(home,/onSubmit=\{updatePassword\}/);
+ assert.match(home,/ProfessionalAuth/);
+ assert.match(auth,/w1-auth-screen/);
+ assert.match(file('app/layout.jsx'),/brand-auth\.css/);
+});
+
+test('prospective proprietary licence and historic MIT grants match the README',()=>{
+ assert.match(file('LICENSE'),/PROPRIETÁRIO/);
+ assert.match(file('LICENSE'),/MIT/);
+ assert.match(file('LICENSE'),/RETROATIVAMENTE/);
+ assert.match(file('README.md'),/Proprietária/);
+ assert.match(file('NOTICE.md'),/MIT/);
+});

@@ -1,0 +1,44 @@
+import './globals.css';
+import './motion-system.css';
+import './reference-design.css';
+import './crm-themes.css';
+import './settings.css';
+import './report-print.css';
+import './efferd-crm.css';
+import './dashboard-charts.css';
+import './sales-workspace.css';
+import './visual-overrides.css';
+import './brand-auth.css';
+import './infinitum-reference.css';
+import './office-console.css';
+import './infinitum-login.css';
+import './integrations-console.css';
+import './office-superagent.css';
+import './blackhole-infinitum-studio.css';
+import './blackhole-legibility.css';
+import './crm-unified-2026.css';
+import './wa-auto-inbox.css';
+import './prestige-exact-reference.css';
+import './prestige-dashboard.css';
+import './prestige-office-lists.css';
+import './prestige-final-polish.css';
+import './crm-responsive-themes.css';
+import './crm-judicial-history.css';
+import './crm-case-client-link.css';
+import './legal-stationery.css';
+import './crm-mobile-all-areas.css';
+import './crm-generator-names.css';
+import './infinitum-video-motion.css';
+import './infinitum-prestige-all-tabs.css';
+import './lexis-infinitum-theme.css';
+import './lexis-operator-views.css';
+import './lexis-dashboard.css';
+// Vídeo permanece restrito ao login; a camada de temas é aplicada por último no CRM.
+import './infinitum-login-video.css';
+import './infinitum-dual-themes.css';
+import {WorkspaceSessionProvider} from '../components/workspace-session-provider';
+import QwenPreinstallBootstrap from '../components/qwen-preinstall-bootstrap';
+export const metadata={title:'INFINITUM • CRM Jurídico W1',description:'Gestão operacional de processos, agenda, clientes e atendimentos',icons:{icon:'/branding/projectw1sc-symbol.svg'}};
+// Restaura Light ou Dark antes da primeira pintura; Light é o padrão e Blackhole migra para Dark.
+const hydrateTheme='try{const k="projectw1sc.crm-theme",v=String(localStorage.getItem(k)||"").toLowerCase(),t=(v==="infinitum-dark"||v==="blackhole"||v==="dark")?"infinitum-dark":"infinitum";localStorage.setItem(k,t);document.documentElement.dataset.crmTheme="infinitum";document.documentElement.dataset.crmMode=t==="infinitum-dark"?"dark":"light"}catch(e){document.documentElement.dataset.crmTheme="infinitum";document.documentElement.dataset.crmMode="light"}';
+export default function RootLayout({children}){return <html lang="pt-BR" data-crm-theme="infinitum" data-crm-mode="light" suppressHydrationWarning><head><script dangerouslySetInnerHTML={{__html:hydrateTheme}}/></head><body><WorkspaceSessionProvider><QwenPreinstallBootstrap/>{children}</WorkspaceSessionProvider></body></html>}
