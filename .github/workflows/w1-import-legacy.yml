@@ -5,10 +5,13 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/w1-import-legacy.yml"
+  pull_request:
+    types: [opened, synchronize, reopened]
   workflow_dispatch:
 
 permissions:
   contents: write
+  pull-requests: read
 
 concurrency:
   group: infinitum-one-time-import
@@ -16,7 +19,7 @@ concurrency:
 
 jobs:
   import:
-    if: github.repository == 'W1CAPITAL/Infinitum'
+    if: github.repository == 'W1CAPITAL/Infinitum' && (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository)
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -51,12 +54,7 @@ jobs:
           git config user.name "W1 Capital Migration"
           git config user.email "230652126+W1CAPITAL@users.noreply.github.com"
 
-          # Create a two-parent merge commit, preserving the original repository
-          # history and the destination's initial commit.
           git merge --allow-unrelated-histories --no-commit --no-ff -s ours "${SOURCE_SHA}"
-
-          # The source tree becomes the application tree; the source commit
-          # remains a parent of the new destination commit.
           git read-tree -u "${SOURCE_SHA}"
 
           mkdir -p .github/workflows
