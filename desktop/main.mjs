@@ -12,7 +12,7 @@ import {validateDesktopConfig,safeStandaloneEnvironment,isLocalAppNavigation,
 import {safeLauncherSnapshot,normalizeUpdateProgress,canInstallSignedUpdate,isSignedUpdateConfiguration} from './launcher-policy.mjs';
 import {secondInstanceAction,canReuseLocalServer} from './lifecycle-policy.mjs';
 
-const CONFIG_ENDPOINT='https://segjskjlbeydlljnefai.supabase.co/functions/v1/killa-mcp/desktop-config';
+const CONFIG_ENDPOINT='https://segjskjlbeydlljnefai.supabase.co/functions/v1/infinitum-desktop-config';
 let nextProcess=null,port=0,desktopConfig=null,window=null,launcherWindow=null,zapFastWindow=null,shuttingDown=false,localNonce='';
 let updater=null,freeUpdater=null,updateCheck=null,appOpen=null;
 let autoUpdateEnabled=true;
