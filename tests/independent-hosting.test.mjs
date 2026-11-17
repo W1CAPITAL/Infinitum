@@ -22,7 +22,7 @@ test('desktop launcher, relay, OAuth and MCP metadata do not depend on Vercel',(
  const callback=read('app/api/openbot/integrations/oauth/callback/route.js');
  const mcp=read('app/api/openbot/mcp/route.js');
  const metadata=read('app/.well-known/oauth-protected-resource/api/openbot/mcp/route.js');
- assert.match(main,/functions\/v1\/killa-mcp\/desktop-config/);
+ assert.match(main,/functions\/v1\/infinitum-desktop-config/);
  assert.doesNotMatch(main,/agentinfinitum\.vercel\.app/);
  assert.match(relay,/process\.env\.OPENBOT_DESKTOP_REMOTE/);
  assert.doesNotMatch(relay,/agentinfinitum\.vercel\.app/);
