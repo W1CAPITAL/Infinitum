@@ -1,0 +1,35 @@
+name: INFINITUM Docker build
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - ".dockerignore"
+      - "app/**"
+      - "components/**"
+      - "lib/**"
+      - "package.json"
+  push:
+    branches: [main]
+    paths:
+      - "Dockerfile"
+      - "docker-compose.yml"
+      - ".dockerignore"
+      - "app/**"
+      - "components/**"
+      - "lib/**"
+      - "package.json"
+
+permissions:
+  contents: read
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build standalone container
+        run: docker build --tag infinitum:ci .

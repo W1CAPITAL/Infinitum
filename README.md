@@ -9,7 +9,7 @@
 
 Organização de clientes, processos, atendimentos, captção de leads e rotinas de trabalho em um único ambiente — com foco em rastreabilidade, DataJud/DJEN e produtividade.
 
-[**Acessar a aplicação**](https://projectw1sc-crm.vercel.app)
+**Aplicação:** acesse pelo domínio configurado na sua implantação própria. Consulte [implantação independente](./docs/SELF-HOSTING.md).
 
 **Licença atual:** Proprietária W1 Capital (16/11/2026). Distribuições anteriores sob MIT mantêm os direitos então concedidos. Copyright © 2026 W1 Capital.
 
@@ -44,7 +44,7 @@ O **MCP independente** continua em `https://ulkuhiibeoibbzhqrfya.supabase.co/fun
 
 **MCP sem Vercel:** `https://ulkuhiibeoibbzhqrfya.supabase.co/functions/v1/killa-mcp` (Supabase Edge Function; independente dos builds do frontend).
 
-[Configurar MCP](https://agentinfinitum.vercel.app/mcp/setup) · [Vincular WhatsApp por QR individual](https://agentinfinitum.vercel.app/mcp/pair) · [KPI de atendimentos](https://agentinfinitum.vercel.app/report) · [Manual técnico](./docs/killa-mcp.md) · [Política de segurança](./SECURITY.md)
+[Configurar MCP](/mcp/setup) · [Vincular WhatsApp por QR individual](/mcp/pair) · [KPI de atendimentos](/report) · [Manual técnico](./docs/killa-mcp.md) · [Política de segurança](./SECURITY.md)
 
 O servidor MCP remoto exige uma conta do INFINITUM autenticada por OAuth 2.1, MFA/AAL2, habilitação administrativa e `client_id` do aplicativo registrado na lista permitida. Cada usuário só lê seu arquivo de WhatsApp e, na carteira compartilhada Lexis, dados vinculados à empresa autorizada. **O envio por MCP exige autorização humana individual com MFA:** a IA solicita, o operador confere no INFINITUM e o Edge Function encaminha ao WA.Auto apenas após confirmação. O QR pode ser exibido como imagem a clientes MCP aprovados exclusivamente quando o administrador ativa essa opção sensível.
 
@@ -56,7 +56,7 @@ O painel de KPI de atendimento OpenBot apresenta somente mensagens com aceite do
 
 ## Sobre o projeto
 
-O **INFINITUM** é a evolução do ambiente operacional W1 Capital / ProjectW1SC: uma plataforma para reunir carteira de clientes, processos judiciais, retornos, tarefas, captção e registros de atendimento em um fluxo claro e auditável.
+O **INFINITUM** é a evolução do ambiente operacional W1 Capital: uma plataforma para reunir carteira de clientes, processos judiciais, retornos, tarefas, captção e registros de atendimento em um fluxo claro e auditável.
 
 A proposta é permitir que cada pessoa saiba **o que precisa fazer, por que aquilo é prioridade e o que já aconteceu em cada acompanhamento**. O sistema combina carteira centralizada, histórico de atividades, filtros operacionais, indicadores e consultas a fontes públicas (DataJud e DJEN), respeitando os limites de cada origem.
 
@@ -118,8 +118,8 @@ A documentação detalhada de linguagens, versões, arquitetura, scripts e build
 Requisitos: **Node.js 22+**, Git e um projeto Supabase configurado.
 
 ```bash
-git clone https://github.com/ProjectW1SC/INFINITUM.git
-cd INFINITUM
+git clone https://github.com/W1CAPITAL/Infinitum.git
+cd Infinitum
 npm install
 ```
 
