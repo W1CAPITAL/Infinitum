@@ -4,7 +4,7 @@ import {validateDesktopConfig,safeStandaloneEnvironment,isLocalAppNavigation,isS
 import {readFileSync} from 'node:fs';
 const read=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 const config={supabaseUrl:'https://segjskjlbeydlljnefai.supabase.co',
-  publishableKey:'sb_publishable_sample-not-a-real-token',bridgeOrigin:'https://lexispredict-wa-auto.onrender.com'};
+  publishableKey:'sb_publishable_sample-not-a-real-token',bridgeOrigin:'https://lexispredict-wa-auto.onrender.com',remoteOrigin:'https://infinitum.example.test'};
 test('desktop accepts only a pinned Supabase project and public key',()=>{
  assert.equal(validateDesktopConfig(config).supabaseUrl,config.supabaseUrl);
  assert.throws(()=>validateDesktopConfig({...config,supabaseUrl:'https://attacker.invalid'}),/Supabase/i);
@@ -22,7 +22,7 @@ test('local Next process never inherits a service role or other private env keys
  assert.equal(env.PORT,'54193');
  assert.equal(env.WA_AUTO_URL,config.bridgeOrigin);
  assert.equal(env.NEXT_PUBLIC_LEXIS_SHARED_DB,'1');
- assert.equal(env.OPENBOT_DESKTOP_REMOTE,'https://agentinfinitum.vercel.app');
+ assert.equal(env.OPENBOT_DESKTOP_REMOTE,config.remoteOrigin);
  assert.equal(env.SUPABASE_SERVICE_ROLE_KEY,undefined);
  assert.equal(env.OPENAI_API_KEY,undefined);
  assert.equal(env.WA_AUTO_SECRET,undefined);
@@ -30,7 +30,8 @@ test('local Next process never inherits a service role or other private env keys
 });
 test('renderer may navigate only to its own random loopback origin',()=>{
  assert.equal(isLocalAppNavigation('http://127.0.0.1:54193/agentes',54193),true);
- assert.equal(isLocalAppNavigation('https://agentinfinitum.vercel.app/agentes',54193),false);
+ assert.equal(isLocalAppNavigation('https://infinitum.example.test/agentes',54193),false);
+ assert.equal(isSafeExternalNavigation('https://agentinfinitum.vercel.app/agentes'),false);
  assert.equal(isLocalAppNavigation('http://localhost:54193/agentes',54193),false);
  assert.equal(isLocalAppNavigation('file:///C:/Windows/system.ini',54193),false);
  assert.equal(isLocalAppNavigation('http://127.0.0.1:54194/agentes',54193),false);
