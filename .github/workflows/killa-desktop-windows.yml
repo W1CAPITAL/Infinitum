@@ -1,0 +1,85 @@
+name: INFINITUM Killa AI — instalador Windows
+
+on:
+  workflow_dispatch:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'desktop/**'
+      - '.github/workflows/killa-desktop-windows.yml'
+      - 'next.config.mjs'
+      - 'tests/killa-desktop-shared-wallet-build.test.mjs'
+  push:
+    branches:
+      - feat/infinitum-windows-desktop-20261116
+      - feat/killa-secure-launcher-20261116
+      - feat/killa-superadmin-store-mcp-20261116
+      - feat/w1-branded-free-updates-20261116
+      - main
+    paths:
+      - 'desktop/**'
+      - '.github/workflows/killa-desktop-windows.yml'
+      - 'next.config.mjs'
+      - 'lib/supabase-client.js'
+      - 'lib/killa-realtime.mjs'
+      - 'components/workspace-session-provider.jsx'
+      - 'tests/killa-desktop-shared-wallet-build.test.mjs'
+
+permissions:
+  contents: read
+
+jobs:
+  windows-exe:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Baixar código
+        uses: actions/checkout@v4
+      - name: Node 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Instalar Next e dependências
+        run: npm install --no-audit --no-fund
+      - name: Testes e autorização
+        run: npm test
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Build completo standalone sem Vercel
+        run: npm run build
+        env:
+          KILLA_DESKTOP_STANDALONE: '1'
+          NODE_ENV: production
+          # Next.js inlines NEXT_PUBLIC_* values into browser bundles at build time.
+          # Keep the desktop's shared Lexis wallet mode and public project identity aligned.
+          NEXT_PUBLIC_LEXIS_SHARED_DB: '1'
+          NEXT_PUBLIC_SUPABASE_URL: 'https://segjskjlbeydlljnefai.supabase.co'
+          NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'sb_publishable_yEX6mVid3dpC7o7eOzuB1g_Vh'
+          # Publishable key is public; never copy service_role, sb_secret or signing keys into the EXE.
+      - name: Copiar Next standalone e assets
+        run: node desktop/stage-standalone.mjs
+      - name: Smoke test do Next local em 127.0.0.1
+        run: node desktop/verify-local-server.mjs
+      - name: Instalar Electron
+        run: npm install --prefix desktop --no-audit --no-fund
+      - name: Verificar launcher estático antes do empacotamento
+        run: |
+          node --check desktop/launcher-ui.js
+          node --check desktop/launcher-preload.cjs
+          node --check desktop/main.mjs
+      - name: Testar EXE empacotado antes do instalador
+        run: |
+          npm --prefix desktop run pack:win
+          node desktop/verify-packaged-server.mjs
+      - name: Compilar instalador EXE Windows x64
+        run: npm --prefix desktop run dist:win
+      - name: Verificar payload final do instalador
+        run: node desktop/verify-packaged-server.mjs
+      - name: Guardar instalador para instalação
+        uses: actions/upload-artifact@v4
+        with:
+          name: infinitum-killa-windows-test-UNSIGNED
+          path: desktop/dist/*.exe
+          if-no-files-found: error
+          retention-days: 14

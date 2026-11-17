@@ -1,0 +1,99 @@
+name: INFINITUM Killa AI — publicação Windows Authenticode verificada
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Versão x.y.z, somente se houver certificado Windows válido'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+jobs:
+  signed-windows-release:
+    if: github.ref == 'refs/heads/main'
+    environment: desktop-production
+    runs-on: windows-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Validar versão e origem
+        shell: pwsh
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if ($env:VERSION -notmatch '^\d+\.\d+\.\d+$') { throw 'Versão inválida' }
+          if ($env:GITHUB_REF -ne 'refs/heads/main') { throw 'Publicações apenas na main' }
+      - name: Exigir certificado Authenticode e senha
+        shell: pwsh
+        env:
+          WIN_CSC_LINK: ${{ secrets.KILLA_WINDOWS_CERT_P12 }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.KILLA_WINDOWS_CERT_PASSWORD }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:WIN_CSC_LINK) -or [string]::IsNullOrWhiteSpace($env:WIN_CSC_KEY_PASSWORD)) { throw 'Publicação bloqueada: exigido certificado Authenticode confiável. Ed25519 sozinho não evita alerta do Windows.' }
+      - name: Preparar metadados da versão
+        run: node desktop/prepare-signed-release.mjs '${{ inputs.version }}'
+      - name: Instalar dependências
+        run: npm install --no-audit --no-fund
+      - name: Testes e tipos
+        run: |
+          npm test
+          npm run typecheck
+      - name: Preparar Next standalone
+        run: npm run build
+        env:
+          KILLA_DESKTOP_STANDALONE: '1'
+      - name: Validar servidor local e gerar ícone
+        run: |
+          node desktop/stage-standalone.mjs
+          node desktop/verify-local-server.mjs
+          node desktop/generate-windows-icon.mjs
+      - name: Instalar Electron
+        run: npm install --prefix desktop --no-audit --no-fund
+      - name: Validar que a assinatura é obrigatória
+        shell: pwsh
+        run: |
+          $p=Get-Content desktop/package.json -Raw | ConvertFrom-Json
+          if ($p.build.forceCodeSigning -ne $true) { throw 'forceCodeSigning ausente' }
+      - name: Validar EXE Windows empacotado e assinado
+        run: |
+          npm --prefix desktop run pack:win
+          node desktop/verify-packaged-server.mjs
+        env:
+          WIN_CSC_LINK: ${{ secrets.KILLA_WINDOWS_CERT_P12 }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.KILLA_WINDOWS_CERT_PASSWORD }}
+      - name: Construir instalador assinado sem publicar
+        run: npm --prefix desktop run dist:win
+        env:
+          WIN_CSC_LINK: ${{ secrets.KILLA_WINDOWS_CERT_P12 }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.KILLA_WINDOWS_CERT_PASSWORD }}
+      - name: Validar assinatura do aplicativo e do instalador
+        shell: pwsh
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          ./desktop/verify-windows-signature.ps1 -AppExe 'desktop/dist/win-unpacked/INFINITUM Killa AI.exe' -Installer ('desktop/dist/INFINITUM-KillaAI-Setup-'+$env:VERSION+'-x64.exe')
+      - name: Publicar somente após validação Authenticode
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          if (!(Test-Path 'desktop/dist/latest.yml')) { throw 'Manifesto de atualização Windows ausente. Publicação bloqueada.' }
+          gh release view ('v'+$env:VERSION) --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -eq 0) { throw 'Versão já publicada: não sobrescrever.' }
+          $global:LASTEXITCODE=0
+          gh release create ('v'+$env:VERSION) --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --latest --title ('INFINITUM Killa AI v'+$env:VERSION) --notes 'Instalador e executável assinados com Authenticode confiável e validados no Windows.' ('desktop/dist/INFINITUM-KillaAI-Setup-'+$env:VERSION+'-x64.exe') 'desktop/dist/latest.yml'
+          if ($LASTEXITCODE -ne 0) { throw 'Falha ao publicar release assinada.' }
+      - name: Guardar instalador
+        uses: actions/upload-artifact@v4
+        with:
+          name: infinitum-killa-windows-authenticode
+          path: desktop/dist/*.exe
+          if-no-files-found: error
+          retention-days: 30
