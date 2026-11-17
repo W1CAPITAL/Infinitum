@@ -1,5 +1,5 @@
 import {createPublicKey,createHash,verify} from 'node:crypto';
-const REPO='ProjectW1SC/INFINITUM';
+const REPO='W1CAPITAL/Infinitum';
 const APP_ID='br.com.w1capital.infinitum.killa';
 const VERSION=/^(0|[1-9]\d{0,3})\.(0|[1-9]\d{0,3})\.(0|[1-9]\d{0,3})$/;
 const PUBLIC_FINGERPRINT='64226fb4ce21332768a8779be5548acdddd4933f0be48cfc35751884ca481d3c';

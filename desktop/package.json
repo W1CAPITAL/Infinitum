@@ -27,6 +27,7 @@
       "main.mjs",
       "preload.cjs",
       "runtime-policy.mjs",
+      "public-origin.mjs",
       "package.json",
       "launcher-policy.mjs",
       "lifecycle-policy.mjs",

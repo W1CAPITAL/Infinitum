@@ -1,4 +1,4 @@
-import {validatedPublicOrigin} from '../lib/openbot-public-origin.mjs';
+import {validatedPublicOrigin} from './public-origin.mjs';
 // Main CRM route renders login through SecuredWorkspace; /login does not exist.
 export const DESKTOP_ENTRY_PATH='/';
 // Independent ZapFast web session, never an implicit WA.Auto/CRM account.

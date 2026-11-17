@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {createPublicKey,verify} from 'node:crypto';
 import {
  verifyUpdateManifest,validateReleaseMetadata,versionIsNewer,releaseArtifactUrl,
  publicKeyFingerprint
@@ -10,13 +11,19 @@ const payload=(version='1.2.3')=>({
  schema:1,channel:'stable',appId:'br.com.w1capital.infinitum.killa',
  version,tag:'v'+version,
  asset:{name:'INFINITUM-KillaAI-Setup-'+version+'-x64.exe',
-  url:'https://github.com/ProjectW1SC/INFINITUM/releases/download/v'+version+'/INFINITUM-KillaAI-Setup-'+version+'-x64.exe',
+  url:'https://github.com/W1CAPITAL/Infinitum/releases/download/v'+version+'/INFINITUM-KillaAI-Setup-'+version+'-x64.exe',
   size:1000000,sha512:Buffer.alloc(64,7).toString('base64') }
 });
 test('free signed manifest rejects tampering, downgrade and unsigned main ZIP',()=>{
  const pub=read('desktop/branding/update-public-key.pem');
  const doc=JSON.parse(read('tests/fixtures/killa-signed-release.json'));
- assert.equal(verifyUpdateManifest(doc,pub,'1.0.0').version,'1.2.3');
+ // The historic fixture is legitimately signed but uses the retired repository,
+ // so signature validity alone must NOT permit importing it as an update.
+ const signedPayload=Buffer.from(doc.payload,'base64');
+ const signedSignature=Buffer.from(doc.signature,'base64');
+ assert.equal(verify(null,signedPayload,createPublicKey(pub),signedSignature),true);
+ assert.throws(()=>verifyUpdateManifest(doc,pub,'1.0.0'),/origem GitHub/i);
+ assert.equal(validateReleaseMetadata(payload(),'1.0.0').version,'1.2.3');
  assert.throws(()=>verifyUpdateManifest({...doc,signature:Buffer.alloc(64).toString('base64')},pub,'1.0.0'),/assinatura|signature/i);
  assert.throws(()=>verifyUpdateManifest({...doc,payload:Buffer.from('tampered').toString('base64')},pub,'1.0.0'),/assinatura|signature/i);
  assert.throws(()=>verifyUpdateManifest(doc,pub,'1.2.3'),/nova versão|newer/i);

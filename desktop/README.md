@@ -143,3 +143,12 @@ O login pertence à rota `/` do INFINITUM; `/login` não existe. Launcher e veri
 ### Avisos de antivírus e editor desconhecido
 
 O artefato `infinitum-killa-windows-test-UNSIGNED` é somente de teste e não deve ser instalado como versão pública. Releases públicas exigem certificado Authenticode confiável, validação do EXE e do instalador e revisão no GitHub. Um alerta com nome de ameaça não pode ser presumido falso positivo só por ser Electron. Não desative o Microsoft Defender; verifique o nome da detecção e a origem do arquivo.
+
+
+## Migração do endereço público e das releases
+
+O bootstrap do executável consulta o endpoint público do Supabase `/functions/v1/killa-mcp/desktop-config`. O Supabase Edge pode retornar `remoteOrigin` quando o operador configurar `W1_CANONICAL_ORIGIN` para o domínio HTTPS próprio do INFINITUM. Sem essa configuração, o CRM local pode abrir, mas os recursos protegidos de retransmissão OpenBot/OAuth continuam indisponíveis (não há fallback para Vercel).
+
+As releases confiáveis vêm exclusivamente de `W1CAPITAL/Infinitum` no GitHub. O verificador continua exigindo assinatura Ed25519 própria, hash SHA-512 e nome de pacote autorizado. Manifestos assinados da origem antiga são recusados após a migração, mesmo quando sua assinatura criptográfica é válida.
+
+O aplicativo Electron empacota `desktop/public-origin.mjs`, utilizado no processo principal e também na política das rotas Next. Uma dependência JavaScript fora de `desktop/` não seria incluída automaticamente pelo electron-builder.

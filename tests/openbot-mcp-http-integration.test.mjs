@@ -22,7 +22,7 @@ test('OAuth state expires after ten minutes, not reusable beyond expiry',()=>{
 });
 test('Google OAuth requests read-only scopes, PKCE and exact approved callback',()=>{
  const url=new URL(authorizationUrl('google',{
-  clientId:'public-demo',redirectUri:'https://agentinfinitum.vercel.app/api/openbot/integrations/oauth/callback',
+  clientId:'public-demo',redirectUri:'https://infinitum.example.test/api/openbot/integrations/oauth/callback',
   state:'sealed',challenge:'pkce',connectorId:'gmail'
  }));
  assert.equal(url.hostname,'accounts.google.com');
@@ -67,7 +67,8 @@ test('User may approve MausBot client directly in OAuth consent after MFA',()=>{
 });
 test('Windows app does not carry server secrets or allow arbitrary proxying',()=>{
  const p=read('desktop/runtime-policy.mjs');
- assert.match(p,/OPENBOT_DESKTOP_REMOTE:'https:\/\/agentinfinitum\.vercel\.app'/);
+ assert.match(p,/OPENBOT_DESKTOP_REMOTE:allowed\.remoteOrigin/);
+ assert.doesNotMatch(p,/agentinfinitum\.vercel\.app/);
  assert.match(p,/NEXT_PUBLIC_LEXIS_SHARED_DB:'1'/);
  const relay=read('app/api/openbot/relay/route.js');
  assert.match(relay,/READABLE=new Set/);
