@@ -17,6 +17,7 @@ import JudicialConsultationResult,{JudicialEvents} from './judicial-consultation
 import {loadPortfolioHistory} from '../lib/portfolio-history.mjs';
 import {responsibleDisplay,processStatus} from '../lib/lexis-operations.mjs';
 import {classifyLexisReturn} from '../lib/lexis-return-kpis.mjs';
+import {fetchLexisAttendanceRows} from '../lib/lexis-attendance-report-data.mjs';
 const PAGE=75;
 const DATE_LABEL=s=>s?String(s).slice(0,10).split('-').reverse().join('/'):'—';
 const STATUS={ativo:'Em andamento',em_andamento:'Em andamento',suspenso:'Suspenso',encerrado:'Encerrado',excluido:'Excluído (arquivado)'};
@@ -287,8 +288,7 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
   try{
    const bounds=periodBounds(period,todayBrazil());
    const [r,caseCount,teamData]=await Promise.all([
-    db.from('tarefas_realizadas').select('id,titulo,descricao,protocolo_ref,data_realizacao,responsavel_auth_user_id,processo_id,categoria,contato_cliente_confirmado')
-     .eq('empresa_id',profile.empresa_id).gte('data_realizacao',bounds.start).lt('data_realizacao',bounds.endExclusive).order('data_realizacao',{ascending:false}).limit(2500),
+    fetchLexisAttendanceRows(db,profile.empresa_id,bounds),
     db.from('processos').select('id',{count:'exact',head:true}).eq('empresa_id',profile.empresa_id),
     db.rpc('infinitum_resumo_equipe_v2')
    ]);
