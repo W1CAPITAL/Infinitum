@@ -15,19 +15,20 @@
     "node": ">=22"
   },
   "dependencies": {
-    "next": "15.5.29",
-    "react": "19.1.2",
-    "react-dom": "19.1.2",
     "@supabase/supabase-js": "2.119.0",
+    "firebase": "13.3.0",
     "google-auth-library": "9.15.1",
     "lucide-react": "0.468.0",
-    "read-excel-file": "9.3.10",
+    "next": "15.5.29",
     "qrcode": "1.5.4",
-    "firebase": "13.3.0"
+    "react": "19.1.2",
+    "react-dom": "19.1.2",
+    "read-excel-file": "9.3.10"
   },
   "devDependencies": {
-    "typescript": "5.9.3",
+    "@electric-sql/pglite": "0.5.16",
     "@types/node": "22.18.0",
-    "jsdom": "26.1.0"
+    "jsdom": "26.1.0",
+    "typescript": "5.9.3"
   }
 }
