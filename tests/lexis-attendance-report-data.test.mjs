@@ -32,6 +32,16 @@ test('relatório traz mais de 2.500 eventos sem corte silencioso',async()=>{
  assert.deepEqual(db.calls.map(call=>call.from),[0,500,1000,1500,2000,2500]);
 });
 
+test('paginação mantém os eventos recentes no início do relatório',async()=>{
+ const rows=[
+  {id:1,data_realizacao:'2026-11-01',created_at:'2026-11-01T10:00:00Z'},
+  {id:2,data_realizacao:'2026-11-03',created_at:'2026-11-03T10:00:00Z'},
+  {id:3,data_realizacao:'2026-11-02',created_at:'2026-11-02T10:00:00Z'}
+ ];
+ const result=await fetchLexisAttendanceRows(database(rows),COMPANY,BOUNDS,{pageSize:2});
+ assert.deepEqual(result.map(row=>row.id),[2,3,1]);
+});
+
 test('erro de leitura e limite de segurança não viram relatório parcial',async()=>{
  await assert.rejects(fetchLexisAttendanceRows(database([],{failure:'RLS recusou'}),COMPANY,BOUNDS),/RLS recusou/);
  const rows=Array.from({length:40},(_,index)=>({id:index+1}));
