@@ -1,5 +1,8 @@
 # INFINITUM / Killa AI — Windows Desktop
 
+> **Distribuição:** [Central de Aplicativos W1 Capital](https://github.com/W1CAPITAL/Central-de-Apps) · [Releases Windows](https://github.com/W1CAPITAL/Central-de-Apps/releases) · [Guia específico do INFINITUM](../docs/DISTRIBUICAO-W1.md). Na prévia `v0.1.48`, o INFINITUM está no catálogo, mas não há instalador individual publicado como asset da Central. Os builds próprios podem ser consultados nos workflows deste repositório.
+
+
 
 ## Linguagens, versões e estrutura do código
 

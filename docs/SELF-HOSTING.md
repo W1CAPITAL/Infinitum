@@ -1,5 +1,8 @@
 # Self-host INFINITUM without Vercel
 
+> **Instalação para Windows:** use a [Central de Apps W1](https://github.com/W1CAPITAL/Central-de-Apps/releases) e consulte [o guia de distribuição](DISTRIBUICAO-W1.md). Este documento cobre a implantação autogerenciada do serviço web, não a instalação do programa Windows.
+
+
 INFINITUM can run as a standalone Next.js Node.js service. Vercel is not required. The database and authentication remain in the configured Supabase project; the web application server can run on any host that supports Docker.
 
 ## Requirements

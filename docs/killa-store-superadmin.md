@@ -1,5 +1,8 @@
 # W1 Capital App Store — administração superadmin
 
+> **Distribuição de aplicativos:** a loja independente para Windows é a [Central de Apps W1](https://github.com/W1CAPITAL/Central-de-Apps). A administração descrita a seguir é um recurso separado, restrito aos superadministradores do INFINITUM. Consulte [o catálogo de distribuição](https://github.com/W1CAPITAL/Central-de-Apps/blob/main/docs/ECOSSISTEMA-W1.md) para instaladores e versões publicadas.
+
+
 ## Acesso independente da Vercel
 
 Abra o Killa Launcher → Administração · Build Logs / Typecheck / Env. O launcher abre `/app-store/admin` pelo Next.js local, e a página consulta `killa-store-admin` no Supabase Edge.
