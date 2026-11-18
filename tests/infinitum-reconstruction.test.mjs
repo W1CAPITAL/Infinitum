@@ -32,7 +32,7 @@ test('DJEN e DataJud indisponíveis não produzem sucesso ou dados falsos',async
 });
 test('login reproduz ações reais: mostrar senha, acesso pendente, Google e lembrar sessão',()=>{
  const login=rd('components/secured-workspace.jsx'),auth=rd('components/professional-auth.jsx'),css=rd('app/infinitum-login.css');
- assert.match(login,/signInWithOAuth/);assert.match(login,/signUp/);
+ assert.match(login,/signInWithOAuth/);assert.doesNotMatch(login,/signUp/);
  assert.match(login,/setRememberOfficeSession/);
  assert.match(login,/showPassword/);
  assert.match(auth,/w1-auth-hero/);assert.match(auth,/w1-auth-panel/);

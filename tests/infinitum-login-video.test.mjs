@@ -23,7 +23,7 @@ test('the animation is only in the auth hero, is silent/looping and keeps the RE
  assert.match(auth,/infinitum-login-poster\.webp/);
  assert.ok(auth.indexOf('w1-auth-video')<auth.indexOf('w1-auth-panel'));
  assert.match(login,/signInWithPassword/);
- assert.match(login,/signUp/);
+ assert.doesNotMatch(login,/signUp/);
  assert.match(login,/resetPasswordForEmail/);
  assert.match(login,/signInWithOAuth/);
  assert.match(login,/verifyOtp/);

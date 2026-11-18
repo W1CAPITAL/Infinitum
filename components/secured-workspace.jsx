@@ -100,7 +100,7 @@ export default function SecuredWorkspace({active,children,fullscreen=false}){
     <label htmlFor="office-login-email">Email</label>
     <input id="office-login-email" name="email" required type="email" placeholder="seu@email.com" value={email} onChange={e=>setEmail(e.target.value)} autoComplete="email"/>
     <div className="office-login-label-row"><label htmlFor="office-login-pass">Senha</label>
-     <button type="button" className="office-forgot" onClick={()=>setModeTo('recover')}>Esqueceu a senha?</button>}</div>
+     <button type="button" className="office-forgot" onClick={()=>setModeTo('recover')}>Esqueceu a senha?</button></div>
     <div className="office-password-field">
      <input id="office-login-pass" name="password" required type={showPassword?'text':'password'} placeholder="••••••••" value={password} onChange={e=>setPassword(e.target.value)} autoComplete="current-password"/>
      <button type="button" aria-label={showPassword?'Ocultar senha':'Mostrar senha'} onClick={()=>setShowPassword(x=>!x)}>{showPassword?<EyeOff size={17}/>:<Eye size={17}/>}</button>

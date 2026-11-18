@@ -21,11 +21,11 @@ test('o painel mostra só o vídeo da galáxia em largura e altura completas, se
  assert.match(final,/height:100dvh!important/);
 });
 
-test('login, recuperação e cadastro continuam separados do vídeo, inclusive sem movimento',()=>{
+test('login e recuperação continuam separados do vídeo, inclusive sem movimento',()=>{
  const auth=read('components/professional-auth.jsx');
  const login=read('components/secured-workspace.jsx');
  assert.match(auth,/<video\b/);
  assert.match(auth,/preload="metadata"/);
- for(const method of ['signInWithPassword','signUp','resetPasswordForEmail','verifyOtp','signInWithOAuth'])assert.match(login,new RegExp(method));
+ for(const method of ['signInWithPassword','resetPasswordForEmail','verifyOtp','signInWithOAuth'])assert.match(login,new RegExp(method));
  assert.match(read('app/infinitum-login-video.css'),/prefers-reduced-motion:reduce/);
 });
