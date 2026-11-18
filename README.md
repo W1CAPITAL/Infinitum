@@ -27,6 +27,16 @@ Organização de clientes, processos, atendimentos, captção de leads e rotinas
 
 ---
 
+<!-- W1_DISTRIBUICAO_INICIO -->
+## Distribuição Windows
+
+O ponto de entrada para instalar os produtos W1 Capital no Windows é a **[Central de Aplicativos W1](https://github.com/W1CAPITAL/Central-de-Apps)**.
+
+[Consultar downloads disponíveis](https://github.com/W1CAPITAL/Central-de-Apps/releases) · [Central de Apps para Windows — prévia v0.1.48](https://github.com/W1CAPITAL/Central-de-Apps/releases/download/preview-v0.1.48/W1-Central-de-Apps-Setup-0.1.48-x64.exe) · [Guia de distribuição](./docs/DISTRIBUICAO-W1.md)
+
+A Central organiza o INFINITUM e os demais programas disponíveis. O instalador independente do INFINITUM não consta entre os arquivos publicados na prévia indicada. Essa prévia não deve ser confundida com uma distribuição oficialmente assinada para atualização automática.
+
+<!-- W1_DISTRIBUICAO_FIM -->
 ## W1 Capital App Store — Launcher Windows
 
 [Console privativo de superadmin, diagnósticos e MCP](docs/killa-store-superadmin.md).

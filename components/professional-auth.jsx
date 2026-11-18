@@ -1,9 +1,9 @@
 'use client';
 import {useEffect,useRef} from 'react';
-import {ArrowRight,ShieldCheck} from 'lucide-react';
+import {ShieldCheck} from 'lucide-react';
 
 // O painel animado utiliza o vídeo fornecido pelo cliente; o formulário é HTML real, separado.
-export default function ProfessionalAuth({eyebrow='GESTÃO JURÍDICA',title='Bem-vindo de volta',description='Entre na sua conta para continuar.',onSignup=null,signupMode=false,children}){
+export default function ProfessionalAuth({eyebrow='GESTÃO JURÍDICA',title='Bem-vindo de volta',description='Entre na sua conta para continuar.',children}){
  const videoRef=useRef(null);
  useEffect(()=>{
   const media=window.matchMedia?.('(prefers-reduced-motion: reduce)');
@@ -38,7 +38,6 @@ export default function ProfessionalAuth({eyebrow='GESTÃO JURÍDICA',title='Bem
      <a className="w1-auth-mark" href="/" title="INFINITUM — Gestão jurídica" aria-label="INFINITUM">
       <img src="/branding/infinitum-symbol-preto.svg" width="32" height="24" alt=""/> <span>INFINITUM</span>
      </a>
-     {onSignup&&<button type="button" className="w1-auth-create" onClick={onSignup}>{signupMode?'Fazer login':'Criar conta'} <ArrowRight size={14}/></button>}
     </div>
     <div className="w1-auth-panel-center">
      <div className="w1-auth-heading"><span className="w1-auth-eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>

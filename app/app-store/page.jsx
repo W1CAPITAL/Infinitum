@@ -18,9 +18,10 @@ function StoreContent(){
  return <main className={styles.store}>
   <header className={styles.hero}>
    <div className={styles.eyebrow}><Store size={16}/> W1 CAPITAL · CENTRAL DE APLICATIVOS</div>
-   <h1>Killa AI <span>Store</span></h1>
+   <h1>Central de Aplicativos <span>W1 Capital</span></h1>
    <p>Abra os módulos disponíveis no INFINITUM. Os serviços preservam suas autenticações independentes; a loja não instala aplicativos desconhecidos.</p>
    <div className={styles.badges}><span>Windows · Desktop</span><span>CRM local</span><span>Sem compartilhar senhas</span></div>
+   <p><a className={styles.action} href="https://github.com/W1CAPITAL/Central-de-Apps/releases" target="_blank" rel="noopener noreferrer">Instalar pela Central de Apps W1 <ArrowUpRight size={17}/></a></p>
   </header>
   {error&&<p className={styles.error} role="alert">{error}</p>}
   <div className={styles.grid}>
