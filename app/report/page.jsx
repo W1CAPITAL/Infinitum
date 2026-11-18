@@ -15,6 +15,7 @@ import {priorityDigest,limitSnippet} from '../../lib/report-priority.mjs';
 import ReportPrintDocument from '../../components/report-print-document';
 import EfferdKpi from '../../components/efferd-kpi';
 import KillaAtendimentoKpi from '../../components/killa-atendimento-kpi';
+import {fetchLexisAttendanceRows} from '../../lib/lexis-attendance-report-data.mjs';
 
 const periods=[{id:'esta_semana',label:'Esta semana'},{id:'semana_passada',label:'Semana passada'},{id:'mes',label:'Mês atual'}];
 const periodLabel=Object.fromEntries(periods.map(p=>[p.id,p.label]));
@@ -107,11 +108,7 @@ function LegacyReportPage(){
       throw Error(user.error?.message||'Usuário sem vínculo único à organização Lexis.');
     const empresaId=user.data[0].empresa_id;
     const col='id,cliente,protocolo_ref,tribunal,advogado,atendido_por,status_interno,proximo_retorno,proximo_prazo,ultimo_retorno,observacoes';
-    const tasks=db.from('tarefas_realizadas')
-     .select('id,processo_id,empresa_id,categoria,data_realizacao,responsavel_auth_user_id,contato_cliente_confirmado,descricao,titulo,created_at')
-     .eq('empresa_id',empresaId)
-     .gte('data_realizacao',bounds.start).lt('data_realizacao',bounds.endExclusive)
-     .order('data_realizacao',{ascending:false}).limit(2500);
+    const tasks=fetchLexisAttendanceRows(db,empresaId,bounds);
     const queries=[
      db.from('processos').select(col).eq('empresa_id',empresaId).order('id').range(0,999),
      db.from('processos').select(col).eq('empresa_id',empresaId).order('id').range(1000,1999),
