@@ -34,7 +34,7 @@ O ponto de entrada para instalar os produtos W1 Capital no Windows é a **[Centr
 
 [Consultar downloads disponíveis](https://github.com/W1CAPITAL/Central-de-Apps/releases) · [Central de Apps para Windows — prévia v0.1.48](https://github.com/W1CAPITAL/Central-de-Apps/releases/download/preview-v0.1.48/W1-Central-de-Apps-Setup-0.1.48-x64.exe) · [Guia de distribuição](./docs/DISTRIBUICAO-W1.md)
 
-A Central organiza o INFINITUM e os demais programas disponíveis. O instalador independente do INFINITUM não consta entre os arquivos publicados na prévia indicada. Essa prévia não deve ser confundida com uma distribuição oficialmente assinada para atualização automática.
+A Central organiza o INFINITUM e os demais programas disponíveis. O instalador independente não consta entre os assets da prévia da Central, mas está disponível como [artefato de teste no GitHub Actions](https://github.com/W1CAPITAL/Infinitum/actions/runs/44302707806), no arquivo `infinitum-killa-windows-test-UNSIGNED`. O artefato expira em **02/12/2026**, requer acesso ao GitHub e não é assinado para atualização automática.
 
 <!-- W1_DISTRIBUICAO_FIM -->
 ## W1 Capital App Store — Launcher Windows

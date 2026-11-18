@@ -9,7 +9,7 @@ A distribuição de aplicativos Windows da W1 Capital é organizada pela [Centra
 3. Para a prévia `v0.1.48`, o instalador da Central está [disponível aqui](https://github.com/W1CAPITAL/Central-de-Apps/releases/download/preview-v0.1.48/W1-Central-de-Apps-Setup-0.1.48-x64.exe).
 4. Confira a [documentação do aplicativo desktop](../desktop/README.md) antes de configurar integrações.
 
-A Central contém o INFINITUM em seu catálogo. Na prévia consultada, não há um instalador isolado do INFINITUM publicado como asset da Central. Não utilize arquivos de terceiros como se fossem versões oficiais.
+A Central contém o INFINITUM em seu catálogo. O instalador individual mais recente verificado está como [artefato Windows da execução GitHub Actions #44302707806](https://github.com/W1CAPITAL/Infinitum/actions/runs/44302707806) — baixe o ZIP `infinitum-killa-windows-test-UNSIGNED` na seção **Artifacts**. O instalador gerado corresponde à versão `0.1.2` do projeto desktop, é **não assinado**, e o artefato expira em **02/12/2026**. Ele não foi publicado como asset da pré-release da Central. Não utilize arquivos de terceiros como se fossem versões oficiais.
 
 ## Integridade e atualizações
 
