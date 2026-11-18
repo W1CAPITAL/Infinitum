@@ -199,7 +199,7 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
    if(typeof window!=='undefined')window.dispatchEvent(new window.Event('lexis:attendance-registered'));
    historyRequest.current++;setHistoryLoading(false);setHistory([]);
    setAttendNote('');attendanceRequest.current='';setSelected(null);await load();
-  }catch(e){setNotice('Atendimento não registrado: '+e.message)}
+  }catch(e){setNotice('Não foi possível confirmar o registro. A tentativa foi preservada; confira o histórico antes de abrir outro atendimento. '+e.message)}
   finally{setBusy(false)}
  };
  const startEdit=(p,what)=>{historyRequest.current++;consultController.current?.abort();setSelected(null);setEditing(p);setMode(what);setForm(initialForm(p));setNotice('')};
