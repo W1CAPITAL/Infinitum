@@ -3,6 +3,7 @@ import {useCallback,useEffect,useState} from 'react';
 import Link from 'next/link';
 import {Plus,Search,BriefcaseBusiness,BookOpen,Layers3,PlugZap,Send,Copy,ShieldCheck,Bot,PanelLeftClose,PanelLeftOpen,FileText,Scale,Clock3} from 'lucide-react';
 import SecuredWorkspace from '../../components/secured-workspace';
+import OpenCodeDevicePanel from '../../components/opencode-device-panel';
 import {OFFICE_AGENTS} from '../../lib/office-core.mjs';
 import {runBlackholeQwen,stopBlackholeQwen,getQwenCacheStatus} from '../../lib/blackhole-local-llm.mjs';
 import {offlineBlackholeReply} from '../../lib/blackhole-chat.mjs';
@@ -114,6 +115,7 @@ function Console({db,session}){
   <div className="office-ai-main">
    <header className="office-ai-header"><div><small>BLACKHOLE · INTELIGÊNCIA JURÍDICA</small><strong>Assistente jurídico</strong></div>
     <span className="office-ai-engine"><span/> {engine==='qwen'?'Qwen 0,5B · CPU local':engine==='online'?'IA gratuita online · requer autorização':'Motor de evidências · sem custo de tokens'}</span></header>
+   <OpenCodeDevicePanel db={db} initialPrompt={prompt}/>
    {activeTab?<div className="office-ai-content">
     {tab==='historico'&&<><h1>Buscar conversas</h1><p>Atividades que foram efetivamente registradas na carteira privada.</p>
      <input className="inf-search" aria-label="Pesquisar no histórico" placeholder="Buscar pedido" value={search} onChange={e=>setSearch(e.target.value)}/>

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {Activity,AlertTriangle,ArrowRight,Bell,BriefcaseBusiness,CheckCircle2,ChevronDown,Filter,Grid2X2,Headset,Home,Layers,Link2,MessageSquare,MoreHorizontal,Play,Plus,RefreshCw,Search,Settings,ShieldCheck,Sparkles,Star,Users,Workflow,Zap,Plug,BarChart3,X,Scale} from 'lucide-react';
 import {OPENBOT_BOTS} from '../lib/openbot-studio-config.mjs';
 import OpenBotStudio from './openbot-studio.jsx';
+import OpenCodeDevicePanel from './opencode-device-panel.jsx';
 import s from './agents-command-center.module.css';
 
 const AGENTS=[
@@ -94,7 +95,7 @@ export default function AgentsCommandCenter({db,session}){
     <div className={s.historyList}>{threads.slice(0,7).map(t=>{const a=AGENTS.find(x=>x.botKey===t.bot_key);return a?<button key={t.id} title={t.title} onClick={()=>openAgent(a,{threadId:t.id})}><MessageSquare size={13}/><span><b>{t.title||'Nova conversa'}</b><small>{a.name} · {ago(t.updated_at)}</small></span></button>:null;})}{!threads.length&&<p>Nenhuma conversa salva.</p>}</div>
     <button className={s.rosterNew} onClick={()=>setModal(true)}><Plus size={17}/> Nova conversa</button>
    </aside>
-   {view==='chat'?<div className={s.chatHost}><OpenBotStudio key={chatBotKey+'-'+(chatThreadId||'latest')+'-'+chatNonce} db={db} session={session} initialBot={chatBotKey} initialThreadId={chatThreadId} startNew={chatStartNew} embedded onBack={backToTeam} activityRuns={runs.filter(r=>agentLabel(r)===AGENTS.find(a=>a.botKey===chatBotKey)?.name)}/></div>:<main className={s.main}>
+   {view==='chat'?<div className={s.chatHost}><OpenBotStudio key={chatBotKey+'-'+(chatThreadId||'latest')+'-'+chatNonce} db={db} session={session} initialBot={chatBotKey} initialThreadId={chatThreadId} startNew={chatStartNew} embedded onBack={backToTeam} activityRuns={runs.filter(r=>agentLabel(r)===AGENTS.find(a=>a.botKey===chatBotKey)?.name)}/></div>:<main className={s.main}><OpenCodeDevicePanel db={db}/>
     <div className={s.teamHead}><span className={s.teamIcon}><Users size={21}/></span><div><h2>Equipe de Operações <ChevronDown size={15}/></h2><p>6 perfis especializados · conversas privadas · revisão humana</p></div><div className={s.teamAvatars}>{AGENTS.slice(0,3).map(a=><img key={a.id} src={a.avatar} alt=""/>)}<span>+3</span></div></div>
     <div className={s.tabs}><button className={s.tabActive}><Grid2X2 size={14}/> Visão da equipe</button><button onClick={()=>openAgent(selected)}><MessageSquare size={14}/> Conversas</button><Link href="/tarefas"><CheckCircle2 size={14}/> Tarefas</Link><Link href="/relatorios"><Activity size={14}/> Desempenho</Link><Link href="/configuracoes"><Settings size={14}/> Configurações</Link></div>
     <div className={s.toolbar}><button className={s.primary} onClick={()=>openAgent(selected,{newConversation:true})}><Plus size={16}/> Nova conversa</button><button onClick={()=>openAgent(selected,{integrations:true})}><Link2 size={15}/> Conectar apps</button><button onClick={()=>openAgent(selected)}><Layers size={15}/> Modelos e motor</button><Link href="/mcp/approve"><CheckCircle2 size={15}/> Aprovações</Link></div>
