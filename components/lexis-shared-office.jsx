@@ -119,12 +119,12 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
  },[area]);
  const [selected,setSelected]=useState(null),[history,setHistory]=useState([]),[attendNote,setAttendNote]=useState(''),[nextDate,setNextDate]=useState('');
  const [confirmed,setConfirmed]=useState(false),[consulted,setConsulted]=useState(null);
- const historyRequest=useRef(0),consultController=useRef(null);
+ const historyRequest=useRef(0),consultController=useRef(null),attendanceRequest=useRef('');
  const [historyLoading,setHistoryLoading]=useState(false);
  const [officialHistory,setOfficialHistory]=useState([]),[historyErrors,setHistoryErrors]=useState([]);
  const [consultBusy,setConsultBusy]=useState(false),[consultRange,setConsultRange]=useState(recentPeriod);
  useEffect(()=>()=>{historyRequest.current++;consultController.current?.abort()},[]);
- const closeAction=()=>{if(busy)return;historyRequest.current++;consultController.current?.abort();setSelected(null);setEditing(null);setConsulted(null);setHistory([]);setOfficialHistory([]);setHistoryErrors([]);setHistoryLoading(false);setConsultBusy(false)};
+ const closeAction=()=>{if(busy)return;historyRequest.current++;consultController.current?.abort();attendanceRequest.current='';setSelected(null);setEditing(null);setConsulted(null);setHistory([]);setOfficialHistory([]);setHistoryErrors([]);setHistoryLoading(false);setConsultBusy(false)};
  const [period,setPeriod]=useState('mes'),[scope,setScope]=useState('empresa'),[attendance,setAttendance]=useState([]),[reportTotal,setReportTotal]=useState(0);
  const [reportBusy,setReportBusy]=useState(false),[teamStats,setTeamStats]=useState([]),[selectedMode,setSelectedMode]=useState('atendimento');
  useEffect(()=>{
@@ -177,6 +177,7 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
  const attend=useCallback(async(row)=>{
   if(!profile?.empresa_id)return;
   const request=++historyRequest.current;
+  attendanceRequest.current=crypto.randomUUID();
   setEditing(null);setNotice('');
   setSelected(row);setSelectedMode('atendimento');setAttendNote('');setNextDate(row.next_attendance||'');setConfirmed(false);setConsulted(null);
   void loadHistory(row,request);
@@ -185,16 +186,18 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
   e.preventDefault();if(!selected||busy)return;
   if(attendNote.trim().length<3){setNotice('Descreva o atendimento realizado.');return}
   if(nextDate&&!validDay(nextDate)){setNotice('Data do próximo retorno inválida.');return}
+  if(!attendanceRequest.current){setNotice('Não foi possível identificar esta tentativa. Reabra o atendimento.');return}
   setBusy(true);setNotice('');
   try{
    const {data,error}=await db.rpc('infinitum_registrar_atendimento',{
-    p_processo_id:selected.id,p_descricao:attendNote.trim(),p_proximo_retorno:nextDate||null,p_contato_confirmado:confirmed
+    p_processo_id:selected.id,p_descricao:attendNote.trim(),p_proximo_retorno:nextDate||null,p_contato_confirmado:confirmed,
+    p_idempotency_key:attendanceRequest.current
    });
    if(error||data?.ok!==true)throw Error(error?.message||'Atendimento não confirmado pelo banco.');
    setNotice('Atendimento registrado: '+data.responsavel+' · '+DATE_LABEL(data.ultimo_atendimento)+' · próximo retorno '+DATE_LABEL(data.proximo_atendimento)+'.');
    if(typeof window!=='undefined')window.dispatchEvent(new window.Event('lexis:attendance-registered'));
    historyRequest.current++;setHistoryLoading(false);setHistory([]);
-   setAttendNote('');setSelected(null);await load();
+   setAttendNote('');attendanceRequest.current='';setSelected(null);await load();
   }catch(e){setNotice('Atendimento não registrado: '+e.message)}
   finally{setBusy(false)}
  };
