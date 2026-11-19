@@ -109,7 +109,7 @@ export default function CrmShell({active='Painel jurídico',email='',onNavigate,
     onPointerLeave={()=>setSidebarExpanded(false)}
     onFocusCapture={()=>setSidebarExpanded(true)}
     onBlurCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget))setSidebarExpanded(false)}}>
-   <div className="app-identity"><Link href="/" className="pr-brand" aria-label="INFINITUM — Painel jurídico"><span className="pr-brand-symbol" aria-hidden="true">∞</span><strong className="pr-brand-name">INFINITUM</strong><small className="pr-brand-sub">CRM | JURÍDICO</small></Link>
+   <div className="app-identity"><Link href="/" className="pr-brand" aria-label="INFINITUM — Painel jurídico"><img className="pr-brand-symbol" src="/branding/infinitum-symbol-preto.svg" alt="" width="46" height="24"/><strong className="pr-brand-name">INFINITUM</strong><small className="pr-brand-sub">CRM | JURÍDICO</small></Link>
     <button type="button" className="app-sidebar-toggle" aria-label={sidebarExpanded?'Recolher menu lateral':'Expandir menu lateral'} aria-expanded={sidebarExpanded} onClick={()=>setSidebarExpanded(x=>!x)}>{sidebarExpanded?<PanelLeftClose size={19}/>:<PanelLeftOpen size={19}/>}</button>
     <Link className="app-brand-link" href="/" aria-label="INFINITUM — Painel jurídico" title="Ir ao painel jurídico" prefetch={false}>
      <img className="app-brand-compact" src="/branding/blackhole-symbol.svg" alt="" width="54" height="58"/>

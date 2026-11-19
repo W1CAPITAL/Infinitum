@@ -81,12 +81,12 @@ export default function AgentsCommandCenter({db,session}){
  const agentLabel=r=>{const k=String(r.agent||'').toLowerCase();const a=AGENTS.find(x=>x.botKey===k||x.id===k);return a?a.name:(k==='superagente'?'Superagente':'INFINITUM');};
  return <div className={s.page}>
   <header className={s.topbar}>
-   <Link href="/dashboard" className={s.brand}><span>∞</span><b>Infinitum<small>CRM</small></b></Link>
+   <Link href="/dashboard" className={s.brand}><img src="/branding/infinitum-symbol-branco.svg" alt="" width="36" height="20"/><b>Infinitum<small>CRM</small></b></Link>
    <div className={s.heading}><span><Users size={22}/></span><div><h1>Agentes</h1><p>Sua equipe de agentes de IA. Coordene, monitore e escale operações.</p></div></div>
    <div className={s.topActions}><span className={s.secure}><i/> <ShieldCheck size={15}/> Sessão autenticada</span><button aria-label="Notificações"><Bell size={18}/></button><button aria-label="Ajuda" className={s.help}>?</button><div className={s.user}><b>{initials}</b><span>Infinitum<small>{session&&session.user&&session.user.email||'Conta autenticada'}</small></span><ChevronDown size={14}/></div></div>
   </header>
   <div className={s.workspace+(view==='chat'?' '+s.workspaceChat:'')}>
-   <nav className={s.nav}>{NAV.map(item=>{const I=item.icon;return <Link key={item.label} href={item.href} className={[s.navLink,item.active?s.navActive:''].join(' ')}><I size={19}/><span>{item.label}</span></Link>;})}<div className={s.navFoot}>∞<small>INFINITUM IA</small></div></nav>
+   <nav className={s.nav}>{NAV.map(item=>{const I=item.icon;return <Link key={item.label} href={item.href} className={[s.navLink,item.active?s.navActive:''].join(' ')}><I size={19}/><span>{item.label}</span></Link>;})}<div className={s.navFoot}><img src="/branding/infinitum-symbol-branco.svg" alt="" width="36" height="20"/><small>INFINITUM IA</small></div></nav>
    <aside className={s.roster}>
     <div className={s.search}><Search size={16}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar agente, equipe ou tarefa..."/><kbd>⌘ K</kbd></div>
     <div className={s.rosterTabs}>{['Todos','Equipes','Favoritos'].map(v=><button key={v} className={tab===v?s.activeTab:''} onClick={()=>setTab(v)}>{v}</button>)}<button aria-label="Filtrar" onClick={()=>setTab('Todos')}><Filter size={15}/></button></div>

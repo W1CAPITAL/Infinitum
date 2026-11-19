@@ -106,7 +106,7 @@ function Console({db,session}){
  return <main className="office-ai-console" aria-label="BLACKHOLE · Superagente jurídico">
   <aside className={'office-ai-rail '+(expanded?'expanded':'')} aria-label="Ferramentas do agente">
    <div className="office-ai-rail-brand">
-    <span className="office-ai-infinity" aria-hidden="true">∞</span>
+    <img className="office-ai-infinity" src="/branding/infinitum-symbol-branco.svg" alt="" width="38" height="22"/>
     <button type="button" title="Expandir/recolher painel" onClick={()=>setExpanded(x=>!x)} aria-label={expanded?'Recolher painel do agente':'Expandir painel do agente'}>{expanded?<PanelLeftClose size={18}/>:<PanelLeftOpen size={18}/>}</button>
    </div>
    <nav>{tabs.map(t=>{const Icon=t.icon;return <button key={t.id} type="button" className={tab===t.id?'selected':''} title={t.title} aria-label={t.title} onClick={()=>t.id==='nova'?newChat():setTab(t.id)}><Icon size={18}/>{expanded&&<span>{t.title}</span>}</button>})}</nav>

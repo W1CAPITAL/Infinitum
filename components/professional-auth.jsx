@@ -28,7 +28,7 @@ export default function ProfessionalAuth({eyebrow='GESTÃO JURÍDICA',title='Bem
      <source src="/branding/infinitum-login-hero.mp4?v=20261113-galaxy" type="video/mp4"/>
     </video>
     <div className="w1-auth-hero-transcript">
-     <span>∞ INFINITUM | CRM JURÍDICO</span>
+     <span><img src="/branding/infinitum-symbol-branco.svg" alt="" width="36" height="20"/> INFINITUM | CRM JURÍDICO</span>
      <h2>Gestão jurídica com método, inteligência e alta performance.</h2>
      <p>Organize processos, clientes, prazos, compromissos e sua operação jurídica em um só lugar.</p>
     </div>
