@@ -25,6 +25,10 @@ test('busca da fila procura cliente, CNJ, responsável e título',()=>{
  assert.deepEqual(filterLexisCompanyQueue(rows,{view:'todos',today:TODAY,query:'ana'}).map(x=>x.id),['t1']);
 });
 
+test('filtro de concluídos inclui tarefas encerradas e retornos atendidos',()=>{
+ assert.deepEqual(filterLexisCompanyQueue(rows,{view:'finalizados',today:TODAY}).map(x=>x.id),['r2','m1']);
+});
+
 test('resumo separa pendências, vencidos, em dia, sem data e finalizados',()=>{
  assert.deepEqual(summarizeLexisCompanyQueue(rows,TODAY),{
   total:5,abertas:3,vencidos:1,hoje:0,em_dia:1,sem_data:1,finalizados:1,atendidos:1
