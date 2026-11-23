@@ -1,0 +1,39 @@
+/* Supervisão e relatório integrados ao tema original do INFINITUM. */
+.lxi-shell{min-width:0}
+.lxi-header{align-items:center}
+.lxi-actions{align-items:center}
+.lxi-period{display:flex;flex-direction:column;gap:5px;font-size:11px;font-weight:700;color:#655a50}
+.lxi-period select{border:1px solid #d5ccc0;border-radius:10px;padding:10px 12px;background:#fff;color:#29231f;font:inherit;min-height:40px;cursor:pointer}
+.lxi-links{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px}
+.lxi-links a{display:inline-flex;align-items:center;gap:6px;border-radius:99px;border:1px solid #ded3c7;padding:9px 13px;background:#fff;color:#584c40;text-decoration:none!important;font-size:12px;font-weight:650}
+.lxi-links a[aria-current=page]{background:#ebe2d6;color:#35271f;border-color:#b9a48c}
+.lxi-trend{display:flex;align-items:flex-end;justify-content:space-around;min-height:230px;gap:6px;border-top:1px solid #f2ede7;padding-top:12px;overflow:auto}
+.lxi-day{display:flex;flex:1;min-width:24px;max-width:78px;align-items:center;flex-direction:column;justify-content:flex-end;gap:8px;color:#6a594c;font-size:11px;height:215px}
+.lxi-day strong{min-height:18px}
+.lxi-day small{font-size:10px;white-space:nowrap}
+.lxi-track{position:relative;flex:1;width:100%;max-width:37px;min-height:90px;display:flex;align-items:flex-end;background:#f5efe9;border-radius:8px 8px 0 0;overflow:hidden}
+.lxi-bar{width:100%;background:linear-gradient(180deg,#9f7180,#704558);border-radius:7px 7px 0 0;min-height:2px}
+.lxi-productivity{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.lxi-productivity>div{padding:15px;border:1px solid #eee4dc;border-radius:12px;background:#fcfaf8;display:flex;flex-direction:column;gap:10px;min-height:106px}
+.lxi-productivity span{font-size:11px;color:#74685f}
+.lxi-productivity strong{font:400 29px/1.2 Georgia,serif;color:#34281d}
+.lxi-team{margin-top:20px;min-width:0}
+.lxi-team *{min-width:0}
+.lxi-footnote{font-size:11px;color:#7a6f64;display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:23px;line-height:1.6}
+.lxi-footnote span{margin-left:auto}
+@media(max-width:840px){.lxi-actions{width:100%}.lxi-productivity{grid-template-columns:1fr 1fr}.lxi-day{min-width:28px}.lxi-trend{justify-content:start}}
+@media(max-width:570px){.lxi-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}.lxi-links a{justify-content:center}.lxi-header .lxd-actions{gap:6px}.lxi-header .inf-btn{font-size:11px;padding:9px}.lxi-period{min-width:120px}}
+html[data-crm-mode=dark] .lxi-shell .lxi-period{color:#d4c7bd}
+html[data-crm-mode=dark] .lxi-shell .lxi-period select,
+html[data-crm-mode=dark] .lxi-shell .lxi-links a{background:#28252b;color:#f0e9e4;border-color:#50454d}
+html[data-crm-mode=dark] .lxi-shell .lxi-productivity>div,
+html[data-crm-mode=dark] .lxi-shell .lxi-track{background:#312e34;border-color:#50454d}
+html[data-crm-mode=dark] .lxi-shell .lxi-productivity strong{color:#eee3d9}
+@media print{
+ .lxi-shell{background:#fff!important;color:#171717!important;padding:8px!important;max-width:100%!important}
+ .lxi-header .lxi-actions,.lxi-links,.lxi-shell .inf-btn,.crm-mobile-dock,.lxi-shell .lxd-message[role=status]{display:none!important}
+ .lxi-shell .lxd-panel,.lxi-shell .lxd-stat,.lxi-team{break-inside:avoid;box-shadow:none!important}
+ .lxi-shell .lxd-stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+ .lxi-shell .lxd-panels{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .lxi-shell .lxi-team{page-break-before:always}
+}
