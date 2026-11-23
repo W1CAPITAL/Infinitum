@@ -2,7 +2,7 @@
 import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
-import {ClipboardList,LayoutDashboard,Users,CheckCircle2,Landmark,LogOut,KeyRound,NotebookPen,Bell,Mail,BarChart3,PanelLeftOpen,PanelLeftClose,Settings2,Gavel,CalendarDays,Scale,Target,Bot,Radar,FileText,MessageSquare,Clock3,BriefcaseBusiness,BookOpen,UserRoundCheck,Workflow,PlugZap,ScanSearch,Search,Command,Menu,X} from 'lucide-react';
+import {ClipboardList,LayoutDashboard,Users,CheckCircle2,Landmark,LogOut,KeyRound,NotebookPen,Bell,Mail,BarChart3,PanelLeftOpen,PanelLeftClose,Settings2,Gavel,CalendarDays,Scale,Target,Bot,Radar,FileText,MessageSquare,Clock3,BriefcaseBusiness,BookOpen,UserRoundCheck,Workflow,PlugZap,ScanSearch,Search,Command,Menu,X,ShieldCheck} from 'lucide-react';
 import {CRM_AREAS} from '../lib/crm-navigation.mjs';
 import {CRM_THEMES,resolveTheme} from '../lib/crm-themes.mjs';
 import {getClient} from '../lib/supabase-client';
@@ -18,7 +18,7 @@ function preferredTheme(){try{
 const displayLabels={ 'Painel jurídico':'Dashboard','WhatsApp':'Comunicação','Peças e petições':'Documentos','Fluxos (POP)':'Procedimentos','Mini Agentes':'Agentes','Scanner judicial':'Scanner judicial' };
 const icons={
  'Painel jurídico':BriefcaseBusiness,'Clientes':Users,'Processos':Gavel,'Encerrados':CheckCircle2,'Atividades':ClipboardList,'Análises internas':NotebookPen,'Scanner judicial':ScanSearch,
- 'Prazos':Clock3,'Tarefas':ClipboardList,'Vencidos':Clock3,'Fluxos (POP)':Workflow,'Audiências':CalendarDays,'Agenda':CalendarDays,'Peças e petições':FileText,
+ 'Prazos':Clock3,'Tarefas':ClipboardList,'Vencidos':Clock3,'Supervisão':ShieldCheck,'Fluxos (POP)':Workflow,'Audiências':CalendarDays,'Agenda':CalendarDays,'Peças e petições':FileText,
  'WhatsApp':MessageSquare,'Leads':Target,'Gerador de processos':Radar,
  'Superagente':Bot,'Mini Agentes':UserRoundCheck,'Relatórios':BarChart3,
  'Integrações':PlugZap,'Configurações':Settings2
