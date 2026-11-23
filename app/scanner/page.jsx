@@ -17,6 +17,7 @@ function Scanner({db,session}){
  const [busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[error,setError]=useState('');
  const [query,setQuery]=useState(''),[progress,setProgress]=useState({done:0,total:0}),[live,setLive]=useState([]);
  const [auto,setAuto]=useState(false),[scanBatch,setScanBatch]=useState('4'),[directCNJ,setDirectCNJ]=useState('');
+ useEffect(()=>{const cnj=new URLSearchParams(window.location.search).get('cnj');if(cnj){setDirectCNJ(cnj);setQuery(cnj)}},[]);
  const active=useRef(false),aborter=useRef(null),autoRef=useRef(false),casesRef=useRef([]);
  const read=useCallback(async()=>{
   setLoading(true);
