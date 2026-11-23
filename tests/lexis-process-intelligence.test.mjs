@@ -41,7 +41,7 @@ test('carteira jurídica: rejeita resposta que contenha linha de outra empresa',
 });
 test('carteira jurídica: não publica snapshot parcial se limite de 20 mil for atingido',async()=>{
  const rows=Array.from({length:2},(_,i)=>({...base,id:i+1}));
- await assert.rejects(loadLexisProcessIntelligence(fakeDb({rows}),user,{pageSize:2,maxRows:2}),/limite.*atingido/i);
+ await assert.rejects(loadLexisProcessIntelligence(fakeDb({rows}),user,{pageSize:2,maxRows:2}),/limite.*segurança/i);
 });
 test('normalização: mescla os campos jurídicos de dados sem sobrescrever a fonte canônica',()=>{
  const row=normalizeLexisCase({...base,cliente:'Nome canônico',observacoes:'Registro direto',dados:{
@@ -111,7 +111,8 @@ test('processos parados: contestação sem réplica cria providência; pagamento
  assert.equal(paid.length,0);
 });
 test('processos parados: não classifica menção genérica como providência processual',()=>{
- const rows=listProcessosParados([{...base,observacoes:'Cliente pediu uma atualização sobre o processo'}],15,{now:new Date('2026-11-23T12:00:00Z')});
+ const rows=listProcessosParados([{...base,observacoes:'Cliente pediu uma atualização sobre o processo',
+  datajud_ultimo_nome:'Movimentação processual',datajud_ultimo_movimento:'2026-11-22'}],15,{now:new Date('2026-11-23T12:00:00Z')});
  assert.equal(rows.length,0);
 });
 test('processos parados: marcação tratado é isolada por empresa e usuário',()=>{
