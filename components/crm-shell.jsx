@@ -2,7 +2,7 @@
 import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
-import {ClipboardList,LayoutDashboard,Users,CheckCircle2,Landmark,LogOut,KeyRound,NotebookPen,Bell,Mail,BarChart3,PanelLeftOpen,PanelLeftClose,Settings2,Gavel,CalendarDays,Scale,Target,Bot,Radar,FileText,MessageSquare,Clock3,BriefcaseBusiness,BookOpen,UserRoundCheck,Workflow,PlugZap,ScanSearch,Search,Command,Menu,X,ShieldCheck} from 'lucide-react';
+import {ClipboardList,LayoutDashboard,Users,CheckCircle2,Landmark,LogOut,KeyRound,NotebookPen,Bell,Mail,BarChart3,PanelLeftOpen,PanelLeftClose,Settings2,Gavel,CalendarDays,Scale,Target,Bot,Radar,FileText,MessageSquare,Clock3,BriefcaseBusiness,BookOpen,UserRoundCheck,Workflow,PlugZap,ScanSearch,Search,Command,Menu,X,ShieldCheck,FileSearch,PauseCircle} from 'lucide-react';
 import {CRM_AREAS} from '../lib/crm-navigation.mjs';
 import {CRM_THEMES,resolveTheme} from '../lib/crm-themes.mjs';
 import {getClient} from '../lib/supabase-client';
@@ -18,7 +18,7 @@ function preferredTheme(){try{
 const displayLabels={ 'Painel jurídico':'Dashboard','WhatsApp':'Comunicação','Peças e petições':'Documentos','Fluxos (POP)':'Procedimentos','Mini Agentes':'Agentes','Scanner judicial':'Scanner judicial' };
 const icons={
  'Painel jurídico':BriefcaseBusiness,'Clientes':Users,'Processos':Gavel,'Encerrados':CheckCircle2,'Atividades':ClipboardList,'Análises internas':NotebookPen,'Scanner judicial':ScanSearch,
- 'Prazos':Clock3,'Tarefas':ClipboardList,'Vencidos':Clock3,'Supervisão':ShieldCheck,'Fluxos (POP)':Workflow,'Audiências':CalendarDays,'Agenda':CalendarDays,'Peças e petições':FileText,
+ 'Prazos':Clock3,'Tarefas':ClipboardList,'Vencidos':Clock3,'Supervisão':ShieldCheck,'Fases e provas':FileSearch,'Processos parados':PauseCircle,'Fluxos (POP)':Workflow,'Audiências':CalendarDays,'Agenda':CalendarDays,'Peças e petições':FileText,
  'WhatsApp':MessageSquare,'Leads':Target,'Gerador de processos':Radar,
  'Superagente':Bot,'Mini Agentes':UserRoundCheck,'Relatórios':BarChart3,
  'Integrações':PlugZap,'Configurações':Settings2
@@ -125,7 +125,7 @@ export default function CrmShell({active='Painel jurídico',email='',onNavigate,
     {CRM_AREAS.map(item=>{
      const Icon=icons[item.label];
      return <Link key={item.key} href={item.path} prefetch={false} aria-current={active===item.label?'page':undefined} className={'app-nav-link '+(active===item.label?'active':'')} title={sidebarExpanded?undefined:item.label} aria-label={item.label} onClick={e=>{
-       if(onNavigate&&!['Clientes','Processos','Encerrados','Atividades','Análises internas','Scanner judicial','Prazos','Tarefas','Vencidos','Fluxos (POP)','Audiências','Agenda','Peças e petições','WhatsApp','Leads','Superagente','Mini Agentes','Gerador de processos','Relatórios','Integrações','Configurações'].includes(item.label)&&!e.metaKey&&!e.ctrlKey&&!e.shiftKey&&!e.altKey){
+       if(onNavigate&&!['Clientes','Processos','Encerrados','Atividades','Análises internas','Scanner judicial','Prazos','Tarefas','Vencidos','Fases e provas','Processos parados','Fluxos (POP)','Audiências','Agenda','Peças e petições','WhatsApp','Leads','Superagente','Mini Agentes','Gerador de processos','Relatórios','Integrações','Configurações'].includes(item.label)&&!e.metaKey&&!e.ctrlKey&&!e.shiftKey&&!e.altKey){
         e.preventDefault();onNavigate(item.label);setSidebarExpanded(false);
        }
       }} ><Icon size={17} aria-hidden="true"/><span>{displayLabels[item.label]||item.label}</span></Link>;
