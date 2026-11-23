@@ -144,11 +144,14 @@ export default function LexisOperations({db,session,area='deadlines'}){
   }catch(err){setErrors(['Compromisso não registrado: '+err.message])}finally{setBusy(false)}
  };
  const finish=async x=>{
-  if(!x.manual_id||busy)return;setBusy(true);
+  if((!x.manual_id&&!x.task_id)||busy)return;setBusy(true);
   try{
-   const {data,error}=await db.from('office_deadlines').update({status:'concluido',completed_at:new Date().toISOString()})
-    .eq('id',x.manual_id).eq('empresa_id',profile.empresa_id).select('id').maybeSingle();
-   if(error||!data?.id)throw Error(error?.message||'Não confirmado.');
+   const result=x.task_id
+    ?await db.from('crm_tarefas').update({feito:true,updated_at:new Date().toISOString()})
+      .eq('id',x.task_id).eq('empresa_id',profile.empresa_id).select('id').maybeSingle()
+    :await db.from('office_deadlines').update({status:'concluido',completed_at:new Date().toISOString()})
+      .eq('id',x.manual_id).eq('empresa_id',profile.empresa_id).select('id').maybeSingle();
+   if(result.error||!result.data?.id)throw Error(result.error?.message||'O banco não confirmou a conclusão.');
    setSelected(null);await load();
   }catch(err){setErrors(['Não foi possível concluir: '+err.message])}finally{setBusy(false)}
  };
@@ -157,8 +160,11 @@ export default function LexisOperations({db,session,area='deadlines'}){
  const offset=(new Date(first+'T12:00:00Z').getUTCDay()+6)%7;
  const grid=Array.from({length:42},(_,i)=>iso(currentYear,currentMonth,1+i-offset));
  const groups=useMemo(()=>{const g=new Map();for(const x of listing){if(!x.due_on)continue;g.set(x.due_on,[...(g.get(x.due_on)||[]),x])}return g},[listing]);
- const subtitles={agenda:'Compromissos e audiências da organização, em uma única visão.',deadlines:'Retornos ao cliente com número CNJ e histórico de atendimento registrado.',audiencias:'Audiências registradas pelo LexisPredict e suas fontes.'};
- const titles={agenda:'Agenda',deadlines:'Prazos e retornos',audiencias:'Audiências'};
+ const PAGE_SIZE=60;
+ const pageCount=Math.max(1,Math.ceil(listing.length/PAGE_SIZE));
+ const pageRows=listing.slice(page*PAGE_SIZE,(page+1)*PAGE_SIZE);
+ const subtitles={agenda:'Compromissos e audiências da organização, em uma única visão.',deadlines:'Retornos ao cliente com número CNJ e histórico de atendimento registrado.',audiencias:'Audiências registradas pelo LexisPredict e suas fontes.',tasks:'Tarefas, retornos e compromissos de toda a organização.',overdue:'Pendências vencidas da carteira empresarial.'};
+ const titles={agenda:'Agenda',deadlines:'Prazos e retornos',audiencias:'Audiências',tasks:'Tarefas da organização',overdue:'Vencidos'};
  if(!profile&&!loading)return <main className="inf-studio lx-workspace"><p role="alert" className="inf-note error">{errors[0]||'Acesso não autorizado.'}</p></main>;
  return <main className="inf-studio lx-workspace" data-lexis-operation={area}>
   <header className="inf-heading lx-workspace-heading"><div><small>INFINITUM / INTELIGÊNCIA JURÍDICA</small><h1>{titles[area]||'Agenda operacional'}</h1>
