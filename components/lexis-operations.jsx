@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {Archive,CalendarDays,CheckCircle2,ChevronLeft,ChevronRight,Clock3,ExternalLink,FileText,Gavel,Plus,RefreshCw,Search,Users,X} from 'lucide-react';
 import {buildLexisEvents} from '../lib/lexis-operations.mjs';
 import {summarizeLexisReturns} from '../lib/lexis-return-kpis.mjs';
+import {filterLexisCompanyQueue,summarizeLexisCompanyQueue} from '../lib/lexis-company-queue.mjs';
 import {loadLexisCompanySources} from '../lib/lexis-company-data.mjs';
 import LexisEventDetails from './lexis-event-details';
 import LexisAttendanceBoard from './lexis-attendance-board';
@@ -30,9 +31,10 @@ export default function LexisOperations({db,session,area='deadlines'}){
  const audit=useLexisAttendanceAudit(db,profile?.empresa_id,session.user.id);
  const [errors,setErrors]=useState([]),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[search,setSearch]=useState('');
  const [month,setMonth]=useState(brazilToday().slice(0,7)),[filter,setFilter]=useState('todos'),[showPast,setShowPast]=useState(false),[view,setView]=useState('month');
- const [validSources,setValidSources]=useState({processes:false,hearings:false});
- const [visibleLimit,setVisibleLimit]=useState(60);
- useEffect(()=>{setVisibleLimit(60)},[area,search,filter,month]);
+ const [validSources,setValidSources]=useState({processes:false,hearings:false,tasks:false,manual:false});
+ const [page,setPage]=useState(0);
+ useEffect(()=>{setPage(0)},[area,search,filter,month]);
+ useEffect(()=>{if(area==='tasks')setFilter('prioridades');else if(area==='overdue')setFilter('vencidos')},[area]);
  useEffect(()=>{
   if(area!=='deadlines'||typeof window==='undefined')return;
   const value=new URLSearchParams(window.location.search).get('status');
@@ -61,7 +63,7 @@ export default function LexisOperations({db,session,area='deadlines'}){
  },[db,session.user.id]);
  const load=useCallback(async()=>{
   if(!profile?.empresa_id)return;
-  setLoading(true);setErrors([]);setValidSources({processes:false,hearings:false});
+  setLoading(true);setErrors([]);setValidSources({processes:false,hearings:false,tasks:false,manual:false});
   try{
    const loaded=await loadLexisCompanySources(db,profile.empresa_id);
    if(loaded.errors.length===4)throw new Error('Todas as fontes falharam: '+loaded.errors.join(' · '));
@@ -71,28 +73,37 @@ export default function LexisOperations({db,session,area='deadlines'}){
  },[db,profile?.empresa_id]);
  useEffect(()=>{load()},[load]);
  const items=useMemo(()=>buildLexisEvents({...sourceRows,members:team,today:brazilToday()}),[sourceRows,team]);
+ const queueItems=useMemo(()=>items.filter(x=>x.kind!=='audiencia'),[items]);
+ const queueSummary=useMemo(()=>summarizeLexisCompanyQueue(queueItems,brazilToday()),[queueItems]);
+ const queueSourcesAvailable=validSources.processes&&validSources.tasks&&validSources.manual;
  const areaRows=useMemo(()=>{
   let filtered=items;
+  if(area==='tasks'||area==='overdue')filtered=queueItems;
+  if(area==='overdue')filtered=filtered.filter(x=>x.status==='vencido');
   if(area==='audiencias')filtered=filtered.filter(x=>x.kind==='audiencia');
   if(area==='deadlines')filtered=filtered.filter(x=>x.kind==='retorno'&&x.process_id!=null&&x.status!=='encerrado');
   if(area==='agenda'&&filter==='todos')filtered=filtered.filter(x=>x.due_on&&x.due_on>=rangeStart&&x.due_on<=rangeEnd);
   if(area==='audiencias'&&!showPast)filtered=filtered.filter(x=>!x.due_on||x.due_on>=brazilToday());
-  if(search.trim()){const term=search.toLocaleLowerCase('pt-BR').trim();
+  if(search.trim()&&area!=='tasks'&&area!=='overdue'){const term=search.toLocaleLowerCase('pt-BR').trim();
     filtered=filtered.filter(x=>[x.title,x.client_name,x.process_number,x.responsible,x.notes].some(z=>String(z||'').toLocaleLowerCase('pt-BR').includes(term)))}
   return filtered;
- },[items,area,search,showPast,rangeStart,rangeEnd,filter]);
- const listing=useMemo(()=>areaRows.filter(x=>{
-  if(filter==='todos')return true;
-  if(area==='audiencias')return filter==='futuras'?!!x.due_on&&x.due_on>=brazilToday()&&x.status!=='encerrado':x.status===filter;
-  if(x.kind!=='retorno'||!x.process_id||x.status==='encerrado')return false;
-  if(filter==='retornos')return true;
-  if(filter==='hoje')return x.due_on===brazilToday()&&x.status!=='atendido'&&x.status!=='encerrado';
-  if(filter==='proximos'){
-   const end=new Date(brazilToday()+'T12:00:00Z');end.setUTCDate(end.getUTCDate()+7);
-   return x.due_on>=brazilToday()&&x.due_on<=end.toISOString().slice(0,10)&&x.status!=='atendido'&&x.status!=='encerrado';
-  }
-  return x.status===filter;
- }),[areaRows,filter,area]);
+ },[items,queueItems,area,search,showPast,rangeStart,rangeEnd,filter]);
+ const listing=useMemo(()=>{
+  if(area==='tasks')return filterLexisCompanyQueue(areaRows,{view:filter,today:brazilToday(),query:search});
+  if(area==='overdue')return filterLexisCompanyQueue(areaRows,{view:filter==='todos'?'vencidos':filter,today:brazilToday(),query:search});
+  return areaRows.filter(x=>{
+   if(filter==='todos')return true;
+   if(area==='audiencias')return filter==='futuras'?!!x.due_on&&x.due_on>=brazilToday()&&x.status!=='encerrado':x.status===filter;
+   if(x.kind!=='retorno'||!x.process_id||x.status==='encerrado')return false;
+   if(filter==='retornos')return true;
+   if(filter==='hoje')return x.due_on===brazilToday()&&x.status!=='atendido'&&x.status!=='encerrado';
+   if(filter==='proximos'){
+    const end=new Date(brazilToday()+'T12:00:00Z');end.setUTCDate(end.getUTCDate()+7);
+    return x.due_on>=brazilToday()&&x.due_on<=end.toISOString().slice(0,10)&&x.status!=='atendido'&&x.status!=='encerrado';
+   }
+   return x.status===filter;
+  });
+ },[areaRows,filter,area,search]);
  const returnKpis=useMemo(()=>summarizeLexisReturns(sourceRows.processes,brazilToday()),[sourceRows.processes]);
  const allHearings=useMemo(()=>items.filter(x=>x.kind==='audiencia'),[items]);
  const hearingMetrics=[
@@ -102,7 +113,15 @@ export default function LexisOperations({db,session,area='deadlines'}){
   ['Passadas',allHearings.filter(x=>x.due_on&&x.due_on<brazilToday()&&x.status!=='encerrado').length,'vencido'],
   ['Canceladas',allHearings.filter(x=>x.status==='encerrado').length,'encerrado']
  ];
- const displayedMetrics=area==='audiencias'?hearingMetrics:[
+ const queueMetrics=[
+  ['Pendências abertas',queueSummary.abertas,'prioridades'],
+  ['Vencidos',queueSummary.vencidos,'vencidos'],
+  ['Para hoje',queueSummary.hoje,'hoje'],
+  ['Em dia',queueSummary.em_dia,'em_dia'],
+  ['Sem data',queueSummary.sem_data,'sem_data'],
+  ['Concluídos',queueSummary.finalizados+queueSummary.atendidos,'finalizados']
+ ];
+ const displayedMetrics=area==='tasks'||area==='overdue'?queueMetrics:area==='audiencias'?hearingMetrics:[
   ['Retornos agendados',returnKpis.scheduled,'retornos'],
   ['Retornos vencidos',returnKpis.overdue,'vencido'],
   ['Retornos hoje',returnKpis.today,'hoje'],
