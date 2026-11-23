@@ -87,8 +87,8 @@ test('Indisponibilidade não vira KPI zerado; zero verdadeiro permanece zero',()
 test('CSV exportado contém números reais, preserva acentos e neutraliza fórmulas',()=>{
  const summary=summarizeLexisSnapshots({report:sampleReport,supervision:sampleSupervision});
  const csv=toLexisIntelligenceCsv(summary,'mes');
- assert.match(csv,/Total de processos;2735/);
- assert.match(csv,/Atendimentos no período;52/);
+ assert.match(csv,/"Total de processos";"2735"/);
+ assert.match(csv,/"Atendimentos no período";"52"/);
  assert.match(csv,/Maria/);
  const modified={...summary,team:[{...summary.team[0],nome:'=CMD()'}]};
  assert.match(toLexisIntelligenceCsv(modified,'mes'),/"'=CMD\(\)"/);
