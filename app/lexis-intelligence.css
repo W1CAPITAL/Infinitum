@@ -18,6 +18,8 @@
 .lxi-productivity span{font-size:11px;color:#74685f}
 .lxi-productivity strong{font:400 29px/1.2 Georgia,serif;color:#34281d}
 .lxi-team{margin-top:20px;min-width:0}
+.lxi-team.report-completo-shell{min-height:0!important;background:transparent!important;padding:0!important;border:0!important}
+.lxi-team .report-team-section{padding:0!important}
 .lxi-team *{min-width:0}
 .lxi-footnote{font-size:11px;color:#7a6f64;display:flex;flex-wrap:wrap;align-items:center;gap:9px;margin-top:23px;line-height:1.6}
 .lxi-footnote span{margin-left:auto}
