@@ -3,6 +3,7 @@ import {useEffect,useMemo,useState} from 'react';
 import Link from 'next/link';
 import {Activity,AlertTriangle,BarChart3,BriefcaseBusiness,CalendarClock,CheckCircle2,Download,FileText,Printer,RefreshCw,ShieldCheck,Users} from 'lucide-react';
 import {TeamReport} from './lexis-team-report';
+import '../app/lexis-report-complete-theme.css';
 import {LEXIS_PERIODS,loadLexisIntelligence,summarizeLexisSnapshots,toLexisIntelligenceCsv} from '../lib/lexis-intelligence.mjs';
 
 const number=value=>value==null?'—':Number(value).toLocaleString('pt-BR');
@@ -107,7 +108,7 @@ export default function LexisIntelligenceWorkspace({db,session,mode='report'}){
      <Ranked title="Tribunais" description="Distribuição conforme tribunal registrado." rows={model.tribunals}/>
     </>}
    </section>
-   {result?.report?.equipe?.pessoas&&<section className="lxi-team" aria-label="Produtividade por colaborador">
+   {result?.report?.equipe?.pessoas&&<section className="lxi-team report-completo-shell" aria-label="Produtividade por colaborador">
     <TeamReport data={result.report.equipe} currentUserId={session.user.id}/>
    </section>}
    {mode==='supervision'&&!result?.report?.equipe?.pessoas&&<p className="lxd-message">Detalhamento por colaborador indisponível nesta consulta; os KPIs atuais da Supervisão permanecem separados.</p>}
