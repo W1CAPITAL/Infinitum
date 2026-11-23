@@ -158,9 +158,9 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
    // Carrega a carteira inteira em páginas estáveis do banco. A paginação visual é local:
    // pesquisar, filtrar e trocar de página não dispara novas consultas nem oculta registros.
    const data=await fetchCompanyRows(db,'processos',PROCESS_FIELDS,profile.empresa_id,{pageSize:500,maxRows:20000});
+   // Ordena por atualização quando há data; empates preservam a ordem estável por ID do fetch.
    const mapped=data.map(mapLexisProcess).sort((a,b)=>
-    String(b.updated_at||'').localeCompare(String(a.updated_at||''))||
-    String(b.id||'').localeCompare(String(a.id||''))
+    String(b.updated_at||'').localeCompare(String(a.updated_at||''))
    );
    setRows(mapped);setPage(0);
   }catch(e){
