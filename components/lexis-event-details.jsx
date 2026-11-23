@@ -103,6 +103,10 @@ export default function LexisEventDetails({event,db,profile,onClose,onSaved,onFi
    </div>
   </section>}
   {!loading&&!process&&<p className="inf-note">Registro sem vínculo processual confirmado. Edição de cliente, atendimento e consulta precisam de um processo localizado na carteira autorizada.</p>}
+  {event.task_id&&<section aria-label="Tarefa da organização">
+   <p className="inf-note">Tarefa empresarial registrada no CRM do LexisPredict. A conclusão será gravada na mesma tarefa, sem criar cópia.</p>
+   {event.status!=='encerrado'&&<button type="button" className="inf-btn primary" disabled={busy||saving} onClick={()=>onFinish?.(event)}><CheckCircle2 size={14}/> Concluir tarefa</button>}
+  </section>}
   {event.manual_id&&<section aria-label="Edição de compromisso manual">
    {event.status!=='encerrado'&&<button type="button" className="inf-btn" disabled={busy||saving} onClick={()=>onFinish?.(event)}><CheckCircle2 size={14}/> Concluir compromisso</button>}
    {!manualEdit?<button type="button" className="inf-btn" onClick={()=>setManualEdit(true)}><Edit3 size={14}/> Editar compromisso manual</button>:

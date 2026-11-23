@@ -13,6 +13,8 @@ import {categoryLabel} from '../../lib/minhas-atividades.mjs';
 import {sortTaskQueue} from '../../lib/tarefas.mjs';
 import {priorityDigest,limitSnippet} from '../../lib/report-priority.mjs';
 import ReportPrintDocument from '../../components/report-print-document';
+import SecuredWorkspace from '../../components/secured-workspace';
+import LexisIntelligenceWorkspace from '../../components/lexis-intelligence-workspace';
 import EfferdKpi from '../../components/efferd-kpi';
 import KillaAtendimentoKpi from '../../components/killa-atendimento-kpi';
 import {fetchLexisAttendanceRows} from '../../lib/lexis-attendance-report-data.mjs';
@@ -265,4 +267,8 @@ function LegacyReportPage(){
 
 // /report mantém todos os painéis, o gráfico e o PDF originais do tema Infinitum.
 // No modo compartilhado, o carregamento acima substitui dados legados pelos dados Lexis.
-export default function ReportPage(){return <LegacyReportPage/>;}
+export default function ReportPage(){
+ if(process.env.NEXT_PUBLIC_LEXIS_SHARED_DB==='1')
+  return <SecuredWorkspace active="Relatórios">{({db,session})=><LexisIntelligenceWorkspace db={db} session={session} mode="report"/>}</SecuredWorkspace>;
+ return <LegacyReportPage/>;
+}

@@ -33,6 +33,7 @@ import './infinitum-prestige-all-tabs.css';
 import './lexis-infinitum-theme.css';
 import './lexis-operator-views.css';
 import './lexis-dashboard.css';
+import './lexis-intelligence.css';
 // Vídeo permanece restrito ao login; a camada de temas é aplicada por último no CRM.
 import './infinitum-login-video.css';
 import './infinitum-dual-themes.css';

@@ -3,6 +3,8 @@ import {useCallback,useEffect,useMemo,useState} from 'react';
 import {AlertCircle,AlertTriangle,ArrowLeft,ArrowUpRight,BadgeCheck,CalendarDays,CheckCircle2,ChevronRight,ClipboardCheck,Clock3,FileClock,Filter,Flag,History,Inbox,ListChecks,Loader2,Pencil,NotebookPen,Phone,Plus,RefreshCcw,Search,Send,ShieldCheck,UserRound,Users,X} from 'lucide-react';
 import {getClient} from '../../lib/supabase-client';
 import CrmShell from '../../components/crm-shell';
+import SecuredWorkspace from '../../components/secured-workspace';
+import LexisOperations from '../../components/lexis-operations';
 import ProfessionalAuth from '../../components/professional-auth';
 import EfferdKpi from '../../components/efferd-kpi';
 import {useCrmAccess} from '../../lib/use-crm-access';
@@ -57,7 +59,7 @@ function TaskLogin({db,onLogged}){
   <a className="w1-auth-back" href="/">Voltar ao CRM ou recuperar senha</a>
  </ProfessionalAuth>;
 }
-export default function TarefasPage(){
+function LegacyTarefasPage(){
  const db=useMemo(()=>getClient(),[]);
  const [session,setSession]=useState(null),[authLoading,setAuthLoading]=useState(true);
  const access=useCrmAccess(db,session?.user);
@@ -309,4 +311,12 @@ export default function TarefasPage(){
    </section>
   </div>}
  </div></CrmShell>;
+}
+
+
+export default function TarefasPage(){
+ if(process.env.NEXT_PUBLIC_LEXIS_SHARED_DB==='1'){
+  return <SecuredWorkspace active="Tarefas">{({db,session})=><LexisOperations area="tasks" db={db} session={session}/>}</SecuredWorkspace>;
+ }
+ return <LegacyTarefasPage/>;
 }

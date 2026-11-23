@@ -3,7 +3,8 @@ import {withAuthDeadline} from '../lib/auth-deadline.mjs';
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import Link from 'next/link';
 import {Activity,Archive,BarChart3,CalendarDays,CheckCircle2,ChevronLeft,ChevronRight,ClipboardList,Download,Edit3,FileText,Gavel,History,Plus,Printer,RefreshCw,Search,ShieldCheck,Users} from 'lucide-react';
-import {mapLexisProcess,resolveCompanyAccess,portfolioUpdate,PROCESS_FIELDS,processSearchField,likeTerm,normalizedCnj,validDay,dailyAttendanceSummary} from '../lib/lexis-shared-portfolio.mjs';
+import {mapLexisProcess,resolveCompanyAccess,portfolioUpdate,PROCESS_FIELDS,normalizedCnj,validDay,dailyAttendanceSummary} from '../lib/lexis-shared-portfolio.mjs';
+import {fetchCompanyRows} from '../lib/lexis-company-data.mjs';
 import {consultHistoricalCase} from '../lib/judicial-history-client.mjs';
 import {browseOfficialDjenNumber} from '../lib/blackhole-public-djen-browser.mjs';
 import {periodBounds} from '../lib/report.mjs';
@@ -24,12 +25,11 @@ const STATUS={ativo:'Em andamento',em_andamento:'Em andamento',suspenso:'Suspens
 const FIELDS_CLIENT=['cliente','telefone','email','cpf'];
 const FIELDS_PROCESS=['cliente','protocolo_ref','tribunal','advogado','observacoes','proximo_retorno','proximo_prazo','status_interno'];
 const initialForm=p=>({cliente:p.client_name||'',telefone:p.phone||'',email:p.email||'',cpf:p.cpf||'',tribunal:p.tribunal||'',advogado:p.advogado||'',observacoes:p.observacoes||'',proximo_retorno:p.next_attendance||'',proximo_prazo:p.next_deadline||'',status_interno:p.status==='outro'?'preservar':p.status||'ativo'});
-const qFilter=(query,type)=>({field:processSearchField(type),text:likeTerm(query)});
 const recentPeriod=()=>({start:'',end:'',source:'auto',page:1});
 function Summary({title,count,href}){return <Link href={href} className="inf-stat" style={{textDecoration:'none'}}><label>{title}</label><strong>{Number(count||0).toLocaleString('pt-BR')}</strong></Link>;}
 export default function LexisSharedOffice({area='dashboard',db,session}){
  const [profile,setProfile]=useState(null),[company,setCompany]=useState(''),[team,setTeam]=useState([]);
- const [authChecking,setAuthChecking]=useState(true),[rows,setRows]=useState([]),[total,setTotal]=useState(0);
+ const [authChecking,setAuthChecking]=useState(true),[rows,setRows]=useState([]);
  const [activeFilter,setActiveFilter]=useState('em_andamento'),[loading,setLoading]=useState(false),[busy,setBusy]=useState(false);
  const [notice,setNotice]=useState(''),[editing,setEditing]=useState(null),[mode,setMode]=useState('processo'),[form,setForm]=useState({});
 
@@ -153,19 +153,38 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
  },[db,session.user.id]);
  const load=useCallback(async()=>{
   if(!profile?.empresa_id||area==='reports')return;
-  setLoading(true);
+  setLoading(true);setNotice('');
   try{
-   let q=db.from('processos').select(PROCESS_FIELDS,{count:'exact'}).eq('empresa_id',profile.empresa_id);
-   if(search){const f=qFilter(search,type);q=q.ilike(f.field,f.text)}
-   if(activeFilter==='em_andamento')q=q.or('status_interno.is.null,and(status_interno.not.ilike.ENCERRADO,status_interno.not.ilike.EXCLUIDO)');
-   if(activeFilter==='encerrado'||activeFilter==='excluido')q=q.ilike('status_interno',activeFilter);
-   const {data,error,count}=await q.order('updated_at',{ascending:false,nullsFirst:false}).range(page*PAGE,(page+1)*PAGE-1);
-   if(error)throw Error(error.message);
-   setRows((data||[]).map(mapLexisProcess));setTotal(count??(data||[]).length);
-  }catch(e){setNotice('Erro ao buscar carteira Lexis: '+e.message)}
-  finally{setLoading(false)}
- },[db,profile?.empresa_id,page,search,type,activeFilter,area]);
+   // Carrega a carteira inteira em páginas estáveis do banco. A paginação visual é local:
+   // pesquisar, filtrar e trocar de página não dispara novas consultas nem oculta registros.
+   const data=await fetchCompanyRows(db,'processos',PROCESS_FIELDS,profile.empresa_id,{pageSize:500,maxRows:20000});
+   // Ordena por atualização quando há data; empates preservam a ordem estável por ID do fetch.
+   const mapped=data.map(mapLexisProcess).sort((a,b)=>
+    String(b.updated_at||'').localeCompare(String(a.updated_at||''))
+   );
+   setRows(mapped);setPage(0);
+  }catch(e){
+   setRows([]);setPage(0);
+   setNotice('Carteira não carregada por completo: '+e.message);
+  }finally{setLoading(false)}
+ },[db,profile?.empresa_id,area]);
  useEffect(()=>{load()},[load]);
+ const filteredRows=useMemo(()=>{
+  const term=String(search||'').trim().toLocaleLowerCase('pt-BR');
+  return rows.filter(p=>{
+   const status=String(p.status_detail||'').toLocaleUpperCase('pt-BR');
+   if(activeFilter==='em_andamento'&&['ENCERRADO','EXCLUIDO'].includes(status))return false;
+   if(activeFilter==='encerrado'&&status!=='ENCERRADO')return false;
+   if(activeFilter==='excluido'&&status!=='EXCLUIDO')return false;
+   if(term){
+    const value=type==='numero'?p.process_number:type==='tribunal'?p.tribunal:p.client_name;
+    if(!String(value||'').toLocaleLowerCase('pt-BR').includes(term))return false;
+   }
+   return true;
+  });
+ },[rows,search,type,activeFilter]);
+ const total=filteredRows.length;
+ const visibleRows=filteredRows.slice(page*PAGE,(page+1)*PAGE);
  const lastTotalPages=Math.max(1,Math.ceil(total/PAGE));
  const loadHistory=useCallback(async(row,request)=>{
   setHistory([]);setOfficialHistory([]);setHistoryErrors([]);setHistoryLoading(true);
@@ -400,7 +419,7 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
   <p>{company} · consultas da empresa inteira, conforme permissões do LexisPredict.</p></div>
   <div className="reference-actions"><button type="button" className="inf-btn" onClick={load} disabled={loading}><RefreshCw size={16}/> Atualizar</button><Link href="/relatorios" className="inf-btn"><BarChart3 size={16}/> Relatórios</Link></div></header>
   {notice&&<div className="inf-note" role="status">{notice}</div>}
-  <div className="inf-grid"><Summary title="Registros localizados" count={total} href="/processos"/><Summary title="Membros da organização" count={team.length} href="/relatorios"/><Summary title="Nesta página" count={rows.length} href="/clientes"/></div>
+  <div className="inf-grid"><Summary title="Processos carregados" count={rows.length} href="/processos"/><Summary title="Resultados do filtro" count={total} href="/processos"/><Summary title="Membros da organização" count={team.length} href="/relatorios"/></div>
   <section className="inf-panel"><h2><Search size={18}/> Buscar em toda a organização</h2>
    <form className="inf-row-end" style={{justifyContent:'flex-start',gap:10,flexWrap:'wrap'}} onSubmit={e=>{e.preventDefault();setPage(0);setSearch(draft.trim())}}>
     <select aria-label="Campo da pesquisa" value={type} onChange={e=>{setType(e.target.value);setPage(0);setSearch('');setDraft('')}}><option value="cliente">Cliente</option><option value="numero">Número processual</option><option value="tribunal">Tribunal</option></select>
@@ -410,10 +429,10 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
    </form>
    <label>Mostrar <select value={activeFilter} onChange={e=>{setActiveFilter(e.target.value);setPage(0)}}><option value="todos">Todos</option><option value="em_andamento">Em andamento</option><option value="encerrado">Encerrados internamente</option><option value="excluido">Arquivados / excluídos da vista</option></select></label>
   </section>
-  {loading&&<p className="inf-note">Carregando página de processos...</p>}
+  {loading&&<p className="inf-note">Carregando todos os processos da organização em lotes automáticos...</p>}
   <section className="inf-panel"><h2>{area==='clients'?'Cadastros de clientes por processo':'Processos cadastrados no LexisPredict'}</h2>
    <p>Cada linha representa um processo real. Clientes homônimos não são unidos automaticamente.</p>
-   <div className="office-records">{rows.map(p=><article className="office-record lx-process-record" key={p.id}>
+   <div className="office-records">{visibleRows.map(p=><article className="office-record lx-process-record" key={p.id}>
     <div className="inf-row-end" style={{justifyContent:'space-between',gap:12,flexWrap:'wrap'}}><div><strong>{p.client_name||'Cliente não identificado'}</strong><p>{p.process_number||'Sem número CNJ'} · {p.tribunal||'Tribunal não informado'}</p>
      <small className="lx-process-meta"><span className={'lx-status lx-status--'+processStatus(p.status_detail).key}>{processStatus(p.status_detail).label}</span> <span className={'lx-status lx-status--'+classifyLexisReturn(p,todayBrazil()).status}>{classifyLexisReturn(p,todayBrazil()).label}</span> · Último atendimento: {DATE_LABEL(p.last_attendance)} · Próximo retorno: {DATE_LABEL(p.next_attendance)} · Próximo prazo: {DATE_LABEL(p.next_deadline)} · Responsável: <strong>{responsibleDisplay(p.last_responsible,team)}</strong></small></div>
     </div>
@@ -427,9 +446,9 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
      {p.status!=='excluido'&&<button className="inf-btn" onClick={()=>changeStatus(p,'excluido')} disabled={busy}><Archive size={14}/> Excluir da vista</button>}
     </div>
    </article>)}
-   {!rows.length&&!loading&&<p>Nenhum registro encontrado com os filtros atuais.</p>}</div>
+   {!visibleRows.length&&!loading&&<p>Nenhum registro encontrado com os filtros atuais.</p>}</div>
    <div className="inf-row-end"><button type="button" className="inf-btn" disabled={page<=0||loading} onClick={()=>setPage(x=>Math.max(0,x-1))}><ChevronLeft size={16}/> Anterior</button>
-   <span>Página {page+1} de {lastTotalPages}</span>
+   <span>Mostrando {total? page*PAGE+1:0}–{Math.min(total,(page+1)*PAGE)} de {total} resultados · {rows.length} processos carregados</span>
    <button type="button" className="inf-btn" disabled={page+1>=lastTotalPages||loading} onClick={()=>setPage(x=>x+1)}>Próxima <ChevronRight size={16}/></button></div>
   </section>
   {area==='clients'&&<InfinitumLegacyClients db={db} profile={profile} team={team}/>}
