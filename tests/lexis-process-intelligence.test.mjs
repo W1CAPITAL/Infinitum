@@ -29,7 +29,7 @@ function fakeDb({profiles=[profile],rows=[base]}={}){
    }
    if(table==='processos'){
     return {select(fields){
-     assert.ok(fields.includes('datajud_ultimo_nome'));
+     assert.ok(fields.includes('datajud_ultimo_nome'));assert.ok(fields.includes('evento_tipo:dados->>evento_tipo'));assert.ok(!fields.split(',').includes('dados'));
      return {eq(field,value){
       assert.equal(field,'empresa_id');assert.equal(value,company);
       return {order(col,opt){
