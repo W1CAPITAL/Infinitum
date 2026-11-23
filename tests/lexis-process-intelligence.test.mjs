@@ -98,7 +98,7 @@ test('fases e provas: ignora processo encerrado e deduplica por CNJ e etapa',()=
 });
 test('fases e provas: CSV preserva acentos e neutraliza fórmulas',()=>{
  const [row]=classifyFasesProvas([{...base,cliente:'=HYPERLINK("https://example.test")',observacoes:'Juntada de provas'}]);
- const csv=exportFasesCsv([row]);assert.match(csv,/"'=HYPERLINK/);assert.match(csv,/Cliente/);assert.match(csv,/Réplica/);
+ const csv=exportFasesCsv([row]);assert.match(csv,/"'=HYPERLINK/);assert.match(csv,/Cliente/);assert.match(csv,/Provas/);
 });
 test('processos parados: usa o último sinal oficial, não a data de consulta',()=>{
  const [row]=listProcessosParados([{...base,observacao:'Contestação apresentada',
