@@ -170,14 +170,14 @@ export default function LexisOperations({db,session,area='deadlines'}){
   <header className="inf-heading lx-workspace-heading"><div><small>INFINITUM / INTELIGÊNCIA JURÍDICA</small><h1>{titles[area]||'Agenda operacional'}</h1>
    <p>{subtitles[area]||subtitles.agenda}</p></div>
    <div className="inf-actions"><button className="inf-btn" type="button" onClick={()=>{load();audit.refresh()}} disabled={loading}><RefreshCw size={15}/> Atualizar</button>
-    {area==='deadlines'?<Link className="inf-btn primary" href="/agenda"><Plus size={15}/> Novo compromisso na Agenda</Link>:<button className="inf-btn primary" type="button" onClick={()=>setEditing(x=>!x)}><Plus size={15}/> Novo compromisso</button>}</div>
+    {area==='deadlines'?<Link className="inf-btn primary" href="/agenda"><Plus size={15}/> Novo compromisso na Agenda</Link>:area==='tasks'?<><Link className="inf-btn" href="/vencidos">Ver vencidos</Link><button className="inf-btn primary" type="button" onClick={()=>setEditing(x=>!x)}><Plus size={15}/> Nova tarefa</button></>:area==='overdue'?<Link className="inf-btn primary" href="/tarefas">Todas as tarefas</Link>:<button className="inf-btn primary" type="button" onClick={()=>setEditing(x=>!x)}><Plus size={15}/> Novo compromisso</button>}</div>
   </header>
   {errors.map((e,i)=><p key={i} className="inf-note error" role="status">{e}</p>)}
   {loading&&<p className="inf-note">Consultando registros da organização no Supabase do LexisPredict...</p>}
   <div className="lx-kpis">
    {displayedMetrics.map(([label,value,status])=>{
     const byAudit=status==='atendimentos_hoje'||status==='meus_atendimentos';
-    const available=byAudit?!!audit.data:area==='audiencias'?validSources.hearings:validSources.processes;
+    const available=byAudit?!!audit.data:area==='audiencias'?validSources.hearings:(area==='tasks'||area==='overdue')?queueSourcesAvailable:validSources.processes;
     const pending=byAudit?audit.loading:loading;
     return <button key={status} type="button" className={'lx-kpi '+(filter===status?'is-active':'')}
      onClick={()=>chooseFilter(status)} aria-pressed={filter===status}>
@@ -187,11 +187,12 @@ export default function LexisOperations({db,session,area='deadlines'}){
   </div>
   {area!=='audiencias'&&<LexisAttendanceBoard audit={audit} userId={session.user.id} compact={area==='agenda'}/>}
   <section className="pr-module lx-panel">
-   <div className="pr-module-intro"><span>CARTEIRA DA ORGANIZAÇÃO</span><h2>{area==='audiencias'?'Compromissos judiciais.':area==='agenda'?'Calendário compartilhado.':'Controle de vencimentos.'}</h2>
+   <div className="pr-module-intro"><span>CARTEIRA DA ORGANIZAÇÃO</span><h2>{area==='audiencias'?'Compromissos judiciais.':area==='agenda'?'Calendário compartilhado.':area==='tasks'?'Fila empresarial de tarefas e retornos.':area==='overdue'?'Pendências vencidas da organização.':'Controle de vencimentos.'}</h2>
     <p>Retornos vencidos usam último/próximo retorno e somente processos com CNJ. Atendimentos realizados vêm da auditoria do CRM por dia e operador; são métricas diferentes. A Agenda filtra somente a lista pelo mês.</p></div>
    <div className="lx-toolbar"><label className="lx-search"><Search size={16}/><input aria-label="Buscar nos compromissos" placeholder="Buscar cliente, processo ou responsável" value={search} onChange={e=>setSearch(e.target.value)}/></label>
     <select aria-label="Situação" value={filter} onChange={e=>chooseFilter(e.target.value)}>
-     <option value="todos">Todas as situações</option>{area==='audiencias'?<><option value="futuras">Futuras</option>{Object.entries(statuses).filter(([k])=>k!=='atendido').map(([k,v])=><option key={k} value={k}>{k==='vencido'?'Passadas':v}</option>)}</>:<><option value="retornos">Retornos agendados</option><option value="hoje">Para hoje</option><option value="proximos">Próximos 7 dias</option><option value="atendimentos_hoje">Já atendidos hoje · auditoria</option><option value="meus_atendimentos">Meus atendimentos hoje · auditoria</option><option value="atendido">Agendamentos concluídos por data</option>{Object.entries(statuses).filter(([k])=>!['atendido','encerrado'].includes(k)).map(([k,v])=><option key={k} value={k}>{v}</option>)}</>}</select>
+      {area==='tasks'||area==='overdue'?<><option value="prioridades">Prioridades</option><option value="vencidos">Somente vencidos</option><option value="hoje">Para hoje</option><option value="proximos">Próximos 7 dias</option><option value="em_dia">Em dia</option><option value="sem_data">Sem data</option><option value="finalizados">Finalizados</option><option value="atendidos">Retornos atendidos</option><option value="todos">Todos os registros</option></>:<><option value="todos">Todas as situações</option>{area==='audiencias'?<><option value="futuras">Futuras</option>{Object.entries(statuses).filter(([k])=>k!=='atendido').map(([k,v])=><option key={k} value={k}>{k==='vencido'?'Passadas':v}</option>)}</>:<><option value="retornos">Retornos agendados</option><option value="hoje">Para hoje</option><option value="proximos">Próximos 7 dias</option><option value="atendimentos_hoje">Já atendidos hoje · auditoria</option><option value="meus_atendimentos">Meus atendimentos hoje · auditoria</option><option value="atendido">Agendamentos concluídos por data</option>{Object.entries(statuses).filter(([k])=>!['atendido','encerrado'].includes(k)).map(([k,v])=><option key={k} value={k}>{v}</option>)}</>}</>}
+     </select>
     {area==='audiencias'&&<label className="lx-check"><input type="checkbox" checked={showPast} onChange={e=>setShowPast(e.target.checked)}/> Incluir audiências anteriores</label>}
     {area==='agenda'&&<div className="lx-view-toggle"><button className="inf-btn" onClick={()=>setView('month')} aria-pressed={view==='month'}>Mês</button><button className="inf-btn" onClick={()=>setView('list')} aria-pressed={view==='list'}>Lista</button></div>}
    </div>
@@ -206,8 +207,8 @@ export default function LexisOperations({db,session,area='deadlines'}){
      {(groups.get(d)||[]).length>3&&<small>+{groups.get(d).length-3} registros</small>}
     </div>)}
    </div>}
-   {['atendimentos_hoje','meus_atendimentos'].includes(filter)&&area!=='audiencias'?<p className="inf-note" role="status">Os processos atendidos são contabilizados na auditoria por executor e data, conforme o quadro acima. A lista de retornos mostra agendamentos e não representa os atendimentos registrados.</p>:(area!=='agenda'||view==='list')&&<div className="lx-event-list">{listing.slice(0,visibleLimit).map(x=><Card key={x.id} item={x} onSelect={openDetails}/>)}
-    {listing.length>visibleLimit&&<div className="lx-load-more"><span>Mostrando {visibleLimit} de {listing.length} registros</span><button type="button" className="inf-btn" onClick={()=>setVisibleLimit(v=>v+60)}>Carregar mais</button></div>}
+   {['atendimentos_hoje','meus_atendimentos'].includes(filter)&&area!=='audiencias'?<p className="inf-note" role="status">Os processos atendidos são contabilizados na auditoria por executor e data, conforme o quadro acima. A lista de retornos mostra agendamentos e não representa os atendimentos registrados.</p>:(area!=='agenda'||view==='list')&&<div className="lx-event-list">{pageRows.map(x=><Card key={x.id} item={x} onSelect={openDetails}/>)}
+     {listing.length>PAGE_SIZE&&<div className="lx-load-more"><span>Mostrando {page*PAGE_SIZE+1}–{Math.min(listing.length,(page+1)*PAGE_SIZE)} de {listing.length} registros carregados</span><div className="inf-row-end"><button type="button" className="inf-btn" disabled={page===0} onClick={()=>setPage(v=>Math.max(0,v-1))}>Anterior</button><button type="button" className="inf-btn" disabled={page+1>=pageCount} onClick={()=>setPage(v=>Math.min(pageCount-1,v+1))}>Próxima</button></div></div>}
     {!loading&&!listing.length&&<p className="pr-list-empty">Nenhum registro corresponde aos filtros. Confira as fontes e altere o período quando necessário.</p>}
    </div>}
    {area==='audiencias'&&<p className="inf-note">Audiências passadas não são prazos vencidos. Marque "Incluir audiências anteriores" para conferir eventos anteriores. As sem data ainda exigem confirmação oficial.</p>}
