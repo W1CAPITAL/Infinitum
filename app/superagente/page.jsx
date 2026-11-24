@@ -1,5 +1,5 @@
 'use client';
-import {useCallback,useEffect,useState} from 'react';
+import {useCallback,useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {Plus,Search,BriefcaseBusiness,BookOpen,Layers3,PlugZap,Send,Copy,ShieldCheck,Bot,PanelLeftClose,PanelLeftOpen,FileText,Scale,Clock3} from 'lucide-react';
 import SecuredWorkspace from '../../components/secured-workspace';
@@ -21,7 +21,8 @@ function Console({db,session}){
  const [prompt,setPrompt]=useState(''),[messages,setMessages]=useState([]),[history,setHistory]=useState([]);
  const [tab,setTab]=useState('nova'),[expanded,setExpanded]=useState(false);
  const [busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[search,setSearch]=useState('');
- const [engine,setEngine]=useState('qwen');
+ const [engine,setEngine]=useState('evidencias');
+ const running=useRef(false);
  const [externalAiConsent,setExternalAiConsent]=useState(false);
  const [allowEngineFallback,setAllowEngineFallback]=useState(false);
  const [preferredMotor,setPreferredMotor]=useState('auto');
@@ -53,19 +54,19 @@ function Console({db,session}){
   if(error)setNotice('Histórico não disponível: '+error.message);else setHistory(data||[]);
  },[db,session.user.id]);
  useEffect(()=>{load()},[load]);
- function newChat(){setMessages([]);setPrompt('');setNotice('');setTab('nova')}
- function openHistory(row){setMessages([
+ function newChat(){if(running.current)return;setMessages([]);setPrompt('');setNotice('');setExternalAiConsent(false);setAllowEngineFallback(false);setTab('nova')}
+ function openHistory(row){if(running.current)return;setExternalAiConsent(false);setAllowEngineFallback(false);setMessages([
   {role:'user',content:row.task},{role:'assistant',content:String(row.result?.answer||'Resposta indisponível no histórico.'),review:row.result?.review||null,model:row.result?.engine}
  ]);setTab('nova');setNotice('Conversa recuperada do histórico do CRM.')}
- function chooseAction(q){setPrompt(q);setTab('nova')}
+ function chooseAction(q){if(running.current)return;setPrompt(q);setTab('nova')}
  async function chooseEngine(next){
   setEngine(next);
   setNotice(next==='qwen'
    ?'Qwen 0,5B local ativo, usando CPU/WebAssembly por padrão. O primeiro pedido carrega os pesos. Sem servidor ou WebGPU.'
    :'');
  }
- async function ask(e){e?.preventDefault();const q=prompt.trim();if(!q||busy)return;
-  setBusy(true);setNotice('');setModelProgress('');
+ async function ask(e){e?.preventDefault();const q=prompt.trim();if(!q||busy||running.current)return;
+  running.current=true;setBusy(true);setNotice('');setModelProgress('');
   try{
    let payload;
    if(engine==='qwen'&&!requestedOfficialQuery(q)){
@@ -100,7 +101,7 @@ function Console({db,session}){
    setNotice(saved.error?'Resposta concluída, mas o histórico não foi salvo: '+saved.error.message:
     (payload.notice||'Resposta registrada; nenhuma ação externa foi executada.'));
    if(!saved.error)await load();
-  }catch(e){setNotice(e.message)}finally{setBusy(false);setModelProgress('')}
+  }catch(e){setNotice(e.message)}finally{running.current=false;setBusy(false);setModelProgress('')}
  }
  const activeTab=tab==='nova'?null:tab;
  return <main className="office-ai-console" aria-label="BLACKHOLE · Superagente jurídico">
@@ -167,7 +168,7 @@ function Console({db,session}){
     {engine==='online'&&<label className="office-ai-consent"><input type="checkbox" checked={externalAiConsent} onChange={e=>setExternalAiConsent(e.target.checked)}/> Autorizo o envio desta conversa ao modelo online gratuito (pode haver limites e tratamento pelo provedor).</label>}
     {engine==='online'&&externalAiConsent&&<label className="office-ai-consent"><input type="checkbox" checked={allowEngineFallback} onChange={e=>setAllowEngineFallback(e.target.checked)}/> Autorizo cascata LexisPredict/PredictLM: esta conversa poderá ser enviada a provedores remotos configurados, em sequência, se houver falha.</label>}
      {engine==='online'&&externalAiConsent&&allowEngineFallback&&<label className="office-ai-consent office-motor-preference"><span>Motor preferido</span><select aria-label="Selecionar motor preferido" value={preferredMotor} onChange={e=>setPreferredMotor(e.target.value)}><option value="auto">Automático · Lexis + PredictLM</option><option value="predictlm">PredictLM · se configurado</option>{['colibri','minicpm','minimax','claude','groq','xai','openrouter','gemini'].map(id=><option value={id} key={id}>{id.toUpperCase()} · se configurado</option>)}</select></label>}
-    {engine==='qwen'&&<p className="office-ai-disclaimer">Qwen local por CPU/WebAssembly já ativo para suas perguntas; o modelo é carregado quando você envia a primeira solicitação. Não depende de WebGPU nem servidor pago. Sem limite diário artificial de perguntas.</p>}
+    {engine==='qwen'&&<p className="office-ai-disclaimer">Qwen local por CPU/WebAssembly selecionado; o modelo é carregado quando você envia a primeira solicitação. Não depende de WebGPU nem servidor pago. Sem limite diário artificial de perguntas.</p>}
     {modelProgress&&<p className="office-ai-progress" role="status">{modelProgress}</p>}
     <p className="office-ai-disclaimer">Para consultar, escreva "Consulte DJEN do processo" e o CNJ de 20 dígitos. A busca usa as fontes oficiais com acesso autorizado ao processo, mesmo quando o motor de IA está selecionado. Os resultados do DataJud não são publicações DJEN.</p>
    </div>

@@ -1,5 +1,6 @@
 'use client';
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
+import {draftForChat,updateChatDraft,acceptedSendState} from '../lib/infinitum-agent-policy.mjs';
 import {archiveChats,archiveMessages,mergeChats,mergeMessages,messageState} from '../lib/wa-auto-archive.mjs';
 import {ZAPFAST_SINGLE_SESSION_URL} from '../lib/openbot-workspace-policy.mjs';
 import OfficeLegalAgentPanel from './office-legal-agent-panel';
@@ -17,7 +18,9 @@ export default function WaAutoInbox({db,userId}){
  const activeJid=useRef(null);
  activeJid.current=selected?.jid||null;
  const [busy,setBusy]=useState(''),[error,setError]=useState(''),[notice,setNotice]=useState('');
- const [draft,setDraft]=useState(''),[pairPhone,setPairPhone]=useState(''),[newPhone,setNewPhone]=useState('');
+ const [drafts,setDrafts]=useState({}),[pairPhone,setPairPhone]=useState(''),[newPhone,setNewPhone]=useState('');
+ const draft=draftForChat(drafts,selected?.jid);
+ const setDraft=value=>setDrafts(old=>updateChatDraft(old,selected?.jid,value));
  const [showConnect,setShowConnect]=useState(false),[showNew,setShowNew]=useState(false),[qrImage,setQrImage]=useState('');
  const [lastSync,setLastSync]=useState(''),[archiveWarning,setArchiveWarning]=useState(''),[archiveAt,setArchiveAt]=useState('');
  const [syncUnsupported,setSyncUnsupported]=useState(false);
@@ -191,13 +194,13 @@ export default function WaAutoInbox({db,userId}){
  async function action(name,payload={}){
   if(busy)return;
   setBusy(name);setError('');setNotice('');
+  const targetJid=selected?.jid;let accepted=false;
   try{
    const r=await api(name,payload);
    if(r.connection)setStatus(old=>({...old,configured:true,connected:r.connection.status==='ready',connection:r.connection}));
-   await reloadStatus();
    if(name==='send'){
-    setDraft('');setNotice('WA.Auto aceitou a mensagem. Entrega e leitura dependem da confirmação do WhatsApp.');
-    const jid=selected?.jid;
+    accepted=true;setDrafts(old=>updateChatDraft(old,targetJid,''));setNotice(acceptedSendState(true,false).notice);
+    const jid=targetJid;
     if(jid&&r.messageId){
      const echo={id:String(r.messageId),chat_jid:jid,content:String(payload.message||''),is_from_me:true,
        media_type:null,timestamp:new Date().toISOString(),ack:0};
@@ -207,9 +210,10 @@ export default function WaAutoInbox({db,userId}){
     if(jid)await reloadMessages(jid).catch(e=>setArchiveWarning('Envio aceito; atualização de histórico indisponível: '+e.message));
     await reloadChats(query,groups).catch(()=>{});
    }
-   else if(name==='logout'){setChats([]);setMessages([]);setSelected(null);setNotice('Aparelho desvinculado desta sessão.')}
+   else if(name==='logout'){setChats([]);setMessages([]);setSelected(null);setDrafts({});setNotice('Aparelho desvinculado desta sessão.')}
    else setNotice(name==='connect'?'Solicitação de conexão enviada. Leia o QR quando aparecer.':'Pareamento iniciado. Confira o código no aparelho.');
-  }catch(e){setError(e.message)}finally{setBusy('')}
+   await reloadStatus().catch(e=>{setStatus(old=>old?{...old,connected:false}:old);if(accepted)setNotice(acceptedSendState(true,true).notice);else setArchiveWarning('Status não atualizado: '+e.message)});
+  }catch(e){if(accepted)setNotice(acceptedSendState(true,true).notice);else if(name==='send')setError(acceptedSendState(false,false).notice+' '+e.message);else setError(e.message)}finally{setBusy('')}
  }
  function startChat(e){
   e.preventDefault();setError('');
@@ -232,7 +236,7 @@ export default function WaAutoInbox({db,userId}){
   <header className="wa-heading"><div><small>PROJECTW1SC / COMUNICAÇÃO</small><h1>WhatsApp <span>Workspace</span></h1><p>Use a sessão WA.Auto ou conecte à aba WhatsApp Web já aberta no seu computador, sem novo QR Code. Cada forma de acesso é independente.</p></div>
    <div className="wa-heading-actions">
     {desktopZapFast?<button className="wa-button ghost" type="button" onClick={()=>window.killaDesktop?.openZapFast().catch(()=>setError("Não foi possível abrir a janela ZapFast."))} title="Abrir ZapFast em janela própria no desktop, sem novo QR Code"><ExternalLink size={15}/> ZapFast · abrir no desktop</button>:<a className="wa-button ghost" href={ZAPFAST_SINGLE_SESSION_URL} target="_blank" rel="noopener noreferrer" title="Abrir sessão já vinculada no ZapFast, sem gerar outro QR Code"><ExternalLink size={15}/> ZapFast · sessão existente</a>}
-    <span className={'wa-state '+(connected?'online':'offline')}><span className="wa-dot"/>{connected?'WhatsApp conectado':status?.code==='wa_auto_upstream_route_missing'?'WA.Auto sem rota':status?.configured?'Desconectado':'Aguardando configuração'}</span>
+    <span className={'wa-state '+(connected?'online':'offline')}><span className="wa-dot"/>{connected?'WhatsApp conectado':!status?'Status não verificado':status?.code==='wa_auto_upstream_route_missing'?'WA.Auto sem rota':status?.configured?'Desconectado':'Aguardando configuração'}</span>
     <button className="wa-icon-btn" aria-label="Atualizar WhatsApp" type="button" disabled={!!busy} onClick={refresh}><RefreshCw size={17}/></button>
     <button className="wa-button" type="button" onClick={()=>setShowConnect(v=>!v)}><Smartphone size={16}/> Conexão</button>
    </div>
@@ -263,15 +267,15 @@ export default function WaAutoInbox({db,userId}){
     {showNew&&<form className="wa-new-chat" onSubmit={startChat}><label>Iniciar conversa por telefone</label><input type="tel" autoFocus value={newPhone} onChange={e=>setNewPhone(e.target.value)} placeholder="(11) 99999-9999" required/><button className="wa-button" type="submit">Abrir contato</button></form>}
     <label className="wa-search"><Search size={17}/><input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Buscar contato ou telefone..." aria-label="Pesquisar conversas"/></label>
     <div className="wa-filters"><button aria-pressed={!groups} onClick={()=>setGroups(false)} type="button" className={!groups?'selected':''}>Todas</button><button aria-pressed={groups} onClick={()=>setGroups(true)} type="button" className={groups?'selected':''}><Users size={14}/> Grupos</button></div>
-    <div className="wa-contact-list">{visibleChats.length?visibleChats.map(c=><button type="button" key={c.jid} className={'wa-contact '+(current?.jid===c.jid?'selected':'')} onClick={()=>setSelected(c)}><span className="wa-avatar">{userName(c).charAt(0).toUpperCase()}</span><span className="wa-contact-copy"><span className="wa-contact-title"><strong>{userName(c)}</strong><small>{clock(c.last_message_at)}</small></span><span className="wa-contact-message">{tiny(c.last_message)||c.phone||'Conversa disponível'}</span></span></button>):<div className="wa-empty"><Search size={22}/><strong>Nenhuma conversa encontrada</strong><p>Conversas anteriores continuam disponíveis quando salvas. Vincule o WhatsApp para receber novas mensagens.</p></div>}</div>
+    <div className="wa-contact-list">{visibleChats.length?visibleChats.map(c=><button type="button" key={c.jid} className={'wa-contact '+(current?.jid===c.jid?'selected':'')} disabled={busy==='send'} onClick={()=>setSelected(c)}><span className="wa-avatar">{userName(c).charAt(0).toUpperCase()}</span><span className="wa-contact-copy"><span className="wa-contact-title"><strong>{userName(c)}</strong><small>{clock(c.last_message_at)}</small></span><span className="wa-contact-message">{tiny(c.last_message)||c.phone||'Conversa disponível'}</span></span></button>):<div className="wa-empty"><Search size={22}/><strong>Nenhuma conversa encontrada</strong><p>Conversas anteriores continuam disponíveis quando salvas. Vincule o WhatsApp para receber novas mensagens.</p></div>}</div>
     {moreChats&&<button className="wa-button ghost inf-history-more" type="button" disabled={chatBusy} onClick={readMoreChats}>{chatBusy?'Carregando…':'Mais conversas arquivadas'}</button>}<div className="wa-contact-footer">WA.Auto · histórico no CRM {archiveAt?'· salvo '+clock(archiveAt):''} {connected&&lastSync?'· conexão '+clock(lastSync):''}</div>
    </aside>
    <section className={'wa-conversation '+(!current?'wa-mobile-hidden':'')}>
-    {current?<><div className="wa-conversation-header"><button type="button" className="wa-icon-btn wa-back" onClick={()=>setSelected(null)} aria-label="Voltar à lista"><ArrowLeft size={20}/></button><span className="wa-avatar">{userName(current).charAt(0).toUpperCase()}</span><div className="wa-conversation-heading"><strong>{userName(current)}</strong><small>{current.phone||current.jid} · {connected?'Conectado':'Histórico salvo · serviço offline'}</small></div><button type="button" className="wa-icon-btn" aria-label="Atualizar mensagens" onClick={()=>reloadMessages(current.jid).catch(e=>setError(e.message))}><RefreshCw size={16}/></button></div>
+    {current?<><div className="wa-conversation-header"><button type="button" className="wa-icon-btn wa-back" disabled={busy==='send'} onClick={()=>setSelected(null)} aria-label="Voltar à lista"><ArrowLeft size={20}/></button><span className="wa-avatar">{userName(current).charAt(0).toUpperCase()}</span><div className="wa-conversation-heading"><strong>{userName(current)}</strong><small>{current.phone||current.jid} · {connected?'Conectado':'Histórico salvo · serviço offline'}</small></div><button type="button" className="wa-icon-btn" aria-label="Atualizar mensagens" onClick={()=>reloadMessages(current.jid).catch(e=>setError(e.message))}><RefreshCw size={16}/></button></div>
       <div className="wa-message-list" aria-live="polite">{moreArchive&&<button className="wa-button ghost inf-history-more" type="button" disabled={olderBusy} onClick={readOlder}>{olderBusy?'Carregando…':'Mensagens anteriores'}</button>}{currentMessages.length?currentMessages.map((m,i)=><div className={'wa-message '+(m.is_from_me?'outgoing':'incoming')} key={m.id||i}><div>{String(m.content||'').slice(0,4000)|| (m.media_type?'[Mídia: '+m.media_type+']':'[Mensagem sem texto]')}</div><small>{stamp(m.timestamp)}{m.is_from_me?' · '+messageState(m):''}</small></div>):<div className="wa-empty"><MessageCircle size={28}/><strong>Nenhuma mensagem nesta conversa</strong><p>Não há mensagens arquivadas para esta conversa. O histórico recebido por outros aparelhos depende do sincronismo do WhatsApp.</p></div>}</div>
-      <OfficeLegalAgentPanel db={db} selected={current} connected={connected} messages={currentMessages}
+      <OfficeLegalAgentPanel key={current.jid} db={db} selected={current} connected={connected} messages={currentMessages}
         onSent={()=>{reloadMessages(current.jid).catch(()=>{});reloadChats(query,groups).catch(()=>{});}}/>
-      <form className="wa-composer" onSubmit={e=>{e.preventDefault();if(!draft.trim()||!connected)return;action('send',{to:current.is_group?current.jid:(current.phone||current.jid.split('@')[0]),message:draft.trim(),approved:true})}}><textarea aria-label="Mensagem WhatsApp" value={draft} maxLength={3000} rows={2} placeholder={connected?'Escreva sua mensagem...':'Histórico em leitura; conecte para enviar'} disabled={!connected||!!busy} onChange={e=>setDraft(e.target.value)}/><div className="wa-compose-footer"><small>Envio somente por clique. As mensagens salvas continuam legíveis no celular e PC através do CRM.</small><button className="wa-button" type="submit" disabled={!connected||!draft.trim()||!!busy}><Send size={16}/> {busy==='send'?'Enviando...':'Enviar'}</button></div></form>
+      <form className="wa-composer" onSubmit={e=>{e.preventDefault();if(!draft.trim()||!connected)return;action('send',{to:current.is_group?current.jid:(current.phone||current.jid.split('@')[0]),message:draft.trim(),approved:true})}}><textarea aria-label="Mensagem WhatsApp" value={draft} maxLength={3000} rows={2} placeholder={connected?'Escreva sua mensagem...':'Histórico em leitura; conecte para enviar'} disabled={!connected||!!busy} onChange={e=>setDraft(e.target.value)}/><div className="wa-compose-footer"><small>Destinatário: {userName(current)} · rascunho desta conversa · {draft.length}/3000</small><button className="wa-button" type="submit" disabled={!connected||!draft.trim()||!!busy}><Send size={16}/> {busy==='send'?'Enviando...':'Enviar'}</button></div></form>
      </>:<div className="wa-no-chat"><div className="wa-no-chat-art"><MessageSquare size={52}/></div><h2>Um espaço para cada conversa</h2><p>Escolha um contato ao lado, consulte o histórico e responda sem sair do CRM.</p><div><ShieldCheck size={16}/> Conversas do WA.Auto, sem integração oficial da Meta</div></div>}
    </section>
   </section>

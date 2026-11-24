@@ -6,6 +6,7 @@ import {Bot,Plus,PanelLeftClose,PanelLeftOpen,PanelRightClose,PanelRightOpen,Mes
  ExternalLink,LoaderCircle,FileText,RefreshCw,Copy,RotateCcw} from 'lucide-react';
 import {OPENBOT_BOTS,OPENBOT_CAPABILITIES,OPENBOT_APPROVAL,findOpenBot,chatTitle,
  historyForRequest,prepareBotRequest} from '../lib/openbot-studio-config.mjs';
+import {mergeHistory,allowsExternalFallback} from '../lib/infinitum-agent-policy.mjs';
 import {ZAPFAST_SINGLE_SESSION_URL} from '../lib/openbot-workspace-policy.mjs';
 import styles from './openbot-studio.module.css';
 import OpenBotConnectedApps from './openbot-connected-apps.jsx';
@@ -28,7 +29,8 @@ export default function OpenBotStudio({db,session,initialBot,initialThreadId,sta
  const [activeBot,setActiveBot]=useState(initialBot||'killa'),[thread,setThread]=useState(null);
  const [messages,setMessages]=useState([]),[draft,setDraft]=useState('');
  const [selectedModel,setSelectedModel]=useState('rules');
- const [onlineConsent,setOnlineConsent]=useState(false),[localConsent,setLocalConsent]=useState(false);
+ const [onlineConsent,setOnlineConsent]=useState(false),[localConsent,setLocalConsent]=useState(false),[fallbackConsent,setFallbackConsent]=useState(false);
+ const [historyOffset,setHistoryOffset]=useState(250),[hasOlder,setHasOlder]=useState(false),[olderLoading,setOlderLoading]=useState(false);
  const [busy,setBusy]=useState(false),[loading,setLoading]=useState(true),[loadingChat,setLoadingChat]=useState(false),[sidebarReady,setSidebarReady]=useState(false);
  const [notice,setNotice]=useState(''),[error,setError]=useState('');
  const [search,setSearch]=useState(''),[panel,setPanel]=useState('sobre'),[inspector,setInspector]=useState(true);
@@ -104,20 +106,28 @@ export default function OpenBotStudio({db,session,initialBot,initialThreadId,sta
  async function openThread(x){
   if(busy)return;
   const seq=++chatRequest.current;setLoadingChat(true);setError('');setNotice('');setPendingDelete(false);
-  setThread(x);setActiveBot(x.bot_key);
+  setThread(x);setActiveBot(x.bot_key);setMessages([]);setDraft('');setOnlineConsent(false);setLocalConsent(false);setFallbackConsent(false);setHistoryOffset(250);setHasOlder(false);
   setSelectedModel(models.some(m=>m.id===x.model)?x.model:'rules');
   setMobileBots(false);
   const r=await db.from('openbot_messages').select('id,role,content,source,created_at')
-   .eq('owner_id',owner).eq('thread_id',x.id).order('created_at',{ascending:true}).limit(250);
+   .eq('owner_id',owner).eq('thread_id',x.id).order('created_at',{ascending:false}).order('id',{ascending:false}).limit(250);
   if(seq!==chatRequest.current)return;
   if(r.error){setMessages([]);setError('Não foi possível abrir o histórico: '+r.error.message)}
-  else setMessages(r.data||[]);
+  else {const rows=r.data||[];setMessages(mergeHistory([],rows));setHasOlder(rows.length===250);}
   setLoadingChat(false);
  }
 
+ async function loadOlder(){
+  if(!thread||olderLoading||!hasOlder||busy)return;
+  const seq=chatRequest.current;setOlderLoading(true);
+  try{const result=await db.from('openbot_messages').select('id,role,content,source,created_at').eq('owner_id',owner).eq('thread_id',thread.id).order('created_at',{ascending:false}).order('id',{ascending:false}).range(historyOffset,historyOffset+249);
+   if(result.error)throw result.error;if(seq!==chatRequest.current)return;
+   const rows=result.data||[];setMessages(old=>mergeHistory(old,rows));setHistoryOffset(n=>n+rows.length);setHasOlder(rows.length===250&&historyOffset+rows.length<5000);
+  }catch(e){if(seq===chatRequest.current)setError('Histórico anterior indisponível: '+safeError(e))}finally{setOlderLoading(false)}
+ }
  function newConversation(botKey=activeBot){
   if(busy)return;
-  ++chatRequest.current;setThread(null);setMessages([]);setDraft('');setError('');setNotice('');
+  ++chatRequest.current;setThread(null);setMessages([]);setDraft('');setError('');setNotice('');setLoadingChat(false);setOnlineConsent(false);setLocalConsent(false);setFallbackConsent(false);setHistoryOffset(250);setHasOlder(false);
   setPendingDelete(false);setActiveBot(botKey);setMobileBots(false);
   const defaultModel=profiles[botKey]?.model||'auto';
   setSelectedModel(models.some(x=>x.id===defaultModel)?defaultModel:(models.some(x=>x.id==='auto')?'auto':'rules'));
@@ -213,7 +223,7 @@ export default function OpenBotStudio({db,session,initialBot,initialThreadId,sta
     if(!onlineConsent)throw Error('Autorize o uso do modelo online antes da execução.');
     const j=await api('/api/superagente',{method:'POST',body:JSON.stringify({
      prompt:prepareBotRequest(activeBot,text,profile?.instructions),
-     messages:historyForRequest(messages),externalAiConsent:true,allowEngineFallback:true,
+     messages:historyForRequest(messages),externalAiConsent:true,allowEngineFallback:allowsExternalFallback(onlineConsent,fallbackConsent),
      preferredMotor:selectedModel
     })});
     reply=j.reply;source=j.isGenerativeModel?('IA · '+String(j.engine||j.model||'online')):
@@ -314,7 +324,7 @@ export default function OpenBotStudio({db,session,initialBot,initialThreadId,sta
       </div>
       <small>O OpenBot usa apenas os motores configurados. Sem envio automático, computador remoto ou fontes inventadas.</small>
      </div>:
-     <div className={styles.messageStack}>{messages.map(m=><article key={m.id} className={styles.message+' '+(m.role==='user'?styles.userMessage:styles.botMessage)}>
+     <div className={styles.messageStack}>{hasOlder&&<button className="inf-ai-history" type="button" disabled={olderLoading||busy} onClick={loadOlder}>{olderLoading?'Carregando…':'Carregar mensagens anteriores'}</button>}{messages.map(m=><article key={m.id} className={styles.message+' '+(m.role==='user'?styles.userMessage:styles.botMessage)}>
       {m.role==='assistant'&&<span className={styles.miniAvatar} style={{'--agent':bot.color}}>{bot.short}</span>}
       <div className={styles.bubble}>
        <div className={styles.messageContent}>{m.content}</div>
@@ -350,6 +360,7 @@ export default function OpenBotStudio({db,session,initialBot,initialThreadId,sta
     </form>
     {online&&<label className={styles.consent}><input type="checkbox" checked={onlineConsent}
       onChange={e=>setOnlineConsent(e.target.checked)}/> Autorizo enviar este texto e o contexto recente ao provedor de IA online.</label>}
+    {online&&onlineConsent&&<label className={styles.consent}><input type="checkbox" checked={fallbackConsent} onChange={e=>setFallbackConsent(e.target.checked)}/> Permitir outros provedores se o motor escolhido falhar</label>}
     {local&&<label className={styles.consent}><input type="checkbox" checked={localConsent}
       onChange={e=>setLocalConsent(e.target.checked)}/> Autorizo baixar e executar o Qwen no meu navegador.</label>}
     <p className={styles.disclaimer}><ShieldCheck size={13}/> Respostas exigem revisão. O OpenBot não envia WhatsApp nem executa ações externas sozinho.</p>

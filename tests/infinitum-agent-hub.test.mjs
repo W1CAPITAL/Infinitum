@@ -1,0 +1,7 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{draftForChat,updateChatDraft,acceptedSendState,serviceState,mergeHistory,allowsExternalFallback}from'../lib/infinitum-agent-policy.mjs';
+test('drafts never cross recipients',()=>{const d=updateChatDraft({},'a','texto privado');assert.equal(draftForChat(d,'b'),'');assert.equal(draftForChat(d,'a'),'texto privado');assert.equal(draftForChat(updateChatDraft(d,'a',''),'a'),'')});
+test('accepted send survives status failure without suggesting a resend',()=>{const s=acceptedSendState(true,true);assert.equal(s.accepted,true);assert.equal(s.retry,false)});
+test('failed status is unknown, not confirmed disconnected',()=>{assert.equal(serviceState({status:'rejected'},'wa').tone,'unknown');assert.equal(serviceState({status:'fulfilled',value:{ok:true,configured:true,connected:true}},'wa').tone,'ready')});
+test('configured AI is not a successful generation',()=>assert.match(serviceState({status:'fulfilled',value:{ok:true,configured:true}},'ai').label,/geração não testada/));
+test('history merges chronologically without duplicate records',()=>assert.deepEqual(mergeHistory([{id:'2',created_at:'2026-11-02'}],[{id:'1',created_at:'2026-11-01'},{id:'2',created_at:'2026-11-02'}]).map(x=>x.id),['1','2']));
+test('remote fallback requires separate authorization',()=>{assert.equal(allowsExternalFallback(true,false),false);assert.equal(allowsExternalFallback(false,true),false);assert.equal(allowsExternalFallback(true,true),true)});

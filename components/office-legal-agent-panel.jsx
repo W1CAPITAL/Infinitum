@@ -18,7 +18,7 @@ export default function OfficeLegalAgentPanel({db,selected,connected,messages,on
  const [includeHearing,setIncludeHearing]=useState(false);
  const [lastReturn,setLastReturn]=useState(null);
  const [feedbackTag,setFeedbackTag]=useState('more_cordial');
- const [consentQwen,setConsentQwen]=useState(true),[humanConfirmed,setHumanConfirmed]=useState(false);
+ const [consentQwen,setConsentQwen]=useState(false),[humanConfirmed,setHumanConfirmed]=useState(false);
  const jid=selected?.jid||'';
  const valid=/^[1-9][0-9]{9,14}@s\.whatsapp\.net$/.test(jid)&&!selected?.is_group;
  const lastInbound=useMemo(()=>(Array.isArray(messages)?messages:[])
@@ -37,7 +37,7 @@ export default function OfficeLegalAgentPanel({db,selected,connected,messages,on
  },[db,jid]);
  useEffect(()=>{
   setPreview(null);setReviewed('');setCases([]);setChosenCase(null);setHumanConfirmed(false);setMemory('');setIncludeHearing(false);setLastReturn(null);
-  setStatus('');setIdentityProof('');setConsentQwen(true);setDiagnostics(null);
+  setStatus('');setIdentityProof('');setConsentQwen(false);setDiagnostics(null);
  },[jid]);
  useEffect(()=>()=>stopBlackholeQwen(),[]);
  async function run(name,operation){
@@ -95,6 +95,7 @@ export default function OfficeLegalAgentPanel({db,selected,connected,messages,on
  }
  async function polishWithQwen(){
   return run('qwen',async()=>{
+   if(!consentQwen)throw Error('Autorize a revisão local antes de executar o Qwen.');
    if(!preview?.reply)throw Error('Prepare uma resposta oficial antes da revisão.');
    const check=await checkBlackholeQwenSupport({preferCpu:true});
    if(!check.ok)throw Error(check.reason);
