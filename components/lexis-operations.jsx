@@ -2,6 +2,7 @@
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import Link from 'next/link';
 import {Archive,CalendarDays,CheckCircle2,ChevronLeft,ChevronRight,Clock3,ExternalLink,FileText,Gavel,Plus,RefreshCw,Search,Users,X} from 'lucide-react';
+import {groupWorkQueue} from '../lib/workspace-layout.mjs';
 import {buildLexisEvents,filterAgendaEvents,classifyMonitoredHearing} from '../lib/lexis-operations.mjs';
 import {summarizeLexisReturns} from '../lib/lexis-return-kpis.mjs';
 import {filterLexisCompanyQueue,summarizeLexisCompanyQueue} from '../lib/lexis-company-queue.mjs';
@@ -16,7 +17,7 @@ const fmt=d=>d?String(d).slice(0,10).split('-').reverse().join('/'):'Data não c
 const kinds={retorno:'Retorno',prazo:'Prazo',audiencia:'Audiência',tarefa:'Tarefa'};
 const statuses={vencido:'Vencido',atencao:'Atenção',em_dia:'Em dia',atendido:'Atendido',encerrado:'Encerrado',sem_data:'Sem data'};
 function Chip({value,label}){return <span className={'lx-status lx-status--'+(statuses[value]?value:'sem_data')} data-status={value}>{label||statuses[value]||'Sem data'}</span>}
-function Card({item,onSelect}){
+function Card({item,onSelect,onFinish,busy}){
  return <article className="lx-event-card">
   <div className="lx-event-symbol">{item.kind==='audiencia'?<Gavel size={18}/>:item.kind==='prazo'?<Clock3 size={18}/>:<CalendarDays size={18}/>}</div>
   <div className="lx-event-main"><small className="lx-event-kicker">{kinds[item.kind]||'Compromisso'} · {fmt(item.due_on)}{item.hour?' · '+item.hour:''}</small>
@@ -24,7 +25,7 @@ function Card({item,onSelect}){
    <span>{item.process_number||item.source||'Registro da empresa'}</span>
    <small>Responsável: {item.responsible||'Não informado'}</small>
   </div>
-  <div className="lx-event-right"><Chip value={item.status} label={item.status_label}/><button className="lx-event-open" type="button" onClick={()=>onSelect(item)}>Detalhes <ChevronRight size={14}/></button></div>
+  <div className="lx-event-right"><Chip value={item.status} label={item.status_label}/>{onFinish&&(item.task_id||item.manual_id)&&!['encerrado','atendido'].includes(item.status)&&<button type="button" className="inf-btn" disabled={busy} onClick={()=>onFinish(item)}><CheckCircle2 size={15}/> Concluir</button>}<button className="lx-event-open" type="button" onClick={()=>onSelect(item)}>{item.kind==='retorno'?'Atender / detalhes':'Detalhes'} <ChevronRight size={14}/></button></div>
  </article>;
 }
 export default function LexisOperations({db,session,area='deadlines'}){
@@ -209,10 +210,10 @@ export default function LexisOperations({db,session,area='deadlines'}){
      <span className={'lx-kpi-mark lx-kpi-mark--'+status}/></button>;
    })}
   </div>
-  {area!=='audiencias'&&!(area==='deadlines'&&deadlineMode==='juridicos')&&<LexisAttendanceBoard audit={audit} userId={session.user.id} compact={area==='agenda'}/>}
+  {area!=='audiencias'&&!(area==='deadlines'&&deadlineMode==='juridicos')&&<details className="inf-audit-disclosure" open={['atendimentos_hoje','meus_atendimentos'].includes(filter)}><summary>Histórico e auditoria de atendimentos</summary><LexisAttendanceBoard audit={audit} userId={session.user.id} compact={area==='agenda'}/></details>}
   <section className="pr-module lx-panel">
    <div className="pr-module-intro"><span>CARTEIRA DA ORGANIZAÇÃO</span><h2>{area==='audiencias'?'Compromissos judiciais.':area==='agenda'?'Calendário compartilhado.':area==='tasks'?'Fila empresarial de tarefas e retornos.':area==='overdue'?'Pendências vencidas da organização.':'Controle de vencimentos.'}</h2>
-    <p>Retornos vencidos usam último/próximo retorno e somente processos com CNJ. Atendimentos realizados vêm da auditoria do CRM por dia e operador; são métricas diferentes. Na Agenda, o calendário é mensal; a lista de prazos inclui todos os períodos.</p></div>
+    <p>{area==='audiencias'?'Consulte as datas e abra os detalhes para verificar a fonte.':area==='agenda'?'Selecione um dia ou alterne para a lista de compromissos.':area==='overdue'?'Priorize as pendências vencidas. Abra o registro para atender ou conclua uma tarefa realizada.':'Organize as pendências por situação. Abra os detalhes para editar ou registrar atendimento.'}</p></div>
    <div className="lx-toolbar"><label className="lx-search"><Search size={16}/><input aria-label="Buscar nos compromissos" placeholder="Buscar cliente, processo ou responsável" value={search} onChange={e=>setSearch(e.target.value)}/></label>
     <select aria-label="Situação" value={filter} onChange={e=>chooseFilter(e.target.value)}>
       {area==='deadlines'&&deadlineMode==='juridicos'?<><option value="todos">Todos os prazos</option><option value="hoje">Hoje</option><option value="proximos">Próximos 7 dias</option><option value="vencido">Vencidos</option><option value="atencao">Atenção</option><option value="em_dia">Em dia</option><option value="encerrado">Concluídos</option></>:area==='agenda'?<><option value="todos">Todas as situações</option><option value="hoje">Hoje</option><option value="proximos">Próximos 7 dias</option>{Object.entries(statuses).map(([k,v])=><option key={k} value={k}>{v}</option>)}</>:area==='tasks'||area==='overdue'?<><option value="prioridades">Prioridades</option><option value="vencidos">Somente vencidos</option><option value="hoje">Para hoje</option><option value="proximos">Próximos 7 dias</option><option value="em_dia">Em dia</option><option value="sem_data">Sem data</option><option value="finalizados">Finalizados</option><option value="atendidos">Retornos atendidos</option><option value="atendimentos_hoje">Atendimentos de hoje · auditoria</option><option value="meus_atendimentos">Meus atendimentos · auditoria</option><option value="todos">Todos os registros</option></>:<><option value="todos">Todas as situações</option>{area==='audiencias'?<><option value="futuras">Futuras</option><option value="agendadas">Audiências agendadas</option><option value="informadas">Notificações a verificar</option><option value="sessoes">Sessões de julgamento</option>{Object.entries(statuses).filter(([k])=>!['atendido','sem_data'].includes(k)).map(([k,v])=><option key={k} value={k}>{k==='vencido'?'Passadas':v}</option>)}</>:<><option value="retornos">Retornos agendados</option><option value="hoje">Para hoje</option><option value="proximos">Próximos 7 dias</option><option value="atendimentos_hoje">Já atendidos hoje · auditoria</option><option value="meus_atendimentos">Meus atendimentos hoje · auditoria</option><option value="atendido">Agendamentos concluídos por data</option>{Object.entries(statuses).filter(([k])=>!['atendido','encerrado'].includes(k)).map(([k,v])=><option key={k} value={k}>{v}</option>)}</>}</>}
@@ -234,7 +235,7 @@ export default function LexisOperations({db,session,area='deadlines'}){
     </div>)}
    </div>}
    {area==='agenda'&&selectedDay&&<div className="lx-toolbar"><strong>{fmt(selectedDay)} · {listing.length} registros</strong><button type="button" className="inf-btn" onClick={()=>setSelectedDay('')}>Ver todos os dias</button></div>}
-   {['atendimentos_hoje','meus_atendimentos'].includes(filter)&&area!=='audiencias'?<p className="inf-note" role="status">Os processos atendidos são contabilizados na auditoria por executor e data, conforme o quadro acima. A lista de retornos mostra agendamentos e não representa os atendimentos registrados.</p>:(area!=='agenda'||view==='list')&&<div className="lx-event-list">{pageRows.map(x=><Card key={x.id} item={x} onSelect={openDetails}/>)}
+   {['atendimentos_hoje','meus_atendimentos'].includes(filter)&&area!=='audiencias'?<p className="inf-note" role="status">Os processos atendidos são contabilizados na auditoria por executor e data, conforme o quadro acima. A lista de retornos mostra agendamentos e não representa os atendimentos registrados.</p>:(area!=='agenda'||view==='list')&&<div className="lx-event-list inf-queue-list">{(area==='tasks'||area==='overdue')?groupWorkQueue(pageRows,brazilToday()).map(group=><section className="inf-queue-section" key={group.key} data-queue={group.key}><header><div><h3>{group.label}</h3><small>{group.detail}</small></div><span>{group.items.length.toLocaleString('pt-BR')}</span></header>{group.items.map(x=><Card key={x.id} item={x} onSelect={openDetails} onFinish={finish} busy={busy}/>)}</section>):pageRows.map(x=><Card key={x.id} item={x} onSelect={openDetails}/>)}
      {listing.length>PAGE_SIZE&&<ProgressiveListEnd shown={pageRows.length} total={listing.length} onMore={moreRows} disabled={loading}/>}
     {!loading&&!listing.length&&<p className="pr-list-empty">Nenhum registro corresponde aos filtros. Confira as fontes e altere o período quando necessário.</p>}
    </div>}
