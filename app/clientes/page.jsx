@@ -1,3 +1,2 @@
-'use client';
-import OfficeConsole from '../../components/office-console';
-export default function Page(){return <OfficeConsole area="clients"/>}
+import {redirect} from 'next/navigation';
+export default function Page(){redirect('/processos?visao=clientes')}
