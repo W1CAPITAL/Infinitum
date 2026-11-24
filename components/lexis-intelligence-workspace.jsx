@@ -51,6 +51,7 @@ function AnalysisPanel({analysis}){
 }
 export default function LexisIntelligenceWorkspace({db,session,mode='report'}){
  const [period,setPeriod]=useState('mes'),[version,setVersion]=useState(0);
+ const [superView,setSuperView]=useState('overview'),[updated,setUpdated]=useState(null);
  const queryKey=[session?.user?.id||'',period,mode,version].join(':');
  const [state,setState]=useState({loading:true,data:null,error:'',key:null});
  const waiting=state.loading||state.key!==queryKey;
@@ -60,7 +61,7 @@ export default function LexisIntelligenceWorkspace({db,session,mode='report'}){
   let active=true;
   setState({loading:true,data:null,error:'',key:queryKey});
   loadLexisIntelligence(db,session.user.id,{period,area:mode}).then(data=>{
-   if(active)setState({loading:false,data,error:'',key:queryKey});
+   if(active){setState({loading:false,data,error:'',key:queryKey});setUpdated(new Date())}
   }).catch(e=>{if(active)setState({loading:false,data:null,error:String(e?.message||e).slice(0,350),key:queryKey})});
   return()=>{active=false};
  },[db,session?.user?.id,period,mode,version]);
@@ -91,7 +92,7 @@ export default function LexisIntelligenceWorkspace({db,session,mode='report'}){
    <p>Acompanhe resultados, produtividade e evolução do período. Exporte os dados disponíveis ao seu perfil.</p>
   </div><div className="lxd-actions lxi-actions">
    <label className="lxi-period" htmlFor={'lxi-period-'+mode}>Período
-    <select id={'lxi-period-'+mode} value={period} disabled={waiting} onChange={e=>{setPeriod(e.target.value);setNotice('')}}>
+    <select id={'lxi-period-'+mode} value={period} onChange={e=>{setPeriod(e.target.value);setNotice('')}}>
      {LEXIS_PERIODS.map(p=><option value={p.id} key={p.id}>{p.label}</option>)}
     </select>
    </label>
@@ -99,19 +100,21 @@ export default function LexisIntelligenceWorkspace({db,session,mode='report'}){
    <button type="button" className="inf-btn" disabled={!model||waiting} onClick={exportCsv}><Download size={15}/> Exportar CSV</button>
    <button type="button" className="inf-btn primary" disabled={!model||waiting} onClick={exportPdf}><Download size={15}/> Baixar PDF</button>
   </div></header>
-  <nav className="lxi-links" aria-label="Áreas de gestão"><Link href="/supervisao" aria-current={mode==='supervision'?'page':undefined}><ShieldCheck size={15}/> Supervisão</Link><Link href="/report" aria-current={mode==='report'?'page':undefined}><BarChart3 size={15}/> Relatórios</Link><Link href="/tarefas"><CalendarClock size={15}/> Tarefas</Link><Link href="/vencidos"><AlertTriangle size={15}/> Vencidos</Link></nav>
+  <nav className="lxi-links" aria-label="Áreas de gestão"><Link href="/supervisao" aria-current={mode==='supervision'?'page':undefined}><ShieldCheck size={15}/> Supervisão</Link><Link href="/relatorios" aria-current={mode==='report'?'page':undefined}><BarChart3 size={15}/> Relatórios</Link><Link href="/tarefas"><CalendarClock size={15}/> Tarefas</Link><Link href="/vencidos"><AlertTriangle size={15}/> Vencidos</Link></nav>
   {waiting&&<p className="lxd-message" role="status">Consultando os indicadores reais do período no Supabase...</p>}
   {!waiting&&state.error&&<div className="lxd-message danger" role="alert"><AlertTriangle size={18}/><span>Não foi possível consultar: {state.error}. Nenhum KPI foi substituído por estimativa.</span><button type="button" className="inf-btn" onClick={()=>setVersion(x=>x+1)}>Tentar novamente</button></div>}
   {result?.warnings?.length>0&&<p role="alert" className="lxd-message">Algumas fontes não responderam: {result.warnings.join(' · ')}. Os respectivos indicadores permanecem indisponíveis.</p>}
   {notice&&<p role="status" className="lxd-message">{notice}</p>}
   {model&&<>
+   <div className="inf-report-status"><span>{result?.warnings?.length?'Fontes parcialmente disponíveis':'Consulta autenticada concluída'}</span><small>{LEXIS_PERIODS.find(p=>p.id===period)?.label} · {updated?.toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})}</small></div>
+   {mode==='supervision'&&<nav className="inf-super-tabs" aria-label="Painéis da supervisão">{[['overview','Visão geral'],['team','Equipe'],['analysis','Auditoria e análises']].map(([id,label])=><button key={id} type="button" aria-pressed={superView===id} onClick={()=>setSuperView(id)}>{label}</button>)}</nav>}
    {mode==='report'&&<InfinitumExecutiveReport key={period} report={result.report} model={model} sections={sections} periodLabel={LEXIS_PERIODS.find(p=>p.id===period)?.label||period}/>}
-   {mode==='supervision'&&<>
+   {mode==='supervision'&&superView==='overview'&&<>
    <section aria-label="KPIs da carteira e dos atendimentos" className="lxd-stats">
     <Stat icon={BriefcaseBusiness} title="Carteira disponível" value={h.total} description="Processos visíveis conforme permissões" to="/processos"/>
     <Stat icon={Activity} title="Ativos" value={h.ativos} description="Situação atual, não resultado do período" to="/processos"/>
     <Stat icon={CheckCircle2} title="Encerrados" value={h.encerrados} description="Status no CRM, não mérito judicial" to="/encerrados"/>
-    <Stat icon={AlertTriangle} title="Retornos vencidos" value={h.vencidos} description="Somente vencimentos confirmados" to="/vencidos" alert/>
+    <Stat icon={AlertTriangle} title="Retornos vencidos" value={h.vencidos} description="Somente vencimentos confirmados" to="/tarefas?tipo=retorno&escopo=carteira&status=vencido" alert/>
     <Stat icon={Users} title="Atendimentos registrados" value={h.atendimentos} description="Eventos identificados no período selecionado" to="/tarefas"/>
     <Stat icon={CalendarClock} title="Processos atendidos" value={h.processosAtendidos} description="Processos distintos no histórico do período" to="/tarefas"/>
     <Stat icon={FileText} title="Atividades registradas no período" value={h.atividades} description="Trabalho cadastrado no período, separado dos atendimentos" to="/atividades"/>
@@ -136,11 +139,12 @@ export default function LexisIntelligenceWorkspace({db,session,mode='report'}){
      <Ranked title="Tribunais" description="Distribuição conforme tribunal registrado." rows={model.tribunals}/>
     </>}
    </section>
-   <AnalysisPanel analysis={model.analysis}/></>}
-   {result?.report?.equipe?.pessoas&&<section id="equipe" className="lxi-team report-completo-shell" aria-label="Produtividade por colaborador">
+   </>}
+   {mode==='supervision'&&superView==='analysis'&&<AnalysisPanel analysis={model.analysis}/>}
+   {(mode==='report'||superView==='team')&&result?.report?.equipe?.pessoas&&<section id="equipe" className="lxi-team report-completo-shell" aria-label="Produtividade por colaborador">
     <TeamReport data={result.report.equipe} currentUserId={session.user.id}/>
    </section>}
-   {!result?.report?.equipe?.pessoas&&<p className="lxd-message">Detalhamento por colaborador indisponível para esta consulta ou perfil.</p>}
+   {(mode==='report'||superView==='team')&&!result?.report?.equipe?.pessoas&&<p className="lxd-message">Detalhamento por colaborador indisponível para esta consulta ou perfil.</p>}
    <footer className="lxi-footnote"><ShieldCheck size={15}/> Indicadores consultados sob o acesso autenticado da empresa. Sem resultados presumidos. O histórico por período não deve ser confundido com o tamanho atual da carteira. {model.source.consultadoEm&&<span>Consulta: {new Date(model.source.consultadoEm).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})}</span>}</footer>
   </>}
  </main>;
