@@ -1,0 +1,13 @@
+/* Command workspace: shared navigation and responsive interaction. Screen only. */
+@media screen{
+.inf-editorial-shell .inf-workspace-quick{display:flex;gap:6px;align-items:center;overflow-x:auto;scrollbar-width:thin;padding:10px clamp(12px,2.3vw,36px);background:var(--ed-paper);border-bottom:1px solid var(--ed-line);min-height:52px;box-sizing:border-box}
+.inf-editorial-shell .inf-workspace-quick a{display:flex;align-items:center;gap:7px;white-space:nowrap;text-decoration:none;color:var(--ed-muted)!important;font-size:12px;font-weight:600;padding:8px 12px;border:1px solid transparent;border-radius:7px}
+.inf-editorial-shell .inf-workspace-quick a:hover,.inf-editorial-shell .inf-workspace-quick a[aria-current=page]{background:var(--ed-tint)!important;color:var(--ed-brand)!important;border-color:var(--ed-line)}
+.inf-editorial-shell .blackhole-shell-search-results .inf-command-selected{background:var(--ed-tint)!important;color:var(--ed-brand)!important;outline:1px solid var(--ed-line)}
+.inf-editorial-shell .wa-chat-layout{min-width:0;overflow:hidden;border:1px solid var(--ed-line);border-radius:12px;background:var(--ed-paper)}
+.inf-editorial-shell .wa-contact-list,.inf-editorial-shell .wa-message-list{scrollbar-width:thin;overscroll-behavior:contain}
+.inf-editorial-shell .wa-conversation,.inf-editorial-shell .wa-contacts{min-width:0}
+.inf-editorial-shell .wa-conversation-header,.inf-editorial-shell .wa-pane-header{border-bottom:1px solid var(--ed-line)}
+.inf-editorial-shell .wa-contact.selected{box-shadow:inset 3px 0 var(--ed-brand)}
+@media(max-width:880px){.inf-editorial-shell .inf-workspace-quick{padding:6px 10px;min-height:44px}.inf-editorial-shell .inf-workspace-quick a{padding:7px 9px}.inf-editorial-shell .wa-chat-layout{border-radius:0}}
+}

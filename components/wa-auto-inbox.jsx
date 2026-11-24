@@ -12,6 +12,8 @@ const clock=value=>value?stamp(value).split(' ').pop():'';
 export default function WaAutoInbox({db,userId}){
  const [status,setStatus]=useState(null),[chats,setChats]=useState([]),[messages,setMessages]=useState([]);
  const [selected,setSelected]=useState(null),[query,setQuery]=useState(''),[groups,setGroups]=useState(false);
+ const activeJid=useRef(null);
+ activeJid.current=selected?.jid||null;
  const [busy,setBusy]=useState(''),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const [draft,setDraft]=useState(''),[pairPhone,setPairPhone]=useState(''),[newPhone,setNewPhone]=useState('');
  const [showConnect,setShowConnect]=useState(false),[showNew,setShowNew]=useState(false),[qrImage,setQrImage]=useState('');
@@ -62,7 +64,7 @@ export default function WaAutoInbox({db,userId}){
    .eq('owner_id',userId).eq('jid',jid).order('timestamp',{ascending:false}).limit(150);
   if(err){setArchiveWarning('Não foi possível ler as mensagens salvas: '+err.message);return []}
   const rows=(data||[]).map(item=>({...item,id:item.provider_message_id}));
-  setMessages(old=>mergeMessages(old,rows));return rows;
+  if(activeJid.current===jid)setMessages(old=>mergeMessages(old,rows));return rows;
  },[db,userId]);
  const persistArchive=useCallback(async(rawChats=[],rawMessages=[])=>{
   if(!userId)return;
@@ -94,7 +96,7 @@ export default function WaAutoInbox({db,userId}){
   if(!jid)return;
   const p=await api('messages',{jid,limit:100});
   const rows=Array.isArray(p.messages)?p.messages:[];
-  setMessages(old=>mergeMessages(old,[...rows].reverse()));
+  if(activeJid.current===jid)setMessages(old=>mergeMessages(old,rows.map(x=>({...x,chat_jid:x.chat_jid||jid})).reverse()));
   await persistArchive([],rows.map(x=>({...x,chat_jid:x.chat_jid||jid}))).catch(e=>setArchiveWarning(e.message));
  },[api,persistArchive]);
  const syncRecent=useCallback(async()=>{
@@ -105,7 +107,7 @@ export default function WaAutoInbox({db,userId}){
    const recentMessages=Array.isArray(p.messages)?p.messages:[];
    await persistArchive(currentChats,recentMessages);
    setChats(old=>mergeChats(old,currentChats));
-   setMessages(old=>mergeMessages(old,recentMessages.filter(x=>x.chat_jid===selected?.jid)));
+   if(activeJid.current===selected?.jid)setMessages(old=>mergeMessages(old,recentMessages.filter(x=>x.chat_jid===selected?.jid)));
   }catch(e){if(/404|não permitida|not found|Operação não encontrada/i.test(e.message))setSyncUnsupported(true);else setArchiveWarning('Atualização recente indisponível: '+e.message)}
  },[api,persistArchive,selected?.jid,syncUnsupported]);
  useEffect(()=>{
@@ -116,7 +118,7 @@ export default function WaAutoInbox({db,userId}){
   const id=window.setInterval(()=>{
    if(document.visibilityState==='visible'&&statusPollingEnabled.current)
     reloadStatus().catch(e=>{if(alive){setStatus(old=>old?{...old,connected:false}:old);setError(e.message)}});
-  },4000);
+  },15000);
   return()=>{alive=false;window.clearInterval(id)};
  },[reloadStatus,reloadChats,loadArchiveChats]);
  useEffect(()=>{
@@ -181,7 +183,7 @@ export default function WaAutoInbox({db,userId}){
     if(jid&&r.messageId){
      const echo={id:String(r.messageId),chat_jid:jid,content:String(payload.message||''),is_from_me:true,
        media_type:null,timestamp:new Date().toISOString(),ack:0};
-     setMessages(old=>mergeMessages(old,[echo]));
+     if(activeJid.current===jid)setMessages(old=>mergeMessages(old,[echo]));
      await persistArchive([current||{jid,name:jid.split('@')[0]}],[echo]).catch(e=>setArchiveWarning(e.message));
     }
     if(jid)await reloadMessages(jid).catch(e=>setArchiveWarning('Envio aceito; atualização de histórico indisponível: '+e.message));
@@ -205,6 +207,7 @@ export default function WaAutoInbox({db,userId}){
   catch(e){setError(e.message)}finally{setBusy('')}
  }
  const current=useMemo(()=>chats.find(c=>c.jid===selected?.jid)||selected,[chats,selected]);
+ const currentMessages=useMemo(()=>messages.filter(m=>(m.chat_jid||m.jid)===current?.jid),[messages,current?.jid]);
  const visibleChats=useMemo(()=>chats.filter(c=>(!groups||c.is_group)&&
   [c.name,c.phone,c.jid].some(x=>String(x||'').toLocaleLowerCase('pt-BR').includes(query.toLocaleLowerCase('pt-BR')))),[chats,groups,query]);
  return <main className="wa-workspace">
@@ -247,8 +250,8 @@ export default function WaAutoInbox({db,userId}){
    </aside>
    <section className={'wa-conversation '+(!current?'wa-mobile-hidden':'')}>
     {current?<><div className="wa-conversation-header"><button type="button" className="wa-icon-btn wa-back" onClick={()=>setSelected(null)} aria-label="Voltar à lista"><ArrowLeft size={20}/></button><span className="wa-avatar">{userName(current).charAt(0).toUpperCase()}</span><div className="wa-conversation-heading"><strong>{userName(current)}</strong><small>{current.phone||current.jid} · {connected?'Conectado':'Histórico salvo · serviço offline'}</small></div><button type="button" className="wa-icon-btn" aria-label="Atualizar mensagens" onClick={()=>reloadMessages(current.jid).catch(e=>setError(e.message))}><RefreshCw size={16}/></button></div>
-      <div className="wa-message-list" aria-live="polite">{messages.length?messages.map((m,i)=><div className={'wa-message '+(m.is_from_me?'outgoing':'incoming')} key={m.id||i}><div>{String(m.content||'').slice(0,4000)|| (m.media_type?'[Mídia: '+m.media_type+']':'[Mensagem sem texto]')}</div><small>{stamp(m.timestamp)}{m.is_from_me?' · '+messageState(m):''}</small></div>):<div className="wa-empty"><MessageCircle size={28}/><strong>Nenhuma mensagem nesta conversa</strong><p>Não há mensagens arquivadas para esta conversa. O histórico recebido por outros aparelhos depende do sincronismo do WhatsApp.</p></div>}</div>
-      <OfficeLegalAgentPanel db={db} selected={current} connected={connected} messages={messages}
+      <div className="wa-message-list" aria-live="polite">{currentMessages.length?currentMessages.map((m,i)=><div className={'wa-message '+(m.is_from_me?'outgoing':'incoming')} key={m.id||i}><div>{String(m.content||'').slice(0,4000)|| (m.media_type?'[Mídia: '+m.media_type+']':'[Mensagem sem texto]')}</div><small>{stamp(m.timestamp)}{m.is_from_me?' · '+messageState(m):''}</small></div>):<div className="wa-empty"><MessageCircle size={28}/><strong>Nenhuma mensagem nesta conversa</strong><p>Não há mensagens arquivadas para esta conversa. O histórico recebido por outros aparelhos depende do sincronismo do WhatsApp.</p></div>}</div>
+      <OfficeLegalAgentPanel db={db} selected={current} connected={connected} messages={currentMessages}
         onSent={()=>{reloadMessages(current.jid).catch(()=>{});reloadChats(query,groups).catch(()=>{});}}/>
       <form className="wa-composer" onSubmit={e=>{e.preventDefault();if(!draft.trim()||!connected)return;action('send',{to:current.is_group?current.jid:(current.phone||current.jid.split('@')[0]),message:draft.trim(),approved:true})}}><textarea aria-label="Mensagem WhatsApp" value={draft} maxLength={3000} rows={2} placeholder={connected?'Escreva sua mensagem...':'Histórico em leitura; conecte para enviar'} disabled={!connected||!!busy} onChange={e=>setDraft(e.target.value)}/><div className="wa-compose-footer"><small>Envio somente por clique. As mensagens salvas continuam legíveis no celular e PC através do CRM.</small><button className="wa-button" type="submit" disabled={!connected||!draft.trim()||!!busy}><Send size={16}/> {busy==='send'?'Enviando...':'Enviar'}</button></div></form>
      </>:<div className="wa-no-chat"><div className="wa-no-chat-art"><MessageSquare size={52}/></div><h2>Um espaço para cada conversa</h2><p>Escolha um contato ao lado, consulte o histórico e responda sem sair do CRM.</p><div><ShieldCheck size={16}/> Conversas do WA.Auto, sem integração oficial da Meta</div></div>}

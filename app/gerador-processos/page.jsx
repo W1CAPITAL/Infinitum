@@ -5,8 +5,9 @@ import {normalizeOfficeCNJ} from '../../lib/office-core.mjs';
 import {browseOfficialDjenSearch} from '../../lib/blackhole-public-djen-browser.mjs';
 import {splitDjenCalendarMonths} from '../../lib/judicial-history-client.mjs';
 import {PUBLIC_DATAJUD_COURTS} from '../../lib/blackhole-datajud-discovery.mjs';
-import {saveNamedCandidate} from '../../lib/office-candidate-save.mjs';
+import {candidatePerson,saveNamedCandidate} from '../../lib/office-candidate-save.mjs';
 import {officialAccessHelp} from '../../lib/official-access-guidance.mjs';
+import {createPortfolioProcess,resolveCompanyAccess} from '../../lib/lexis-shared-portfolio.mjs';
 import SecuredWorkspace from '../../components/secured-workspace';
 const now=()=>new Date().toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'});
 const initialStart=()=>{const d=new Date();d.setDate(d.getDate()-14);return d.toLocaleDateString('sv-SE',{timeZone:'America/Sao_Paulo'})};
@@ -91,6 +92,19 @@ function Generator({db,session}){
   catch(err){setStatus('error');setNotice('DJEN via navegador não confirmado: '+String(err.message||err));setAccessHelp(officialAccessHelp(err,'djen'))}
   finally{setBusy(false)}
  }
+ async function saveToCompany(number,name,tribunal,notes){
+  const {data,error}=await db.from('usuarios').select('id,auth_user_id,empresa_id,nome').eq('auth_user_id',session.user.id).limit(2);
+  if(error)throw Error('Não foi possível verificar a organização: '+error.message);
+  const profile=resolveCompanyAccess(data,session.user.id);
+  if(!profile)throw Error('Organização não identificada.');
+  return createPortfolioProcess(db,{profile,userId:session.user.id,values:{protocolo_ref:number,cliente:name,tribunal,observacoes:notes}});
+ }
+ async function saveCandidate(row,enteredName){
+  if(process.env.NEXT_PUBLIC_LEXIS_SHARED_DB!=='1')return saveNamedCandidate(db,{row,ownerId:session.user.id,enteredName});
+  const {name,source}=candidatePerson(row,enteredName);
+  const result=await saveToCompany(row.process_number,name,row.tribunal||'','Candidato registrado pelo gerador. Nome informado por '+source+'. Verificar identidade e autos antes de qualquer contato.');
+  return {name,existing:false,caseId:result.id};
+ }
  async function addManual(e){
   e.preventDefault();if(busy)return;setBusy(true);setNotice('');
   try{
@@ -100,9 +114,14 @@ function Generator({db,session}){
    const row={owner_id:session.user.id,process_number:number,title:manual.title.trim().slice(0,180),
     tribunal:manual.tribunal.trim().toUpperCase().slice(0,40)||null,status:'ativo',
     notes:'Cadastro manual; ainda não constitui confirmação de tramitação no tribunal.'};
-   const {data,error}=await db.from('office_cases').insert(row).select('id').single();
-   if(error)throw Error(error.message);
-   if(!data?.id)throw Error('Cadastro não confirmou o salvamento.');
+   if(process.env.NEXT_PUBLIC_LEXIS_SHARED_DB==='1'){
+    const {name}=candidatePerson({},manual.title);
+    await saveToCompany(number,name,row.tribunal,row.notes);
+   }else{
+    const {data,error}=await db.from('office_cases').insert(row).select('id').single();
+    if(error)throw Error(error.message);
+    if(!data?.id)throw Error('Cadastro não confirmou o salvamento.');
+   }
    setManual({cnj:'',title:'',tribunal:''});setStatus('ok');
    setNotice('Processo cadastrado no escritório com sucesso. Consulte DataJud e DJEN em Processos para verificar o CNJ.');
   }catch(e){setStatus('error');setNotice('Cadastro não concluído: '+e.message)}
@@ -111,8 +130,7 @@ function Generator({db,session}){
  async function add(row){
   if(busy)return;setBusy(true);setStatus('running');setNotice('Salvando contato e processo com nome identificado...');
   try{
-   const saved=await saveNamedCandidate(db,{row,ownerId:session.user.id,
-    enteredName:personNames[row.id]??''});
+   const saved=await saveCandidate(row,personNames[row.id]??'');
    setStatus('ok');setNotice('Contato '+saved.name+' '+(saved.existing?'vinculado ao processo existente.':'e ficha processual criados.')+' Confira a identidade antes de qualquer comunicação.');
   }catch(e){setStatus('error');setNotice('Cadastro não concluído: '+e.message)}
   finally{setBusy(false)}
@@ -121,7 +139,7 @@ function Generator({db,session}){
   if(busy)return;setBusy(true);setStatus('running');let saved=0,errors=[];
   const candidates=rows.filter(r=>r.person_name&&r.person_name_source==='DJEN_parte').slice(0,30);
   for(const row of candidates){
-   try{await saveNamedCandidate(db,{row,ownerId:session.user.id,enteredName:personNames[row.id]||''});saved++}
+   try{await saveCandidate(row,personNames[row.id]||'');saved++}
    catch(e){errors.push(row.process_number+': '+String(e.message||e).slice(0,110))}
   }
   setBusy(false);setStatus(errors.length?'error':'ok');
@@ -152,7 +170,7 @@ function Generator({db,session}){
    <p>Alternativa gratuita que funciona mesmo quando o DJEN bloqueia pesquisas por palavras. Cadastro não implica confirmação de tramitação.</p>
    <form onSubmit={addManual}><div className="inf-fields">
     <label>Número CNJ<input required value={manual.cnj} onChange={e=>setManual({...manual,cnj:e.target.value})} placeholder="0000000-00.0000.0.00.0000" maxLength={32}/></label>
-    <label>Nome do caso<input required minLength={3} maxLength={180} value={manual.title} onChange={e=>setManual({...manual,title:e.target.value})} placeholder="Descrição do processo"/></label>
+    <label>{process.env.NEXT_PUBLIC_LEXIS_SHARED_DB==='1'?'Nome verdadeiro do cliente':'Nome do caso'}<input required minLength={3} maxLength={180} value={manual.title} onChange={e=>setManual({...manual,title:e.target.value})} placeholder={process.env.NEXT_PUBLIC_LEXIS_SHARED_DB==='1'?'Nome completo do cliente':'Descrição do processo'}/></label>
     <label>Tribunal (opcional)<input maxLength={40} value={manual.tribunal} onChange={e=>setManual({...manual,tribunal:e.target.value})} placeholder="TJSP, TRT2, TRF3..."/></label>
    </div>
    <div className="inf-row-end"><button className="inf-btn primary" disabled={busy} type="submit"><Plus size={14}/> Cadastrar CNJ manualmente</button></div></form>
