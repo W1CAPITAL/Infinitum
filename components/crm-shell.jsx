@@ -3,7 +3,7 @@ import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
 import {ClipboardList,LayoutDashboard,Users,CheckCircle2,Landmark,LogOut,KeyRound,NotebookPen,Bell,Mail,BarChart3,PanelLeftOpen,PanelLeftClose,Settings2,Gavel,CalendarDays,Scale,Target,Bot,Radar,FileText,MessageSquare,Clock3,BriefcaseBusiness,BookOpen,UserRoundCheck,Workflow,PlugZap,ScanSearch,Search,Command,Menu,X,ShieldCheck,FileSearch,PauseCircle,ChevronDown,ArrowUpRight,Plus} from 'lucide-react';
-import {CRM_AREAS,CRM_NAV_GROUPS,searchCrmAreas,isNavGroupOpen} from '../lib/crm-navigation.mjs';
+import {CRM_AREAS,CRM_NAV_GROUPS,searchCrmAreas,isNavGroupOpen,resolveWorkspaceGroup} from '../lib/crm-navigation.mjs';
 import {CRM_THEMES,resolveTheme} from '../lib/crm-themes.mjs';
 import {getClient} from '../lib/supabase-client';
 import {DEMO_GUEST_EMAIL} from '../lib/demo-tenant.mjs';
@@ -36,6 +36,10 @@ export default function CrmShell({active='Painel jurídico',email='',onNavigate,
  const currentArea=CRM_NAV_GROUPS.flatMap(group=>group.items).find(item=>item.path===pathname)||CRM_NAV_GROUPS.flatMap(group=>group.items).find(item=>item.label===active);
  const CurrentIcon=icons[currentArea?.label]||LayoutDashboard;
  const currentGroup=CRM_NAV_GROUPS.find(g=>g.items.some(item=>item.key===currentArea?.key));
+ const [workspaceSelection,setWorkspaceSelection]=useState(null);
+ const selectedGroup=resolveWorkspaceGroup(pathname,currentArea?.key,workspaceSelection);
+ const groupIcons=[LayoutDashboard,BriefcaseBusiness,Scale,MessageSquare,Settings2];
+ const groupNames=['Gestão','Operação','Jurídico','Conexões','Admin'];
  const [navSearch,setNavSearch]=useState('');
  const navSearchRef=useRef(null);
  const matches=searchCrmAreas(navSearch);
@@ -111,7 +115,7 @@ export default function CrmShell({active='Painel jurídico',email='',onNavigate,
   };
  },[sidebarPinned]);
 
- return <div className={'app-shell blackhole-studio-shell inf-workspace-v2 inf-signature-shell '+(menuExpanded?'sidebar-expanded':'sidebar-collapsed')+(sidebarPinned?' sidebar-pinned':'')}>
+ return <div className={'app-shell blackhole-studio-shell inf-workspace-v2 inf-signature-shell inf-studio-chrome '+(menuExpanded?'sidebar-expanded':'sidebar-collapsed')+(sidebarPinned?' sidebar-pinned':'')}>
   <aside ref={sidebarRef} className="app-sidebar"
     onPointerEnter={()=>setSidebarExpanded(true)}
     onPointerLeave={()=>{if(!sidebarPinned)setSidebarExpanded(false)}}
@@ -129,9 +133,10 @@ export default function CrmShell({active='Painel jurídico',email='',onNavigate,
     <button type="button" onClick={onSignOut} aria-label="Sair da conta"><LogOut size={16}/></button>
    </div>
    <div className="inf-sidebar-context"><span className="inf-sidebar-context-icon"><ShieldCheck size={19}/></span><div><strong>Escritório digital</strong><small>Ambiente privado de trabalho</small></div></div>
+   <div className="inf-category-rail" role="group" aria-label="Espaços de trabalho">{CRM_NAV_GROUPS.map((group,i)=>{const Icon=groupIcons[i];return <button type="button" key={group.label} title={group.label} aria-label={group.label} aria-pressed={selectedGroup===group.label} onClick={()=>{setWorkspaceSelection({path:pathname,label:group.label});setSidebarExpanded(true);setCollapsedGroups(prev=>prev.filter(x=>x!==group.label))}}><Icon size={20}/><span>{groupNames[i]}</span></button>})}</div>
    <div className="app-section-name">ESPAÇO DE TRABALHO</div>
    <nav aria-label="Navegação principal" className="app-nav">
-    {CRM_NAV_GROUPS.map(group=>{const groupOpen=!menuExpanded||isNavGroupOpen(group.label,currentArea?.key,collapsedGroups);return <section key={group.label} className="inf-nav-group" aria-label={group.label}><h2><button className="inf-nav-group-toggle" type="button" aria-expanded={groupOpen} onClick={()=>toggleGroup(group.label)}><span>{group.label}</span><ChevronDown size={13}/></button></h2>{groupOpen&&group.items.map(item=>{
+    {CRM_NAV_GROUPS.map(group=>{const groupOpen=!menuExpanded||isNavGroupOpen(group.label,currentArea?.key,collapsedGroups);return <section hidden={menuExpanded&&group.label!==selectedGroup} key={group.label} className="inf-nav-group" aria-label={group.label}><h2><button className="inf-nav-group-toggle" type="button" aria-expanded={groupOpen} onClick={()=>toggleGroup(group.label)}><span>{group.label}</span><ChevronDown size={13}/></button></h2>{groupOpen&&group.items.map(item=>{
      const Icon=icons[item.label];
      return <Link key={item.key} href={item.path} prefetch={false} aria-current={(pathname===item.path||currentArea?.key===item.key)?'page':undefined} className={'app-nav-link '+((pathname===item.path||currentArea?.key===item.key)?'active':'')} title={item.name+' — '+item.description} aria-label={item.name} onClick={e=>{
        if(onNavigate&&!['Clientes','Processos','Encerrados','Atividades','Análises internas','Scanner judicial','Prazos','Tarefas','Vencidos','Fases e provas','Processos parados','Fluxos (POP)','Audiências','Agenda','Peças e petições','WhatsApp','Leads','Superagente','Mini Agentes','Gerador de processos','Relatórios','Integrações','Configurações'].includes(item.label)&&!e.metaKey&&!e.ctrlKey&&!e.shiftKey&&!e.altKey){
@@ -140,6 +145,7 @@ export default function CrmShell({active='Painel jurídico',email='',onNavigate,
       }} ><span className="inf-nav-icon"><Icon size={19} aria-hidden="true"/></span><span className="inf-nav-text"><strong>{item.name}</strong>{(pathname===item.path||currentArea?.key===item.key)&&<small className="inf-nav-description">{item.description}</small>}</span>{item.key==='vencidos'&&overdueCount>0&&<b className="inf-nav-count">{overdueCount}</b>}</Link>;
     })}</section>})}
    </nav>
+   <div className="inf-sidebar-shortcuts"><span>ACESSO RÁPIDO</span><Link href="/processos"><BriefcaseBusiness size={16}/> Carteira</Link><Link href="/tarefas?status=hoje"><ClipboardList size={16}/> Minha rotina</Link><Link href="/report"><BarChart3 size={16}/> Relatórios</Link></div>
    <footer className="app-nav-footer">
     <div className="app-private"><span>Operação privada com trilha de auditoria.</span></div>
     <Link href="/configuracoes" className="inf-signature-profile" title="Configurações do perfil"><span className="inf-profile-avatar">{avatarUrl?<img src={avatarUrl} alt=""/>:(profile.display_name||email||'W').charAt(0).toUpperCase()}</span><span><strong>{profile.display_name||'Meu perfil'}</strong><small>{email}</small></span><ArrowUpRight size={14}/></Link>
@@ -158,7 +164,7 @@ export default function CrmShell({active='Painel jurídico',email='',onNavigate,
     </div>
 
    <span className="bh-theme-identity" title="BLACKHOLE · horizonte de eventos"><img src="/branding/blackhole-symbol.svg" alt="" width="29" height="19"/> INFINITUM</span>
-   <button type="button" className="crm-visible-signout" onClick={onSignOut} title="Sair da conta" aria-label="Sair da conta"><LogOut size={18}/><span>Sair</span></button><Link href="/vencidos" prefetch={false} aria-label="Ver itens vencidos" title="Ver itens vencidos" className="reference-top-alert"><Bell size={20}/>{overdueCount>0&&<span className="reference-notification-dot"/>}</Link><span className="reference-top-divider"/><Link className="reference-top-avatar" href="/configuracoes" prefetch={false} title={profile.display_name||'Configurações do perfil'} aria-label="Abrir configurações do perfil">{avatarUrl?<img src={avatarUrl} alt="Foto do perfil"/>:(profile.display_name||email||'W').charAt(0).toLocaleUpperCase('pt-BR')}</Link></div></div>{children}{mobileMenuOpen&&<div className="crm-mobile-more" role="dialog" aria-label="Todas as áreas do CRM"><header><strong>Todas as áreas</strong><button type="button" onClick={()=>setMobileMenuOpen(false)} aria-label="Fechar menu"><X size={19}/></button></header><div className="crm-mobile-more-links">{CRM_NAV_GROUPS.map(group=><section className="inf-mobile-group" key={group.label}><h2>{group.label}</h2>{group.items.map(item=>{const Icon=icons[item.label];return <Link href={item.path} key={item.key} prefetch={false} aria-current={pathname===item.path?'page':undefined} onClick={()=>setMobileMenuOpen(false)}><Icon size={19}/><span><strong>{item.name}</strong><small>{item.description}</small></span></Link>})}</section>)}</div><button type="button" className="crm-more-signout" onClick={onSignOut}><LogOut size={16}/> Sair da conta</button></div>}
+   <button type="button" className="crm-visible-signout" onClick={onSignOut} title="Sair da conta" aria-label="Sair da conta"><LogOut size={18}/><span>Sair</span></button><Link href="/vencidos" prefetch={false} aria-label="Ver itens vencidos" title="Ver itens vencidos" className="reference-top-alert"><Bell size={20}/>{overdueCount>0&&<span className="reference-notification-dot"/>}</Link><span className="reference-top-divider"/><Link className="reference-top-avatar" href="/configuracoes" prefetch={false} title={profile.display_name||'Configurações do perfil'} aria-label="Abrir configurações do perfil">{avatarUrl?<img src={avatarUrl} alt="Foto do perfil"/>:(profile.display_name||email||'W').charAt(0).toLocaleUpperCase('pt-BR')}</Link></div></div><div className="inf-studio-frame">{children}</div>{mobileMenuOpen&&<div className="crm-mobile-more" role="dialog" aria-label="Todas as áreas do CRM"><header><strong>Todas as áreas</strong><button type="button" onClick={()=>setMobileMenuOpen(false)} aria-label="Fechar menu"><X size={19}/></button></header><div className="crm-mobile-more-links">{CRM_NAV_GROUPS.map(group=><section className="inf-mobile-group" key={group.label}><h2>{group.label}</h2>{group.items.map(item=>{const Icon=icons[item.label];return <Link href={item.path} key={item.key} prefetch={false} aria-current={pathname===item.path?'page':undefined} onClick={()=>setMobileMenuOpen(false)}><Icon size={19}/><span><strong>{item.name}</strong><small>{item.description}</small></span></Link>})}</section>)}</div><button type="button" className="crm-more-signout" onClick={onSignOut}><LogOut size={16}/> Sair da conta</button></div>}
    <nav className="crm-mobile-dock" aria-label="Navegação móvel">{[{href:'/',Icon:LayoutDashboard,name:'Início'},{href:'/tarefas',Icon:ClipboardList,name:'Tarefas'},{href:'/processos',Icon:Scale,name:'Processos'},{href:'/agenda',Icon:CalendarDays,name:'Agenda'},{href:'/whatsapp',Icon:MessageSquare,name:'Mensagens'}].map(({href,Icon,name})=><Link key={href} href={href} prefetch={false} title={name} aria-label={name}><Icon size={18}/><span>{name}</span></Link>)}<button type="button" aria-label="Todas as áreas" aria-expanded={mobileMenuOpen} onClick={()=>setMobileMenuOpen(x=>!x)}>{mobileMenuOpen?<X size={18}/>:<Menu size={18}/>}<span>Mais</span></button></nav></div>
  </div>;
 }
