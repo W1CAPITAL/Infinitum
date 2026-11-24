@@ -46,6 +46,7 @@ import './infinitum-signature.css';
 import './infinitum-studio-chrome.css';
 import './infinitum-interiors.css';
 import './infinitum-workbench.css';
+import './infinitum-editorial.css';
 import {WorkspaceSessionProvider} from '../components/workspace-session-provider';
 import QwenPreinstallBootstrap from '../components/qwen-preinstall-bootstrap';
 export const metadata={title:'INFINITUM • CRM Jurídico W1',description:'Gestão operacional de processos, agenda, clientes e atendimentos',icons:{icon:'/branding/projectw1sc-symbol.svg'}};

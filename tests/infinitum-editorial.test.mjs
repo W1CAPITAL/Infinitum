@@ -1,0 +1,4 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{readFileSync}from'node:fs';
+const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
+test('Editorial keeps all navigation groups accessible without category switching',()=>{const s=read('components/crm-shell.jsx');assert.doesNotMatch(s,/hidden=\{menuExpanded&&group.label!==selectedGroup\}/);assert.match(s,/scrollIntoView\(\{block:'nearest'/);assert.match(s,/inf-editorial-shell/);});
+test('Editorial is the final shared style layer, restricted to screen and both themes',()=>{const l=read('app/layout.jsx');const c=read('app/infinitum-editorial.css');assert.ok(l.indexOf('infinitum-editorial.css')>l.indexOf('infinitum-workbench.css'));assert.match(c,/@media screen/);assert.match(c,/data-crm-mode="dark"/);assert.match(c,/@media\(max-width:880px\)/);assert.match(c,/prefers-reduced-motion/);});
