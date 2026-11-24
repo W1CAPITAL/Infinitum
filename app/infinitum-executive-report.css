@@ -86,3 +86,12 @@ html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .ixr-panel h2{
 /* Restore character in shared page headings without repainting the approved solid backgrounds. */
 html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .app-content :is(.inf-heading,.reference-header,.lxd-top) h1{position:relative;padding-left:15px!important}
 html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .app-content :is(.inf-heading,.reference-header,.lxd-top) h1::before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:4px;border-radius:4px;background:var(--ui-accent)}
+
+/* Acentos funcionais no painel e nas superfícies principais; preserve fundo plano. */
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .inf-quick-grid a{position:relative;overflow:hidden;padding:16px 14px!important;min-height:78px;border-radius:12px;transition:border-color .15s,background-color .15s}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .inf-quick-grid a:before{content:"";position:absolute;left:0;top:12px;bottom:12px;width:3px;border-radius:2px;background:var(--ui-accent)}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .inf-quick-grid a:nth-child(2):before{background:#168d82}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .inf-quick-grid a:nth-child(3):before{background:#5278ad}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .inf-quick-grid a:nth-child(4):before{background:#8271b2}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .inf-quick-grid a>svg:first-child{padding:8px;width:20px;height:20px;box-sizing:content-box;background:var(--ui-neutral-bg);border-radius:9px}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .inf-priority-board{border-left:4px solid var(--ui-accent)}
