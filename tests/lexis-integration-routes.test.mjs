@@ -31,7 +31,8 @@ test('agenda suporta retornos, prazos e audiências no tema Infinitum',()=>{
 });
 test('/report mantém PDF original, mas lê processos Lexis em páginas',()=>{
  const report=src('app/report/page.jsx');
- assert.match(report,/from\('processos'\)/);
+ assert.match(report,/fetchCompanyRows\(db,'processos',col,empresaId\)/);
+ assert.match(src('lib/lexis-company-data.mjs'),/\.range\(from,from\+pageSize-1\)/);
  assert.match(report,/adaptLexisToExecutiveReport/);
  assert.match(report,/<ReportPrintDocument/);
  assert.match(report,/return <LegacyReportPage\/>/);
