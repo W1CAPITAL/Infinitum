@@ -1,0 +1,97 @@
+/* Studio chrome: architectural layout, scoped to screen and authenticated workspace.
+   The outer shell, navigation and working surface have deliberately different roles. */
+@media screen {
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.inf-studio-chrome {
+ --studio-edge:#271824;--studio-rail:#251521;--studio-sidebar:#321c2c;--studio-nav-text:#f9f3f6;--studio-nav-muted:#c5b2c0;
+ --studio-frame:#f1f4f9;--studio-surface:#ffffff;--studio-border:#dfe5ee;--studio-ink:#202a3c;--studio-accent:#72273f;
+ --studio-backdrop:linear-gradient(135deg,#f7f9fc 0%,#edf1f7 100%);
+ --studio-side-bg:radial-gradient(ellipse at 12% 0%,#63334c 0%,transparent 44%),linear-gradient(160deg,#392235 0%,#241722 66%,#211621 100%);
+ --v2-sidebar:300px;--v2-rail:78px;--signature-panel:var(--studio-surface);--signature-border:var(--studio-border);--signature-ink:var(--studio-ink);--signature-accent:var(--studio-accent);
+}
+html[data-crm-theme="infinitum"][data-crm-mode="dark"] .app-shell.inf-studio-chrome {
+ --studio-edge:#0f1118;--studio-rail:#211825;--studio-sidebar:#251c2a;--studio-nav-text:#f4edf5;--studio-nav-muted:#bfb0c4;
+ --studio-frame:#171e2c;--studio-surface:#202a39;--studio-border:#354256;--studio-ink:#edf2f9;--studio-accent:#e3adcc;
+ --studio-backdrop:radial-gradient(ellipse at 94% 0%,#2a3349 0%,transparent 55%),linear-gradient(125deg,#1c2331,#141b28);
+ --studio-side-bg:radial-gradient(ellipse at 8% 0%,#493045 0%,transparent 44%),linear-gradient(160deg,#2b2232,#1c1927 75%);
+}
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome,
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-content[data-route]{
+ background:var(--studio-edge)!important;background-image:none!important;color:var(--studio-ink)!important
+}
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-sidebar{
+ background:var(--studio-side-bg)!important;background-image:var(--studio-side-bg)!important;
+ border:1px solid #ffffff15!important;box-shadow:none!important;gap:0!important;
+ padding:18px 13px 12px!important;color:var(--studio-nav-text)!important;
+}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .app-sidebar .app-identity{min-height:72px!important;padding:2px 4px 16px!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .app-sidebar .pr-brand{grid-template-columns:44px minmax(0,1fr)!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .app-sidebar .pr-brand-symbol{background:#ffffff12;border-radius:11px;padding:9px!important;width:44px!important;height:44px!important;box-sizing:border-box}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .app-sidebar .pr-brand-name{font-size:16px!important;letter-spacing:.085em!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-sidebar-context{display:none!important}
+.inf-studio-chrome .inf-category-rail{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px;padding:7px 5px;margin:0 0 24px;background:#140c1745;border:1px solid #ffffff12;border-radius:12px;flex:none}
+.inf-studio-chrome .inf-category-rail button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;min-width:0;min-height:56px;padding:8px 1px;border:1px solid transparent;border-radius:9px;background:transparent;color:var(--studio-nav-muted);font:600 9px/1.2 Inter,system-ui,sans-serif;cursor:pointer}
+.inf-studio-chrome .inf-category-rail button:hover{background:#ffffff12;color:#fff}
+.inf-studio-chrome .inf-category-rail button[aria-pressed="true"]{background:#f9edf4;color:#4b2035;border-color:#fff9;box-shadow:0 3px 8px #13091244}
+.inf-studio-chrome .inf-category-rail button:focus-visible{outline:2px solid #f5c5dd;outline-offset:2px}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-nav-group[hidden]{display:none!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .app-sidebar .app-nav{padding:0 0 8px!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-nav-group{border:0!important;margin:0!important;padding:0!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-nav-group-toggle{color:var(--studio-nav-muted)!important;font-size:11px!important;letter-spacing:.07em!important;padding:5px 9px 12px!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-sidebar .app-nav-link{
+ min-height:48px!important;padding:9px 10px!important;gap:12px!important;border-radius:10px!important;box-shadow:none!important;margin:4px 0!important;color:var(--studio-nav-text)!important;
+}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .app-sidebar .app-nav-link svg{color:#cfb9c9!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .app-sidebar .inf-nav-icon{background:#ffffff08;border-radius:8px;width:33px;height:33px}
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-sidebar .app-nav-link.active{
+ background:#fff5fa!important;background-image:none!important;color:#4b2035!important;border:1px solid #fff8!important;box-shadow:0 4px 15px #140b1840!important
+}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .app-sidebar .app-nav-link.active:before{display:none!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .app-sidebar .app-nav-link.active :is(strong,svg){color:#4b2035!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .app-sidebar .app-nav-link.active .inf-nav-icon{background:#ead9e5!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .app-sidebar .app-nav-link.active .inf-nav-description{color:#75586a!important}
+.inf-studio-chrome .inf-sidebar-shortcuts{display:grid;gap:3px;padding:13px 5px 10px;border-top:1px solid #ffffff1a;flex:none}
+.inf-studio-chrome .inf-sidebar-shortcuts>span{color:var(--studio-nav-muted);font-size:9px;font-weight:700;letter-spacing:.12em;padding:4px 7px}
+.inf-studio-chrome .inf-sidebar-shortcuts>a{display:flex;gap:9px;align-items:center;text-decoration:none;padding:8px 7px;border-radius:8px;color:var(--studio-nav-text)!important;font-size:12px;font-weight:500}
+.inf-studio-chrome .inf-sidebar-shortcuts>a:hover{background:#ffffff13}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .app-nav-footer{border-top-color:#ffffff15!important}
+.inf-studio-chrome .inf-signature-profile{background:#ffffff0c;border-color:#ffffff1c}
+.inf-studio-chrome .inf-profile-avatar{background:#865171}
+.inf-studio-chrome .inf-studio-frame{background:var(--studio-backdrop);min-width:0;min-height:calc(100dvh - 104px);border:1px solid var(--studio-border);border-top:0;border-radius:0 0 19px 19px;position:relative;color:var(--studio-ink)}
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .reference-top-tools{
+ background:var(--studio-surface)!important;border:1px solid var(--studio-border)!important;border-bottom:1px solid var(--studio-border)!important;border-radius:19px 19px 0 0!important;min-height:80px!important;
+}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-context-icon{background:var(--studio-edge)!important;color:#f8dfed!important;border:0!important;width:46px;height:46px;border-radius:12px;box-shadow:0 4px 12px #27182420}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-current-area strong{color:var(--studio-ink)!important;font-size:18px!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .blackhole-shell-search{background:var(--studio-frame)!important;border-color:var(--studio-border)!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-content .inf-studio-frame :is(.inf-studio,.reference-dashboard,.task-shell,.task-main,.report-dashboard,.settings-dashboard,.lxd-shell,.lxi-shell,.lx-workspace,.lx-shared,.report-completo-shell,.lexis-report-root,.office-workflow-screen){background:transparent!important;background-image:none!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-content .inf-studio-frame :is(.reference-header,.inf-heading,.lxd-top,.task-header){
+ background:transparent!important;border:0!important;border-bottom:1px solid var(--studio-border)!important;border-radius:0!important;box-shadow:none!important;padding:6px 0 21px!important;margin-bottom:22px!important
+}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-studio-frame :is(.reference-header,.inf-heading,.lxd-top,.task-header)::after{display:none!important;content:none!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-studio-frame :is(.reference-header,.inf-heading,.lxd-top,.task-header) h1{padding-left:0!important;font-weight:730!important;font-size:clamp(30px,3.1vw,46px)!important;letter-spacing:-.055em!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-studio-frame :is(.reference-header,.inf-heading,.lxd-top,.task-header) h1::before{display:none!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-studio-frame :is(.inf-panel,.reference-panel,.lxd-panel,.office-panel,.ixr-panel,.inf-priority-board){border-radius:16px!important;box-shadow:0 6px 20px #1822380b!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-studio-frame :is(.inf-stat,.lxd-stat,.lx-kpi){border-radius:14px!important;border-top:3px solid var(--studio-accent)!important;min-height:132px!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-studio-frame :is(.inf-stat,.lxd-stat,.lx-kpi):nth-child(3n+2){border-top-color:#507d9e!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-studio-frame :is(.inf-stat,.lxd-stat,.lx-kpi):nth-child(3n+3){border-top-color:#3b897e!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-studio-frame :is(.inf-stat,.lxd-stat,.lx-kpi)::after{display:none!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-studio-frame .lxd-stat-danger{border-top-color:#b74350!important}
+@media(min-width:881px){
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-sidebar{position:fixed!important;left:10px!important;top:10px!important;bottom:10px!important;height:calc(100dvh - 20px)!important;max-height:calc(100dvh - 20px)!important;border-radius:18px!important;box-sizing:border-box!important}
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-content[data-route]{margin-left:calc(var(--v2-rail) + 20px)!important;width:calc(100% - var(--v2-rail) - 20px)!important;padding:10px 10px 10px 0!important;box-sizing:border-box!important}
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome.sidebar-pinned .app-content[data-route]{margin-left:calc(var(--v2-sidebar) + 20px)!important;width:calc(100% - var(--v2-sidebar) - 20px)!important}
+ html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome.sidebar-collapsed .inf-category-rail,html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome.sidebar-collapsed .inf-sidebar-shortcuts{display:none!important}
+ html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome.sidebar-collapsed .app-sidebar{padding:12px 8px!important}
+ html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome.sidebar-collapsed .app-sidebar .app-nav-link{justify-content:center!important;padding:5px!important}
+}
+@media(max-width:880px){
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-content[data-route]{background:var(--studio-frame)!important;padding:0 0 76px!important;margin:0!important;width:100%!important}
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .reference-top-tools{border-radius:0!important;min-height:65px!important}
+ .inf-studio-chrome .inf-studio-frame{border:0;border-radius:0;min-height:calc(100dvh - 140px)}
+ html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-context-icon{width:33px;height:33px;border-radius:9px}
+ html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-current-area strong{font-size:13px!important}
+}
+@media(max-height:700px) and (min-width:881px){.inf-studio-chrome .inf-sidebar-shortcuts{display:none}.inf-studio-chrome .inf-category-rail{margin-bottom:12px}}
+@media(prefers-reduced-motion:reduce){.inf-studio-chrome :is(button,a,.app-content,.app-sidebar){transition:none!important;animation:none!important}}
+}
+@media print{.inf-studio-frame{border:0!important;background:transparent!important;min-height:0!important}}
