@@ -4,7 +4,6 @@ import Link from 'next/link';
 import {Activity,AlertTriangle,BarChart3,BriefcaseBusiness,CalendarClock,CheckCircle2,Download,FileText,Printer,RefreshCw,ShieldCheck,Users} from 'lucide-react';
 import InfinitumExecutiveReport from './infinitum-executive-report';
 import {buildReportSections,executiveSeries} from '../lib/infinitum-report-executive.mjs';
-import '../app/infinitum-executive-report.css';
 import {buildExecutivePdf} from '../lib/executive-pdf.mjs';
 import {TeamReport} from './lexis-team-report';
 import '../app/lexis-report-complete-theme.css';
@@ -52,18 +51,20 @@ function AnalysisPanel({analysis}){
 }
 export default function LexisIntelligenceWorkspace({db,session,mode='report'}){
  const [period,setPeriod]=useState('mes'),[version,setVersion]=useState(0);
- const [state,setState]=useState({loading:true,data:null,error:''});
+ const queryKey=[session?.user?.id||'',period,mode,version].join(':');
+ const [state,setState]=useState({loading:true,data:null,error:'',key:null});
+ const waiting=state.loading||state.key!==queryKey;
  const [notice,setNotice]=useState('');
  useEffect(()=>{
   if(!db||!session?.user?.id)return;
   let active=true;
-  setState({loading:true,data:null,error:''});
+  setState({loading:true,data:null,error:'',key:queryKey});
   loadLexisIntelligence(db,session.user.id,{period,area:mode}).then(data=>{
-   if(active)setState({loading:false,data,error:''});
-  }).catch(e=>{if(active)setState({loading:false,data:null,error:String(e?.message||e).slice(0,350)})});
+   if(active)setState({loading:false,data,error:'',key:queryKey});
+  }).catch(e=>{if(active)setState({loading:false,data:null,error:String(e?.message||e).slice(0,350),key:queryKey})});
   return()=>{active=false};
  },[db,session?.user?.id,period,mode,version]);
- const result=state.data;
+ const result=waiting?null:state.data;
  const model=useMemo(()=>result?summarizeLexisSnapshots(result):null,[result]);
  const h=model?.headline;
  const sections=useMemo(()=>buildReportSections(result?.report||{}),[result]);
@@ -75,7 +76,7 @@ export default function LexisIntelligenceWorkspace({db,session,mode='report'}){
   setNotice('Relatório CSV gerado a partir dos dados consultados.');
  };
  function exportPdf(){
-  if(!model||state.loading)return;
+  if(!model||waiting)return;
   try{
    const bytes=buildExecutivePdf(model,{sections,daily:executiveSeries(result?.report?.historico||{}),period:LEXIS_PERIODS.find(p=>p.id===period)?.label||period,mode,warnings:result?.warnings||[]});
    const url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
@@ -90,17 +91,17 @@ export default function LexisIntelligenceWorkspace({db,session,mode='report'}){
    <p>Acompanhe resultados, produtividade e evolução do período. Exporte os dados disponíveis ao seu perfil.</p>
   </div><div className="lxd-actions lxi-actions">
    <label className="lxi-period" htmlFor={'lxi-period-'+mode}>Período
-    <select id={'lxi-period-'+mode} value={period} disabled={state.loading} onChange={e=>{setPeriod(e.target.value);setNotice('')}}>
+    <select id={'lxi-period-'+mode} value={period} disabled={waiting} onChange={e=>{setPeriod(e.target.value);setNotice('')}}>
      {LEXIS_PERIODS.map(p=><option value={p.id} key={p.id}>{p.label}</option>)}
     </select>
    </label>
-   <button type="button" className="inf-btn" disabled={state.loading} onClick={()=>setVersion(x=>x+1)}><RefreshCw size={15}/> Atualizar</button>
-   <button type="button" className="inf-btn" disabled={!model||state.loading} onClick={exportCsv}><Download size={15}/> Exportar CSV</button>
-   <button type="button" className="inf-btn primary" disabled={!model||state.loading} onClick={exportPdf}><Download size={15}/> Baixar PDF</button>
+   <button type="button" className="inf-btn" disabled={waiting} onClick={()=>setVersion(x=>x+1)}><RefreshCw size={15}/> Atualizar</button>
+   <button type="button" className="inf-btn" disabled={!model||waiting} onClick={exportCsv}><Download size={15}/> Exportar CSV</button>
+   <button type="button" className="inf-btn primary" disabled={!model||waiting} onClick={exportPdf}><Download size={15}/> Baixar PDF</button>
   </div></header>
   <nav className="lxi-links" aria-label="Áreas de gestão"><Link href="/supervisao" aria-current={mode==='supervision'?'page':undefined}><ShieldCheck size={15}/> Supervisão</Link><Link href="/report" aria-current={mode==='report'?'page':undefined}><BarChart3 size={15}/> Relatórios</Link><Link href="/tarefas"><CalendarClock size={15}/> Tarefas</Link><Link href="/vencidos"><AlertTriangle size={15}/> Vencidos</Link></nav>
-  {state.loading&&<p className="lxd-message" role="status">Consultando os indicadores reais do período no Supabase...</p>}
-  {state.error&&<div className="lxd-message danger" role="alert"><AlertTriangle size={18}/><span>Não foi possível consultar: {state.error}. Nenhum KPI foi substituído por estimativa.</span><button type="button" className="inf-btn" onClick={()=>setVersion(x=>x+1)}>Tentar novamente</button></div>}
+  {waiting&&<p className="lxd-message" role="status">Consultando os indicadores reais do período no Supabase...</p>}
+  {!waiting&&state.error&&<div className="lxd-message danger" role="alert"><AlertTriangle size={18}/><span>Não foi possível consultar: {state.error}. Nenhum KPI foi substituído por estimativa.</span><button type="button" className="inf-btn" onClick={()=>setVersion(x=>x+1)}>Tentar novamente</button></div>}
   {result?.warnings?.length>0&&<p role="alert" className="lxd-message">Algumas fontes não responderam: {result.warnings.join(' · ')}. Os respectivos indicadores permanecem indisponíveis.</p>}
   {notice&&<p role="status" className="lxd-message">{notice}</p>}
   {model&&<>
