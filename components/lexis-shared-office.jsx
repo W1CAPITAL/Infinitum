@@ -178,7 +178,12 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
  const filteredRows=useMemo(()=>filterPortfolioRows(rows,{query:search,type,status:activeFilter,responsible:responsibleFilter}),[rows,search,type,activeFilter,responsibleFilter]);
  const responsibleOptions=useMemo(()=>[...new Set(rows.map(x=>x.last_responsible).filter(Boolean))].sort((a,b)=>responsibleDisplay(a,team).localeCompare(responsibleDisplay(b,team),'pt-BR')),[rows,team]);
  const total=filteredRows.length;
- const visibleRows=filteredRows.slice(0,(page+1)*PAGE);
+ const [pageSize,setPageSize]=useState(PAGE);
+ const [sortOrder,setSortOrder]=useState('recentes');
+ const sortedRows=useMemo(()=>sortOrder==='cliente'?[...filteredRows].sort((a,b)=>String(a.client_name||'').localeCompare(String(b.client_name||''),'pt-BR')):sortOrder==='cnj'?[...filteredRows].sort((a,b)=>String(a.process_number||'').localeCompare(String(b.process_number||''))):filteredRows,[filteredRows,sortOrder]);
+ const pageCount=Math.max(1,Math.ceil(total/pageSize));
+ const currentPage=Math.min(page,pageCount-1);
+ const visibleRows=sortedRows.slice(currentPage*pageSize,(currentPage+1)*pageSize);
  const moreRows=useCallback(()=>setPage(p=>p+1),[]);
  const loadHistory=useCallback(async(row,request)=>{
   setHistory([]);setOfficialHistory([]);setHistoryErrors([]);setHistoryLoading(true);
@@ -439,6 +444,7 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
   {loading&&<p className="inf-note">Carregando todos os processos da organização em lotes automáticos...</p>}
   <section className="inf-portfolio-results"><div className="inf-work-list-heading"><h2>Carteira de processos</h2><span>{portfolioReady?total.toLocaleString('pt-BR')+' resultados':'Carregando carteira'}</span></div>
    <p>{area==='clients'?'Consulte os dados de contato e registre o atendimento. Cadastros sem identificação comum permanecem separados.':'Cada linha representa um processo real. Consulte o andamento oficial e gerencie a situação judicial.'}</p>
+   <div className="inf-portfolio-display"><strong>{portfolioReady?total.toLocaleString('pt-BR')+' registros encontrados':'Carteira em consulta'}</strong><label>Ordenar <select value={sortOrder} onChange={e=>{setSortOrder(e.target.value);setPage(0)}}><option value="recentes">Atualizados recentemente</option><option value="cliente">Cliente (A–Z)</option><option value="cnj">Número CNJ</option></select></label><label>Por página <select value={pageSize} onChange={e=>{setPageSize(Number(e.target.value));setPage(0)}}>{[25,50,75,150].map(n=><option key={n}>{n}</option>)}</select></label></div>
    <div className="inf-portfolio-table" role="region" aria-label="Carteira de processos" tabIndex={0}>
     <table><thead><tr><th scope="col">Cliente / Processo</th><th scope="col">Situação</th><th scope="col">Responsável</th><th scope="col">Próximo retorno</th><th scope="col">Ações</th></tr></thead><tbody>
     {visibleRows.map(p=><tr className="lx-process-record" key={p.id}>
@@ -462,7 +468,7 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
     </tbody></table>
     {!visibleRows.length&&!loading&&<p className="inf-portfolio-empty">{portfolioReady?"Nenhum registro encontrado com os filtros atuais.":"Carteira indisponível. Atualize para tentar novamente."}</p>}
    </div>
-   <ProgressiveListEnd shown={visibleRows.length} total={total} onMore={moreRows} disabled={loading}/>
+   <div className="inf-portfolio-pagination"><span>{total?currentPage*pageSize+1:0}–{Math.min(total,(currentPage+1)*pageSize)} de {total.toLocaleString('pt-BR')}</span><button type="button" className="inf-btn" disabled={loading||currentPage===0} onClick={()=>setPage(Math.max(0,currentPage-1))}><ChevronLeft size={15}/> Anterior</button><span>Página {currentPage+1} de {pageCount}</span><button type="button" className="inf-btn" disabled={loading||currentPage>=pageCount-1} onClick={()=>setPage(currentPage+1)}>Próxima <ChevronRight size={15}/></button></div>
   </section>
   </>}</div>
   {creating&&<PortfolioDialog title="Cadastrar processo" busy={busy} notice={notice} onClose={closeAction}>

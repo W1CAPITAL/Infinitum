@@ -1,5 +1,6 @@
 'use client';
-import {useCallback,useEffect,useMemo,useState} from 'react';
+import {Suspense,useCallback,useEffect,useMemo,useState} from 'react';
+import {useSearchParams} from 'next/navigation';
 import Link from 'next/link';
 import {Archive,CalendarDays,CheckCircle2,ChevronLeft,ChevronRight,Clock3,ExternalLink,FileText,Gavel,Plus,RefreshCw,Search,Users,X} from 'lucide-react';
 import {groupWorkQueue} from '../lib/workspace-layout.mjs';
@@ -28,27 +29,33 @@ function Card({item,onSelect,onFinish,busy}){
   <div className="lx-event-right"><Chip value={item.status} label={item.status_label}/>{onFinish&&(item.task_id||item.manual_id)&&!['encerrado','atendido'].includes(item.status)&&<button type="button" className="inf-btn" disabled={busy} onClick={()=>onFinish(item)}><CheckCircle2 size={15}/> Concluir</button>}<button className="lx-event-open" type="button" onClick={()=>onSelect(item)}>{item.kind==='retorno'?'Atender / detalhes':'Detalhes'} <ChevronRight size={14}/></button></div>
  </article>;
 }
-export default function LexisOperations({db,session,area='deadlines'}){
+export default function LexisOperations(props){return <Suspense fallback={<main className="inf-studio"><p role="status">Carregando área de trabalho…</p></main>}><LexisOperationsInner {...props}/></Suspense>}
+function LexisOperationsInner({db,session,area='deadlines'}){
+ const urlQuery=useSearchParams().toString();
  const [profile,setProfile]=useState(null),[team,setTeam]=useState([]),[sourceRows,setSourceRows]=useState({processes:[],hearings:[],tasks:[],manual:[]});
  const audit=useLexisAttendanceAudit(db,profile?.empresa_id,session.user.id);
  const [errors,setErrors]=useState([]),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[search,setSearch]=useState('');
  const [month,setMonth]=useState(brazilToday().slice(0,7)),[filter,setFilter]=useState(area==='tasks'?'prioridades':area==='overdue'?'vencidos':'todos'),[showPast,setShowPast]=useState(false),[view,setView]=useState('month');
  const [validSources,setValidSources]=useState({processes:false,hearings:false,tasks:false,manual:false});
  const [deadlineMode,setDeadlineMode]=useState('juridicos');
+ const [queueScope,setQueueScope]=useState('todos'),[density,setDensity]=useState('compacta');
  const [page,setPage]=useState(0),[kindFilter,setKindFilter]=useState('todos'),[responsibleFilter,setResponsibleFilter]=useState('todos'),[selectedDay,setSelectedDay]=useState('');
- useEffect(()=>{setPage(0)},[area,search,filter,month,showPast,view,kindFilter,responsibleFilter,selectedDay,deadlineMode]);
+ useEffect(()=>{setPage(0)},[area,search,filter,month,showPast,view,kindFilter,responsibleFilter,selectedDay,deadlineMode,queueScope]);
  useEffect(()=>{if(area==='tasks')setFilter('prioridades');else if(area==='overdue')setFilter('vencidos')},[area]);
  useEffect(()=>{
   if(typeof window==='undefined')return;
-  const params=new URLSearchParams(window.location.search),value=params.get('status'),kind=params.get('tipo');
+  const params=new URLSearchParams(urlQuery),value=params.get('status'),kind=params.get('tipo');
+  setKindFilter('todos');setQueueScope(params.get('escopo')==='carteira'?'carteira':'todos');setResponsibleFilter('todos');setSearch('');setSelectedDay('');
+  setFilter(area==='tasks'?'prioridades':area==='overdue'?'vencidos':'todos');
   if(['agenda','tasks','overdue'].includes(area)&&Object.hasOwn(kinds,kind))setKindFilter(kind);
+  if(area==='agenda'&&['hoje','proximos'].includes(value)){setView('list');setFilter(value);setMonth(brazilToday().slice(0,7));return}
   if(area==='agenda'&&kind==='prazo'){setView('list');setFilter('todos');return}
-  if(area==='tasks'&&['atendimentos_hoje','meus_atendimentos','vencido','vencidos','hoje','proximos','atendido','retornos'].includes(value)){setFilter(value==='atendido'?'atendidos':value==='vencido'?'vencidos':value==='retornos'?'todos':value);return}
+  if(['tasks','overdue'].includes(area)&&['atendimentos_hoje','meus_atendimentos','vencido','vencidos','hoje','proximos','atendido','retornos','agendados'].includes(value)){setFilter(value==='atendido'?'atendidos':value==='vencido'?'vencidos':value==='retornos'?'agendados':value);return}
   if(area==='tasks'&&kind==='retorno'){setFilter('todos');return}
   if(area!=='deadlines')return;
   if(['atendimentos_hoje','meus_atendimentos','vencido','vencidos','hoje','proximos'].includes(value))
    {setDeadlineMode('retornos');setFilter(value==='vencidos'?'vencido':value);}
- },[area]);
+ },[area,urlQuery]);
  const [selected,setSelected]=useState(null),[editing,setEditing]=useState(false),[form,setForm]=useState({title:'',due_on:brazilToday(),kind:'tarefa',priority:'normal',notes:'',responsible:''});
  const currentYear=Number(month.slice(0,4)),currentMonth=Number(month.slice(5,7))-1;
  const first=iso(currentYear,currentMonth,1),last=iso(currentYear,currentMonth+1,0);
@@ -82,8 +89,8 @@ export default function LexisOperations({db,session,area='deadlines'}){
  useEffect(()=>{load()},[load]);
  const items=useMemo(()=>buildLexisEvents({...sourceRows,members:team,today:brazilToday()}),[sourceRows,team]);
  const queueItems=useMemo(()=>items.filter(x=>x.kind!=='audiencia'),[items]);
- const queueSummary=useMemo(()=>summarizeLexisCompanyQueue(kindFilter==='todos'?queueItems:queueItems.filter(x=>x.kind===kindFilter),brazilToday()),[queueItems,kindFilter]);
- const queueSourcesAvailable=validSources.processes&&validSources.tasks&&validSources.manual;
+ const queueSummary=useMemo(()=>summarizeLexisCompanyQueue(queueItems,brazilToday(),{kind:kindFilter,scope:queueScope,responsible:responsibleFilter,query:search}),[queueItems,kindFilter,queueScope,responsibleFilter,search]);
+ const queueSourcesAvailable=queueScope==='carteira'?validSources.processes:kindFilter==='tarefa'?validSources.tasks&&validSources.manual:kindFilter==='prazo'?validSources.manual:kindFilter==='retorno'?validSources.processes&&validSources.manual:validSources.processes&&validSources.tasks&&validSources.manual;
  const areaRows=useMemo(()=>{
   let filtered=items;
   if(area==='tasks'||area==='overdue')filtered=queueItems;
@@ -99,7 +106,7 @@ export default function LexisOperations({db,session,area='deadlines'}){
  },[items,queueItems,area,search,showPast,rangeStart,rangeEnd,filter,kindFilter,selectedDay,responsibleFilter,deadlineMode,view]);
  const listing=useMemo(()=>{
   if(area==='agenda')return areaRows;
-  if(area==='tasks'||area==='overdue')return filterLexisCompanyQueue(areaRows,{view:filter,today:brazilToday(),query:search});
+  if(area==='tasks'||area==='overdue')return filterLexisCompanyQueue(areaRows,{view:filter,today:brazilToday(),query:search,scope:queueScope});
   return areaRows.filter(x=>{
    if(filter==='todos')return true;
    if(area==='audiencias'){const future=!!x.due_on&&x.due_on>=brazilToday()&&x.status!=='encerrado';if(filter==='agendadas')return future&&x.hearing_class==='agendada';if(filter==='informadas')return future&&x.hearing_class==='informada';if(filter==='sessoes')return future&&x.hearing_class==='sessao';return filter==='futuras'?future:x.status===filter;}
@@ -113,7 +120,7 @@ export default function LexisOperations({db,session,area='deadlines'}){
    }
    return x.status===filter;
   });
- },[areaRows,filter,area,search,deadlineMode]);
+ },[areaRows,filter,area,search,deadlineMode,queueScope]);
  const returnKpis=useMemo(()=>summarizeLexisReturns(sourceRows.processes,brazilToday()),[sourceRows.processes]);
  const responsibleOptions=useMemo(()=>[...new Set(items.map(x=>x.responsible).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR')),[items]);
  const allHearings=useMemo(()=>items.filter(x=>x.kind==='audiencia'),[items]);
@@ -216,13 +223,15 @@ export default function LexisOperations({db,session,area='deadlines'}){
     <p>{area==='audiencias'?'Consulte as datas e abra os detalhes para verificar a fonte.':area==='agenda'?'Selecione um dia ou alterne para a lista de compromissos.':area==='overdue'?'Priorize as pendências vencidas. Abra o registro para atender ou conclua uma tarefa realizada.':'Organize as pendências por situação. Abra os detalhes para editar ou registrar atendimento.'}</p></div>
    <div className="lx-toolbar inf-operation-controls"><label className="lx-search"><Search size={16}/><input aria-label="Buscar nos compromissos" placeholder="Buscar cliente, processo ou responsável" value={search} onChange={e=>setSearch(e.target.value)}/></label>
     <select aria-label="Situação" value={filter} onChange={e=>chooseFilter(e.target.value)}>
-      {area==='deadlines'&&deadlineMode==='juridicos'?<><option value="todos">Todos os prazos</option><option value="hoje">Hoje</option><option value="proximos">Próximos 7 dias</option><option value="vencido">Vencidos</option><option value="atencao">Atenção</option><option value="em_dia">Em dia</option><option value="encerrado">Concluídos</option></>:area==='agenda'?<><option value="todos">Todas as situações</option><option value="hoje">Hoje</option><option value="proximos">Próximos 7 dias</option>{Object.entries(statuses).map(([k,v])=><option key={k} value={k}>{v}</option>)}</>:area==='tasks'||area==='overdue'?<><option value="prioridades">Prioridades</option><option value="vencidos">Somente vencidos</option><option value="hoje">Para hoje</option><option value="proximos">Próximos 7 dias</option><option value="em_dia">Em dia</option><option value="sem_data">Sem data</option><option value="finalizados">Finalizados</option><option value="atendidos">Retornos atendidos</option><option value="atendimentos_hoje">Atendimentos de hoje · auditoria</option><option value="meus_atendimentos">Meus atendimentos · auditoria</option><option value="todos">Todos os registros</option></>:<><option value="todos">Todas as situações</option>{area==='audiencias'?<><option value="futuras">Futuras</option><option value="agendadas">Audiências agendadas</option><option value="informadas">Notificações a verificar</option><option value="sessoes">Sessões de julgamento</option>{Object.entries(statuses).filter(([k])=>!['atendido','sem_data'].includes(k)).map(([k,v])=><option key={k} value={k}>{k==='vencido'?'Passadas':v}</option>)}</>:<><option value="retornos">Retornos agendados</option><option value="hoje">Para hoje</option><option value="proximos">Próximos 7 dias</option><option value="atendimentos_hoje">Já atendidos hoje · auditoria</option><option value="meus_atendimentos">Meus atendimentos hoje · auditoria</option><option value="atendido">Agendamentos concluídos por data</option>{Object.entries(statuses).filter(([k])=>!['atendido','encerrado'].includes(k)).map(([k,v])=><option key={k} value={k}>{v}</option>)}</>}</>}
+      {area==='deadlines'&&deadlineMode==='juridicos'?<><option value="todos">Todos os prazos</option><option value="hoje">Hoje</option><option value="proximos">Próximos 7 dias</option><option value="vencido">Vencidos</option><option value="atencao">Atenção</option><option value="em_dia">Em dia</option><option value="encerrado">Concluídos</option></>:area==='agenda'?<><option value="todos">Todas as situações</option><option value="hoje">Hoje</option><option value="proximos">Próximos 7 dias</option>{Object.entries(statuses).map(([k,v])=><option key={k} value={k}>{v}</option>)}</>:area==='tasks'||area==='overdue'?<><option value="prioridades">Prioridades</option><option value="vencidos">Somente vencidos</option><option value="hoje">Para hoje</option><option value="proximos">Próximos 7 dias</option><option value="em_dia">Em dia</option><option value="sem_data">Sem data</option><option value="finalizados">Finalizados</option><option value="atendidos">Retornos atendidos</option><option value="agendados">Agendamentos da carteira</option><option value="atendimentos_hoje">Atendimentos de hoje · auditoria</option><option value="meus_atendimentos">Meus atendimentos · auditoria</option><option value="todos">Todos os registros</option></>:<><option value="todos">Todas as situações</option>{area==='audiencias'?<><option value="futuras">Futuras</option><option value="agendadas">Audiências agendadas</option><option value="informadas">Notificações a verificar</option><option value="sessoes">Sessões de julgamento</option>{Object.entries(statuses).filter(([k])=>!['atendido','sem_data'].includes(k)).map(([k,v])=><option key={k} value={k}>{k==='vencido'?'Passadas':v}</option>)}</>:<><option value="retornos">Retornos agendados</option><option value="hoje">Para hoje</option><option value="proximos">Próximos 7 dias</option><option value="atendimentos_hoje">Já atendidos hoje · auditoria</option><option value="meus_atendimentos">Meus atendimentos hoje · auditoria</option><option value="atendido">Agendamentos concluídos por data</option>{Object.entries(statuses).filter(([k])=>!['atendido','encerrado'].includes(k)).map(([k,v])=><option key={k} value={k}>{v}</option>)}</>}</>}
      </select>
-    {['agenda','tasks','overdue'].includes(area)&&<select aria-label="Tipo de compromisso" value={kindFilter} onChange={e=>setKindFilter(e.target.value)}><option value="todos">Todos os tipos</option>{Object.entries(kinds).filter(([k])=>area==='agenda'||k!=='audiencia').map(([k,v])=><option key={k} value={k}>{v}</option>)}</select>}
+    {['tasks','overdue'].includes(area)&&<select aria-label="Origem dos registros" value={queueScope} onChange={e=>{setQueueScope(e.target.value);if(e.target.value==='carteira')setKindFilter('retorno')}}><option value="todos">Todas as origens</option><option value="carteira">Retornos da carteira</option></select>}
+    {['agenda','tasks','overdue'].includes(area)&&<select aria-label="Tipo de compromisso" value={kindFilter} onChange={e=>{setKindFilter(e.target.value);if(e.target.value!=='retorno')setQueueScope('todos')}}><option value="todos">Todos os tipos</option>{Object.entries(kinds).filter(([k])=>area==='agenda'||k!=='audiencia').map(([k,v])=><option key={k} value={k}>{v}</option>)}</select>}
     <select aria-label="Responsável" value={responsibleFilter} onChange={e=>setResponsibleFilter(e.target.value)}><option value="todos">Todos os responsáveis</option>{responsibleOptions.map(name=><option key={name} value={name}>{name}</option>)}</select>
     {area==='audiencias'&&<label className="lx-check"><input type="checkbox" checked={showPast} onChange={e=>setShowPast(e.target.checked)}/> Incluir audiências anteriores</label>}
     {area==='agenda'&&<div className="lx-view-toggle"><button className="inf-btn" onClick={()=>{setSelectedDay('');setFilter('todos');setView('month')}} aria-pressed={view==='month'}>Mês</button><button className="inf-btn" onClick={()=>setView('list')} aria-pressed={view==='list'}>Lista</button></div>}
    </div>
+   {['tasks','overdue'].includes(area)&&<div className="inf-queue-result-bar"><div><strong>{loading?'Consultando…':listing.length.toLocaleString('pt-BR')+' registros'}</strong><small>{queueScope==='carteira'?'Somente retornos de processos ativos com CNJ':'Fila da organização · filtros aplicados'}</small></div><div role="group" aria-label="Densidade da lista"><button type="button" aria-pressed={density==='compacta'} onClick={()=>setDensity('compacta')}>Compacta</button><button type="button" aria-pressed={density==='confortavel'} onClick={()=>setDensity('confortavel')}>Confortável</button><button type="button" onClick={()=>{setSearch('');setResponsibleFilter('todos');setKindFilter('todos');setQueueScope('todos');setFilter(area==='overdue'?'vencidos':'prioridades')}}>Limpar filtros</button></div></div>}
    {area==='agenda'&&<div className="lx-calendar-header"><button className="inf-btn" aria-label="Mês anterior" onClick={()=>gotoMonth(-1)}><ChevronLeft size={18}/></button>
     <strong>{new Date(first+'T12:00:00Z').toLocaleDateString('pt-BR',{timeZone:'UTC',month:'long',year:'numeric'})}</strong>
     <button className="inf-btn" aria-label="Próximo mês" onClick={()=>gotoMonth(1)}><ChevronRight size={18}/></button>
@@ -235,7 +244,7 @@ export default function LexisOperations({db,session,area='deadlines'}){
     </div>)}
    </div>}
    {area==='agenda'&&selectedDay&&<div className="lx-toolbar"><strong>{fmt(selectedDay)} · {listing.length} registros</strong><button type="button" className="inf-btn" onClick={()=>setSelectedDay('')}>Ver todos os dias</button></div>}
-   {['atendimentos_hoje','meus_atendimentos'].includes(filter)&&area!=='audiencias'?<p className="inf-note" role="status">Os processos atendidos são contabilizados na auditoria por executor e data, conforme o quadro acima. A lista de retornos mostra agendamentos e não representa os atendimentos registrados.</p>:(area!=='agenda'||view==='list')&&<div className="lx-event-list inf-queue-list">{(area==='tasks'||area==='overdue')?groupWorkQueue(pageRows,brazilToday()).map(group=><section className="inf-queue-section" key={group.key} data-queue={group.key}><header><div><h3>{group.label}</h3><small>{group.detail}</small></div><span>{group.items.length.toLocaleString('pt-BR')}</span></header>{group.items.map(x=><Card key={x.id} item={x} onSelect={openDetails} onFinish={finish} busy={busy}/>)}</section>):pageRows.map(x=><Card key={x.id} item={x} onSelect={openDetails}/>)}
+   {['atendimentos_hoje','meus_atendimentos'].includes(filter)&&area!=='audiencias'?<p className="inf-note" role="status">Os processos atendidos são contabilizados na auditoria por executor e data, conforme o quadro acima. A lista de retornos mostra agendamentos e não representa os atendimentos registrados.</p>:(area!=='agenda'||view==='list')&&<div className="lx-event-list inf-queue-list" data-density={density}>{(area==='tasks'||area==='overdue')?groupWorkQueue(pageRows,brazilToday()).map(group=><section className="inf-queue-section" key={group.key} data-queue={group.key}><header><div><h3>{group.label}</h3><small>{group.detail}</small></div><span>{group.items.length.toLocaleString('pt-BR')}</span></header>{group.items.map(x=><Card key={x.id} item={x} onSelect={openDetails} onFinish={finish} busy={busy}/>)}</section>):pageRows.map(x=><Card key={x.id} item={x} onSelect={openDetails}/>)}
      {listing.length>PAGE_SIZE&&<ProgressiveListEnd shown={pageRows.length} total={listing.length} onMore={moreRows} disabled={loading}/>}
     {!loading&&!listing.length&&<p className="pr-list-empty">Nenhum registro corresponde aos filtros. Confira as fontes e altere o período quando necessário.</p>}
    </div>}

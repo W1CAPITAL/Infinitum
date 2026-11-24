@@ -1,0 +1,14 @@
+@media screen{
+.inf-editorial-shell .inf-dashboard-source{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;color:var(--ed-muted);font-size:12px;padding:0 2px}
+.inf-dashboard-source>span{display:flex;align-items:center;gap:7px;font-weight:600}.inf-dashboard-source>span>span{width:7px;height:7px;border-radius:50%;background:#64748b}.inf-dashboard-source>span>span[data-state=ready]{background:#31856b}.inf-dashboard-source>span>span[data-state=error]{background:#b83d52}.inf-dashboard-source>span>span[data-state=partial]{background:#ba8542}
+.inf-editorial-shell .inf-queue-result-bar,.inf-editorial-shell .inf-portfolio-display,.inf-editorial-shell .inf-portfolio-pagination{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 0;color:var(--ed-ink);font-size:13px}
+.inf-editorial-shell .inf-queue-result-bar{justify-content:space-between;border-bottom:1px solid var(--ed-line);margin-bottom:8px}.inf-queue-result-bar>div:first-child{display:grid;gap:3px}.inf-queue-result-bar small{color:var(--ed-muted);font-size:11px}.inf-queue-result-bar>div:last-child{display:flex;gap:4px;flex-wrap:wrap}
+.inf-editorial-shell .inf-queue-result-bar button{border:1px solid var(--ed-line);background:var(--ed-paper);color:var(--ed-ink);padding:7px 9px;border-radius:6px;cursor:pointer;font-size:12px}
+.inf-editorial-shell .inf-queue-result-bar button[aria-pressed=true]{background:var(--ed-tint);color:var(--ed-brand);border-color:var(--ed-brand)}
+.inf-editorial-shell .inf-queue-list[data-density=compacta] .lx-event-card{padding:9px 12px!important;min-height:68px!important;gap:10px!important;border-radius:7px!important}
+.inf-editorial-shell .inf-queue-list[data-density=compacta] .lx-event-symbol{width:32px!important;height:32px!important}.inf-editorial-shell .inf-queue-list[data-density=compacta] .lx-event-main{gap:2px!important}
+.inf-editorial-shell .inf-portfolio-display>strong{margin-right:auto}.inf-portfolio-display label{display:flex;gap:6px;align-items:center;color:var(--ed-muted)}
+.inf-editorial-shell .inf-portfolio-display select{padding:7px;border:1px solid var(--ed-line);border-radius:6px;background:var(--ed-paper);color:var(--ed-ink)}
+.inf-editorial-shell .inf-portfolio-pagination{justify-content:flex-end;border-top:1px solid var(--ed-line)}.inf-portfolio-pagination>span:first-child{margin-right:auto;color:var(--ed-muted)}
+@media(max-width:720px){.inf-editorial-shell .inf-portfolio-pagination{justify-content:center}.inf-portfolio-pagination>span:first-child{margin:0;flex-basis:100%;text-align:center}.inf-editorial-shell .inf-queue-result-bar>div:last-child{width:100%}}
+}
