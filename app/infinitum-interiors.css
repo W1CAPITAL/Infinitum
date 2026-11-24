@@ -1,12 +1,12 @@
 /* INFINITUM interiors: independently composed screens, preserving Studio navigation. */
 @media screen{
-html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-content .inf-studio-frame .inf-studio-frame{
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-studio-frame{
  --desk-paper:#ffffff;--desk-bg:#edf1f7;--desk-ink:#233044;--desk-muted:#53647a;--desk-line:#d8e1ec;--desk-tint:#e9edf4;
  --desk-brand:#763a57;--desk-blue:#345b85;--desk-teal:#126257;--desk-danger:#963448;--desk-shadow:0 5px 18px #263a5710;
  --desk-hero-surface:#35465e;--desk-hero-ink:#ffffff;--desk-hero-muted:#dce7f4;--desk-hero:linear-gradient(115deg,#273345,#34465e 76%,#4e3b52);
  background:linear-gradient(125deg,#f5f7fb,#e9eef6)!important;
 }
-html[data-crm-theme="infinitum"][data-crm-mode="dark"] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-content .inf-studio-frame .inf-studio-frame{
+html[data-crm-theme="infinitum"][data-crm-mode="dark"] .inf-studio-chrome .inf-studio-frame{
  --desk-paper:#202a39;--desk-bg:#151f2e;--desk-ink:#f0f4fb;--desk-muted:#b7c5d9;--desk-line:#38485c;--desk-tint:#29374a;
  --desk-brand:#e2a8c8;--desk-blue:#a4caf2;--desk-teal:#92d9cb;--desk-danger:#ffb0bb;--desk-shadow:0 6px 18px #0002;
  --desk-hero-surface:#35445a;--desk-hero-ink:#ffffff;--desk-hero-muted:#dce7f4;--desk-hero:linear-gradient(115deg,#273448,#293449 76%,#483346);background:linear-gradient(125deg,#1c2637,#141c2a)!important;
@@ -134,7 +134,7 @@ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shel
 
 /* Readable foregrounds are paired with the actual interior surface. No sidebar, login or print changes. */
 @media screen {
-html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-content .inf-studio-frame .inf-studio-frame{
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-content .inf-studio-frame{
  --ui-page:var(--desk-bg);--ui-surface:var(--desk-paper);--ui-ink:var(--desk-ink);--ui-muted:var(--desk-muted);--ui-border:var(--desk-line);--ui-neutral-bg:var(--desk-tint);
  --v2-text:var(--desk-ink);--v2-muted:var(--desk-muted);--v2-panel:var(--desk-paper);--v2-canvas:var(--desk-bg);--v2-line:var(--desk-line);--v2-soft:var(--desk-tint);
  --inf-ink:var(--desk-ink);--inf-muted:var(--desk-muted);--inf-paper:var(--desk-paper);--inf-canvas:var(--desk-bg);--inf-line:var(--desk-line);--inf-soft:var(--desk-tint);
