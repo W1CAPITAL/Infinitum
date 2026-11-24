@@ -15,6 +15,6 @@ test('official source HTTP 403, 429 and timeouts preserve accurate status to sca
  assert.match(source,/upstreamStatus=Number\(error\?\.status\)/);
  assert.match(source,/\[403,429,502,503,504\]\.includes\(upstreamStatus\)/);
  assert.match(source,/timeout\?504/);
- assert.match(source,/code:error\?\.code\|\|null/);
+ assert.match(source,/status,code:error\?\.code\|\|\(status===504\?'upstream_timeout':null\)/);
  assert.doesNotMatch(source,/badInput\?400:502\);\s*\}/);
 });
