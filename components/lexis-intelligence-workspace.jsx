@@ -2,6 +2,7 @@
 import {useEffect,useMemo,useState} from 'react';
 import Link from 'next/link';
 import {Activity,AlertTriangle,BarChart3,BriefcaseBusiness,CalendarClock,CheckCircle2,Download,FileText,Printer,RefreshCw,ShieldCheck,Users} from 'lucide-react';
+import {buildExecutivePdf} from '../lib/executive-pdf.mjs';
 import {TeamReport} from './lexis-team-report';
 import '../app/lexis-report-complete-theme.css';
 import {LEXIS_PERIODS,loadLexisIntelligence,summarizeLexisSnapshots,toLexisIntelligenceCsv} from '../lib/lexis-intelligence.mjs';
@@ -69,11 +70,20 @@ export default function LexisIntelligenceWorkspace({db,session,mode='report'}){
   const a=document.createElement('a');a.href=url;a.download='infinitum-'+mode+'-'+period+'.csv';a.click();URL.revokeObjectURL(url);
   setNotice('Relatório CSV gerado a partir dos dados consultados.');
  };
+ function exportPdf(){
+  if(!model||state.loading)return;
+  try{
+   const bytes=buildExecutivePdf(model,{period:LEXIS_PERIODS.find(p=>p.id===period)?.label||period,mode,warnings:result?.warnings||[]});
+   const url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
+   const a=document.createElement('a');a.href=url;a.download='INFINITUM-'+mode+'-'+period+'.pdf';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
+   setNotice('Arquivo PDF gerado com os dados consultados.');
+  }catch(error){setNotice('Não foi possível gerar o PDF: '+String(error?.message||error));}
+ }
  const title=mode==='supervision'?'Supervisão':'Relatórios executivos';
  return <main className="lxd-shell lxi-shell" data-lexis-intelligence={mode}>
   <header className="lxd-top lxi-header"><div>
    <small>INFINITUM · GESTÃO JURÍDICA</small><h1>{title}</h1>
-   <p>Informações do Supabase compartilhado, restritas à sua empresa e às permissões de seu perfil.</p>
+   <p>Acompanhe resultados, produtividade e evolução do período. Exporte os dados disponíveis ao seu perfil.</p>
   </div><div className="lxd-actions lxi-actions">
    <label className="lxi-period" htmlFor={'lxi-period-'+mode}>Período
     <select id={'lxi-period-'+mode} value={period} disabled={state.loading} onChange={e=>{setPeriod(e.target.value);setNotice('')}}>
@@ -82,7 +92,7 @@ export default function LexisIntelligenceWorkspace({db,session,mode='report'}){
    </label>
    <button type="button" className="inf-btn" disabled={state.loading} onClick={()=>setVersion(x=>x+1)}><RefreshCw size={15}/> Atualizar</button>
    <button type="button" className="inf-btn" disabled={!model||state.loading} onClick={exportCsv}><Download size={15}/> Exportar CSV</button>
-   <button type="button" className="inf-btn" disabled={!model||state.loading} onClick={()=>window.print()}><Printer size={15}/> PDF</button>
+   <button type="button" className="inf-btn primary" disabled={!model||state.loading} onClick={exportPdf}><Download size={15}/> Baixar PDF</button>
   </div></header>
   <nav className="lxi-links" aria-label="Áreas de gestão"><Link href="/supervisao" aria-current={mode==='supervision'?'page':undefined}><ShieldCheck size={15}/> Supervisão</Link><Link href="/report" aria-current={mode==='report'?'page':undefined}><BarChart3 size={15}/> Relatórios</Link><Link href="/tarefas"><CalendarClock size={15}/> Tarefas</Link><Link href="/vencidos"><AlertTriangle size={15}/> Vencidos</Link></nav>
   {state.loading&&<p className="lxd-message" role="status">Consultando os indicadores reais do período no Supabase...</p>}
@@ -91,7 +101,7 @@ export default function LexisIntelligenceWorkspace({db,session,mode='report'}){
   {notice&&<p role="status" className="lxd-message">{notice}</p>}
   {model&&<>
    <section aria-label="KPIs da carteira e dos atendimentos" className="lxd-stats">
-    <Stat icon={BriefcaseBusiness} title="Carteira da empresa" value={h.total} description="Fotografia atual dos processos" to="/processos"/>
+    <Stat icon={BriefcaseBusiness} title="Carteira disponível" value={h.total} description="Processos visíveis conforme permissões" to="/processos"/>
     <Stat icon={Activity} title="Ativos" value={h.ativos} description="Situação atual, não resultado do período" to="/processos"/>
     <Stat icon={CheckCircle2} title="Encerrados" value={h.encerrados} description="Status no CRM, não mérito judicial" to="/encerrados"/>
     <Stat icon={AlertTriangle} title="Retornos vencidos" value={h.vencidos} description="Somente vencimentos confirmados" to="/vencidos" alert/>
