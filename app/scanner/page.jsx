@@ -9,18 +9,20 @@ import {buildScannerReview,sourceSummary} from '../../lib/blackhole-office-scann
 import {browseOfficialDjenNumber} from '../../lib/blackhole-public-djen-browser.mjs';
 import {withOfficialDeadline} from '../../supabase/functions/_shared/official-http.mjs';
 import {withAuthDeadline} from '../../lib/auth-deadline.mjs';
+import {scanRows,nextScanBatch} from '../../lib/infinitum-scanner-portfolio.mjs';
 const label={confirmed:'Consulta confirmada',blocked_403:'Bloqueada (403)',rate_limited_429:'Limite atingido (429)',
  cooldown:'Em pausa',timeout:'Tempo esgotado',unavailable:'Indisponível',cached_previous:'Histórico confirmado (não atualizado)'};
 function fmtDate(value){try{return new Date(value).toLocaleString('pt-BR')}catch{return String(value||'—')}}
 function Scanner({db,session}){
  const [cases,setCases]=useState([]),[history,setHistory]=useState([]),[loading,setLoading]=useState(true);
  const [busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[error,setError]=useState('');
+ const [portfolioReady,setPortfolioReady]=useState(false),[historyReady,setHistoryReady]=useState(false),[checkedSession,setCheckedSession]=useState(new Set());
  const [query,setQuery]=useState(''),[progress,setProgress]=useState({done:0,total:0}),[live,setLive]=useState([]);
  const [auto,setAuto]=useState(false),[scanBatch,setScanBatch]=useState('4'),[directCNJ,setDirectCNJ]=useState('');
  useEffect(()=>{const cnj=new URLSearchParams(window.location.search).get('cnj');if(cnj){setDirectCNJ(cnj);setQuery(cnj)}},[]);
  const active=useRef(false),aborter=useRef(null),autoRef=useRef(false),casesRef=useRef([]);
  const read=useCallback(async()=>{
-  setLoading(true);
+  setLoading(true);setPortfolioReady(false);setHistoryReady(false);
   try{
    let company=null;
    if(process.env.NEXT_PUBLIC_LEXIS_SHARED_DB==='1'){
@@ -28,24 +30,20 @@ function Scanner({db,session}){
     if(profile.error||profile.data?.length!==1||!profile.data[0].empresa_id)throw Error('Empresa da sessão não confirmada.');
     company=profile.data[0].empresa_id;
    }
-   const results=await withAuthDeadline(Promise.all([
-    db.from('office_cases').select('id,process_number,title,tribunal,status').order('updated_at',{ascending:false}).limit(500),
-    db.from('crm_processes').select('id,process_number').limit(500),
-    db.from('office_scan_runs').select('id,process_number,source_status,review,checked_at,trigger_mode').order('checked_at',{ascending:false}).limit(180),
-    company?db.from('processos').select('id,protocolo_ref,cliente,tribunal,status_interno').eq('empresa_id',company).order('updated_at',{ascending:false}).limit(500):Promise.resolve({data:[]})
-   ]),12000);
-   const failures=results.filter(x=>x.error).map(x=>x.error.message);
-   if(failures.length)throw Error(failures.join(' · '));
+   const portfolio=company
+    ?scanRows(db,'processos','id,protocolo_ref,cliente,tribunal,status_interno',{company}).then(rows=>rows.map(p=>({...p,process_number:p.protocolo_ref,title:p.cliente,status:p.status_interno})))
+    :Promise.all([scanRows(db,'office_cases','id,process_number,title,tribunal,status'),scanRows(db,'crm_processes','id,process_number')]).then(rows=>rows.flat());
+   const [casesResult,historyResult]=await Promise.allSettled([portfolio,withAuthDeadline(db.from('office_scan_runs').select('id,process_number,source_status,review,checked_at,trigger_mode').order('checked_at',{ascending:false}).limit(180),12000)]);
+   if(casesResult.status==='rejected')throw casesResult.reason;
    const merged=new Map();
-   for(const r of [...(results[0].data||[]),...(results[1].data||[]),...(results[3].data||[]).map(p=>({...p,process_number:p.protocolo_ref,title:p.cliente,status:p.status_interno}))]){
+   for(const r of casesResult.value){
     try{const cnj=formatProcessNumber(r.process_number);
       if(!merged.has(cnj))merged.set(cnj,{...r,process_number:cnj,title:r.title||'Processo registrado'})}catch{}
    }
    const rows=[...merged.values()];
-   setCases(rows);casesRef.current=rows;
-   setHistory(results[2].data||[]);
-   setError('');
-  }catch(e){setError('A carteira não pôde ser carregada: '+e.message)}
+   setCases(rows);casesRef.current=rows;setPortfolioReady(true);
+   if(historyResult.status==='fulfilled'&&!historyResult.value.error){setHistory(historyResult.value.data||[]);setHistoryReady(true);setError('')}else setError('Carteira disponível; histórico recente indisponível.');
+  }catch(e){setCases([]);casesRef.current=[];setError('A carteira não pôde ser carregada: '+e.message)}
   finally{setLoading(false)}
  },[db,session.user.id]);
  useEffect(()=>{read()},[read]);
@@ -55,7 +53,7 @@ function Scanner({db,session}){
  function updateAuto(v){setAuto(v);try{window.localStorage.setItem('blackhole.scanner.auto.foreground',v?'1':'0')}catch{}}
  const filtered=useMemo(()=>cases.filter(x=>[x.process_number,x.title,x.tribunal].some(v=>String(v||'').toLowerCase().includes(query.toLowerCase()))),[cases,query]);
  const run=useCallback(async(list,mode='manual')=>{
-  if(active.current||!list.length)return;
+  if(active.current||!list.length||!portfolioReady)return;
   active.current=true;setBusy(true);setError('');setNotice('');
   setProgress({done:0,total:list.length});setLive([]);
   const controller=new AbortController();aborter.current=controller;
@@ -80,7 +78,7 @@ function Scanner({db,session}){
      failed++;
      setLive(items=>[{number:row.process_number,title:row.title||'Processo',ok:false,error:e.message},...items].slice(0,35));
     }
-    index++;setProgress({done:index,total:list.length});
+    index++;setCheckedSession(old=>new Set([...old,row.process_number]));setProgress({done:index,total:list.length});
     if(failed>=3&&success===0)break;
     // Evita varreduras agressivas em IP compartilhado e preserva as fontes oficiais.
     if(index<list.length&&!controller.signal.aborted)await new Promise(resolve=>setTimeout(resolve,1100));
@@ -88,7 +86,7 @@ function Scanner({db,session}){
    setNotice('Scanner: '+index+' processo(s) examinados; '+success+' com evidência oficial atual ou anterior (identificada); '+failed+' sem fonte confirmada. Eventos requerem revisão humana.');
    await read();
   }catch(e){setError(e.message)}finally{active.current=false;setBusy(false);aborter.current=null}
- },[db,read]);
+ },[db,read,portfolioReady]);
  async function directDjen(){
   if(active.current)return;
   let number;try{number=formatProcessNumber(directCNJ||filtered[0]?.process_number)}catch{setError('Escolha um CNJ cadastrado.');return}
@@ -114,10 +112,11 @@ function Scanner({db,session}){
   }catch(e){setError('Consulta DJEN pelo navegador não confirmada: '+e.message)}
   finally{active.current=false;setBusy(false)}
  }
- const runNext=()=>run(filtered.slice(0,Number(scanBatch)),'manual');
+ const remaining=useMemo(()=>filtered.filter(x=>!checkedSession.has(x.process_number)),[filtered,checkedSession]);
+ const runNext=()=>run(nextScanBatch(filtered,checkedSession,Number(scanBatch)),'manual');
  const runAll=()=>run(filtered,'manual');
  useEffect(()=>{
-  if(!auto||!cases.length)return;
+  if(!auto||!cases.length||!portfolioReady||!historyReady)return;
   // Scanner automático em PRIMEIRO PLANO; não promete execução em servidor após a aba fechar.
   let alive=true;
   const tick=()=>{
@@ -131,7 +130,7 @@ function Scanner({db,session}){
   };
   const id=window.setInterval(tick,15*60*1000);
   return()=>{alive=false;window.clearInterval(id)};
- },[auto,cases.length,history,run]);
+ },[auto,cases.length,history,run,portfolioReady,historyReady]);
  useEffect(()=>()=>aborter.current?.abort(),[]);
  const perNumber=new Set(history.map(x=>x.process_number));
  return <main className="inf-studio blackhole-scanner">
@@ -143,10 +142,10 @@ function Scanner({db,session}){
     <button type="button" className="inf-btn" onClick={read} disabled={busy||loading}><RefreshCw size={14}/> Atualizar carteira</button></div>
   </header>
   <div className="inf-grid">
-   <div className="inf-stat"><label>CNJs disponíveis</label><strong>{cases.length}</strong></div>
-   <div className="inf-stat"><label>Processos com histórico de varredura</label><strong>{perNumber.size}</strong></div>
-   <div className="inf-stat"><label>Verificados na sessão</label><strong>{progress.done}</strong></div>
-   <div className="inf-stat"><label>Execuções automáticas do servidor</label><strong>{history.filter(x=>x.trigger_mode==='scheduled').length}</strong></div>
+   <div className="inf-stat"><label>CNJs disponíveis</label><strong>{portfolioReady?cases.length:'—'}</strong></div>
+   <div className="inf-stat"><label>Processos no histórico recente</label><strong>{historyReady?perNumber.size:'—'}</strong></div>
+   <div className="inf-stat"><label>Examinados nesta sessão</label><strong>{checkedSession.size}</strong></div>
+   <div className="inf-stat"><label>Execuções automáticas · histórico recente</label><strong>{historyReady?history.filter(x=>x.trigger_mode==='scheduled').length:'—'}</strong></div>
    <div className="inf-stat"><label>Restantes nesta execução</label><strong>{Math.max(0,progress.total-progress.done)}</strong></div>
   </div>
   <div className="inf-scanner-desk"><section className="inf-panel inf-scanner-control"><h2><ScanSearch size={17}/> Varredura de carteira</h2>
@@ -156,10 +155,11 @@ function Scanner({db,session}){
     <select aria-label="Tamanho do lote" value={scanBatch} onChange={e=>setScanBatch(e.target.value)}>
      <option value="2">2 processos</option><option value="4">4 processos</option><option value="8">8 processos</option>
     </select>
-    <button type="button" className="inf-btn primary" disabled={busy||!filtered.length||loading} onClick={runNext}><ScanSearch size={14}/> Verificar lote</button>
+    <button type="button" className="inf-btn primary" disabled={busy||!remaining.length||loading||!portfolioReady} onClick={runNext}><ScanSearch size={14}/> Verificar próximo lote</button><button type="button" className="inf-btn" disabled={busy||!checkedSession.size} onClick={()=>setCheckedSession(new Set())}>Reiniciar seleção da sessão</button>
     <button type="button" className="inf-btn" disabled={busy||!filtered.length||loading} onClick={runAll}>Varrer toda a carteira carregada</button>
     {busy&&<button type="button" className="inf-btn" onClick={()=>aborter.current?.abort()}><PauseCircle size={14}/> Interromper</button>}
    </div>
+   <div className="inf-scanner-session"><strong>{portfolioReady?filtered.length+' CNJs no filtro · '+remaining.length+' ainda não examinados nesta sessão':'Carteira indisponível ou em consulta'}</strong><small>O histórico mostrado contém até 180 execuções recentes. Uma falha de consulta não comprova ausência de movimentação.</small></div>
    <div className="office-action-row blackhole-scanner-browser">
     <label>DJEN por consulta pública no navegador
      <select value={directCNJ} onChange={e=>setDirectCNJ(e.target.value)} aria-label="Processo para DJEN pelo navegador">

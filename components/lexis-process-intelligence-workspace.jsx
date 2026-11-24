@@ -144,16 +144,18 @@ function ParadosWorkspace({cases,companyId,userId,loading,error,refresh,stale}){
 export default function LexisProcessIntelligenceWorkspace({db,session,mode='fases'}){
  const [state,setState]=useState({loading:true,cases:[],companyId:'',error:'',stale:false});
  const [retry,setRetry]=useState(0);
+ const [loadedFor,setLoadedFor]=useState('');
  const refresh=()=>setRetry(x=>x+1);
  const load=useCallback(async()=>{
   if(!db||!session?.user?.id)return;
-  setState(old=>({...old,loading:true,error:''}));
+  setState(old=>loadedFor===session.user.id?({...old,loading:true,error:''}):({loading:true,cases:[],companyId:'',error:'',stale:false}));
   try{const result=await loadLexisProcessIntelligence(db,session.user.id,{pageSize:500,maxRows:20000});
-   setState({loading:false,cases:result.cases,companyId:result.companyId,error:'',stale:false});
+   setLoadedFor(session.user.id);setState({loading:false,cases:result.cases,companyId:result.companyId,error:'',stale:false});
   }catch(e){setState(old=>({...old,loading:false,error:String(e?.message||e).slice(0,350),stale:old.cases.length>0}))}
  },[db,session?.user?.id,retry]);
  useEffect(()=>{void load()},[load]);
+ const current=loadedFor===session?.user?.id?state:{...state,cases:[],companyId:'',stale:false,loading:!state.error};
  return mode==='parados'
-  ?<ParadosWorkspace cases={state.cases} companyId={state.companyId} userId={session?.user?.id} loading={state.loading} error={state.error} refresh={refresh} stale={state.stale}/>
-  :<FasesWorkspace cases={state.cases} loading={state.loading} error={state.error} refresh={refresh} stale={state.stale}/>;
+  ?<ParadosWorkspace cases={current.cases} companyId={current.companyId} userId={session?.user?.id} loading={state.loading} error={state.error} refresh={refresh} stale={current.stale}/>
+  :<FasesWorkspace cases={current.cases} loading={current.loading} error={state.error} refresh={refresh} stale={current.stale}/>;
 }

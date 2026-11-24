@@ -17,3 +17,4 @@
 .inf-editorial-shell .lx-view-toggle{display:flex;gap:4px;flex-wrap:wrap}.inf-editorial-shell .lx-view-toggle button[aria-pressed=true]{background:var(--ed-tint)!important;color:var(--ed-brand)!important;border-color:var(--ed-brand)!important}
 @media(max-width:720px){.inf-editorial-shell .lx-calendar-grid[data-calendar-view=week]{grid-template-columns:repeat(7,minmax(108px,1fr));overflow-x:auto}.inf-editorial-shell .inf-super-tabs button{flex:1 1 auto}.inf-editorial-shell .inf-report-status small{width:100%}}
 }
+@media screen{.inf-editorial-shell .inf-scanner-session{display:grid;gap:5px;padding:12px;border:1px solid var(--ed-line);border-radius:8px;background:var(--ed-paper);color:var(--ed-ink);margin:8px 0}.inf-editorial-shell .inf-scanner-session small{color:var(--ed-muted)}.inf-editorial-shell .lxp-case{border-radius:10px!important}.inf-editorial-shell .lxp-case-grid{gap:16px}.inf-editorial-shell .lxp-case footer{border-top:1px solid var(--ed-line)}}

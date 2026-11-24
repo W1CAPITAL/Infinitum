@@ -52,6 +52,7 @@ function LexisOperationsInner({db,session,area='deadlines'}){
   if(['agenda','tasks','overdue'].includes(area)&&Object.hasOwn(kinds,kind))setKindFilter(kind);
   if(area==='agenda'&&['hoje','proximos'].includes(value)){setView('list');setFilter(value);setMonth(brazilToday().slice(0,7));return}
   if(area==='agenda'&&kind==='prazo'){setView('list');setFilter('todos');return}
+  if(area==='agenda'){setView('month');setAnchor(brazilToday());setMonth(brazilToday().slice(0,7));}
   if(['tasks','overdue'].includes(area)&&['atendimentos_hoje','meus_atendimentos','vencido','vencidos','hoje','proximos','atendido','retornos','agendados'].includes(value)){setFilter(value==='atendido'?'atendidos':value==='vencido'?'vencidos':value==='retornos'?'agendados':value);return}
   if(area==='tasks'&&kind==='retorno'){setFilter('todos');return}
   if(area!=='deadlines')return;
