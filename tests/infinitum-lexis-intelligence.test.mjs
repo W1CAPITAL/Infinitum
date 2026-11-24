@@ -96,3 +96,16 @@ test('CSV exportado contém números reais, preserva acentos e neutraliza fórmu
 test('Períodos inválidos não são encaminhados ao banco',async()=>{
  await assert.rejects(loadLexisIntelligence(db(),userId,{period:'ano',area:'report'}),/Período inválido/);
 });
+
+test('relatório real usa o agregado histórico de tarefas autenticado por responsável',async()=>{
+ const data={...sampleReport,atividadesRegistradas:{total:1527,porResponsavel:[{userId:'staff-1',registros:1408,processos:900,contatosMarcados:1145,semReferencia:2}]}};
+ const result=await loadLexisIntelligence(db({results:{lexis_desktop_relatorio_snapshot:{data,error:null}}}),userId,{area:'report'});
+ const person=result.report.equipe.pessoas[0];
+ assert.equal(person.atividades.registrosTotal,1408);
+ assert.equal(person.atividades.processosTotal,900);
+ assert.equal(person.atividades.contatosMarcadosTotal,1145);
+ assert.equal(person.atividades.semReferenciaTotal,2);
+ assert.equal(summarizeLexisSnapshots(result).headline.atividadesHistorico,1527);
+ assert.equal(summarizeLexisSnapshots(result).headline.atividades,3);
+ assert.equal(data.equipe.pessoas[0].atividades.registrosTotal,12);
+});
