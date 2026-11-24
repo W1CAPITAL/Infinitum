@@ -114,3 +114,20 @@ html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .lx-operator-
 @media(max-width:520px){html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-home-command-grid .inf-quick-grid{grid-template-columns:1fr!important}html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-operation-desk .lx-calendar-day{min-height:58px}.inf-settings-nav button{font-size:11px}}
 @media(prefers-reduced-motion:reduce){.inf-studio-frame :is(.inf-home-command-grid a,.inf-settings-nav button,.inf-leads-tabs button){transition:none!important;animation:none!important}}
 }
+
+@media screen{
+.inf-scanner-desk,.inf-generator-desk,.inf-integrations-desk{display:grid;grid-template-columns:minmax(270px,.85fr) minmax(0,1.35fr);align-items:start;gap:16px}
+.inf-scanner-results{min-width:0}
+.inf-generator-desk{grid-template-columns:minmax(0,1.35fr) minmax(270px,.85fr)}
+.inf-integrations-desk{grid-template-columns:repeat(2,minmax(0,1fr))}
+.inf-integrations-desk>section:nth-child(2){grid-row:span 2}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-scanner-control :is(.blackhole-scanner-controls,.blackhole-scanner-browser){display:flex!important;flex-wrap:wrap!important;gap:9px!important;align-items:start!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-scanner-control .blackhole-scanner-browser{padding:12px;border:1px solid var(--desk-line);border-radius:10px;background:var(--desk-bg)}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-scanner-control :is(input,select,label){min-width:0!important;max-width:100%}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-generator-desk .inf-fields{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-generator-manual .inf-fields{grid-template-columns:1fr!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .blackhole-native-integration{background:var(--desk-paper)!important;border-color:var(--desk-line)!important;box-shadow:var(--desk-shadow)!important;border-radius:14px!important;color:var(--desk-ink)!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .blackhole-native-integration p{color:var(--desk-muted)!important}
+@media(max-width:1250px){.inf-scanner-desk,.inf-generator-desk,.inf-integrations-desk{grid-template-columns:1fr}.inf-integrations-desk>section:nth-child(2){grid-row:auto}}
+@media(max-width:600px){html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-generator-desk .inf-fields{grid-template-columns:1fr!important}}
+}
