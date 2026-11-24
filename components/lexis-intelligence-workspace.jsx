@@ -2,6 +2,9 @@
 import {useEffect,useMemo,useState} from 'react';
 import Link from 'next/link';
 import {Activity,AlertTriangle,BarChart3,BriefcaseBusiness,CalendarClock,CheckCircle2,Download,FileText,Printer,RefreshCw,ShieldCheck,Users} from 'lucide-react';
+import InfinitumExecutiveReport from './infinitum-executive-report';
+import {buildReportSections} from '../lib/infinitum-report-executive.mjs';
+import '../app/infinitum-executive-report.css';
 import {buildExecutivePdf} from '../lib/executive-pdf.mjs';
 import {TeamReport} from './lexis-team-report';
 import '../app/lexis-report-complete-theme.css';
@@ -63,6 +66,7 @@ export default function LexisIntelligenceWorkspace({db,session,mode='report'}){
  const result=state.data;
  const model=useMemo(()=>result?summarizeLexisSnapshots(result):null,[result]);
  const h=model?.headline;
+ const sections=useMemo(()=>buildReportSections(result?.report||{}),[result]);
  const exportCsv=()=>{
   if(!model)return;
   const bytes=toLexisIntelligenceCsv(model,period);
@@ -73,7 +77,7 @@ export default function LexisIntelligenceWorkspace({db,session,mode='report'}){
  function exportPdf(){
   if(!model||state.loading)return;
   try{
-   const bytes=buildExecutivePdf(model,{period:LEXIS_PERIODS.find(p=>p.id===period)?.label||period,mode,warnings:result?.warnings||[]});
+   const bytes=buildExecutivePdf(model,{sections,period:LEXIS_PERIODS.find(p=>p.id===period)?.label||period,mode,warnings:result?.warnings||[]});
    const url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
    const a=document.createElement('a');a.href=url;a.download='INFINITUM-'+mode+'-'+period+'.pdf';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
    setNotice('Arquivo PDF gerado com os dados consultados.');
@@ -100,6 +104,8 @@ export default function LexisIntelligenceWorkspace({db,session,mode='report'}){
   {result?.warnings?.length>0&&<p role="alert" className="lxd-message">Algumas fontes não responderam: {result.warnings.join(' · ')}. Os respectivos indicadores permanecem indisponíveis.</p>}
   {notice&&<p role="status" className="lxd-message">{notice}</p>}
   {model&&<>
+   {mode==='report'&&<InfinitumExecutiveReport key={period} report={result.report} model={model} sections={sections} periodLabel={LEXIS_PERIODS.find(p=>p.id===period)?.label||period}/>}
+   {mode==='supervision'&&<>
    <section aria-label="KPIs da carteira e dos atendimentos" className="lxd-stats">
     <Stat icon={BriefcaseBusiness} title="Carteira disponível" value={h.total} description="Processos visíveis conforme permissões" to="/processos"/>
     <Stat icon={Activity} title="Ativos" value={h.ativos} description="Situação atual, não resultado do período" to="/processos"/>
@@ -129,11 +135,11 @@ export default function LexisIntelligenceWorkspace({db,session,mode='report'}){
      <Ranked title="Tribunais" description="Distribuição conforme tribunal registrado." rows={model.tribunals}/>
     </>}
    </section>
-   {mode==='supervision'&&<AnalysisPanel analysis={model.analysis}/>}
-   {result?.report?.equipe?.pessoas&&<section className="lxi-team report-completo-shell" aria-label="Produtividade por colaborador">
+   <AnalysisPanel analysis={model.analysis}/></>}
+   {result?.report?.equipe?.pessoas&&<section id="equipe" className="lxi-team report-completo-shell" aria-label="Produtividade por colaborador">
     <TeamReport data={result.report.equipe} currentUserId={session.user.id}/>
    </section>}
-   {mode==='supervision'&&!result?.report?.equipe?.pessoas&&<p className="lxd-message">Detalhamento por colaborador indisponível nesta consulta; os KPIs atuais da Supervisão permanecem separados.</p>}
+   {!result?.report?.equipe?.pessoas&&<p className="lxd-message">Detalhamento por colaborador indisponível para esta consulta ou perfil.</p>}
    <footer className="lxi-footnote"><ShieldCheck size={15}/> Indicadores consultados sob o acesso autenticado da empresa. Sem resultados presumidos. O histórico por período não deve ser confundido com o tamanho atual da carteira. {model.source.consultadoEm&&<span>Consulta: {new Date(model.source.consultadoEm).toLocaleString('pt-BR',{timeZone:'America/Sao_Paulo'})}</span>}</footer>
   </>}
  </main>;
