@@ -1,0 +1,120 @@
+/* INFINITUM Signature — authenticated workspace only. No effect on login or print. */
+@media screen{
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.inf-signature-shell{
+ --signature-canvas:#edf0f4;--signature-top:#f8f9fb;--signature-panel:#fff;--signature-ink:#202631;--signature-muted:#5d6777;--signature-border:#dbe0e8;--signature-accent:#6f2232;
+ --signature-bg:radial-gradient(ellipse at 96% 2%,#dbe1ea 0,transparent 42%),radial-gradient(ellipse at 3% 64%,#e5e9ee 0,transparent 43%),linear-gradient(125deg,#f5f7fa,#e9edf2);
+ --signature-nav:radial-gradient(ellipse at 5% 0%,#3d2835 0,transparent 40%),linear-gradient(165deg,#252731 0%,#181d26 54%,#171b22 100%);
+ --signature-shadow:0 1px 2px #1e28300b,0 8px 22px #2634450a;--v2-sidebar:286px;--v2-rail:76px;
+ --v2-panel:var(--signature-panel);--v2-line:var(--signature-border);--v2-canvas:var(--signature-canvas);
+}
+html[data-crm-theme="infinitum"][data-crm-mode="dark"] .app-shell.inf-signature-shell{
+ --signature-canvas:#141923;--signature-top:#1e2530;--signature-panel:#202733;--signature-ink:#edf1f6;--signature-muted:#b7c2d1;--signature-border:#38424f;--signature-accent:#efb0bf;
+ --signature-bg:radial-gradient(ellipse at 96% 2%,#27313e 0,transparent 45%),radial-gradient(ellipse at 2% 75%,#251d2a 0,transparent 46%),linear-gradient(125deg,#161c27,#11161f);
+ --signature-nav:radial-gradient(ellipse at 5% 0%,#382631 0,transparent 40%),linear-gradient(160deg,#20232d,#131821 66%,#141923);
+ --signature-shadow:0 2px 4px #0002,0 8px 22px #0002;
+}
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell,
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell .app-content[data-route]{
+ background:var(--signature-bg)!important;background-attachment:fixed!important;color:var(--signature-ink)!important;
+}
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell .app-sidebar{
+ background:var(--signature-nav)!important;background-image:var(--signature-nav)!important;padding:18px 13px 12px!important;border-right:1px solid #ffffff13!important;box-shadow:8px 0 26px #161c2520!important;
+}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .app-sidebar .app-identity{
+ padding:4px 3px 17px!important;border:0!important;min-height:65px!important;gap:8px!important
+}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .app-sidebar .pr-brand{grid-template-columns:46px minmax(0,1fr)!important;gap:4px 10px!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .app-sidebar .pr-brand-symbol{width:44px!important;height:34px!important;padding:3px!important;object-fit:contain!important;filter:brightness(0) invert(1)!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .app-sidebar .pr-brand-name{font-size:16px!important;letter-spacing:.12em!important;font-weight:750!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .app-sidebar .pr-brand-sub{font-size:9px!important;letter-spacing:.1em!important;color:#c2aeb9!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .app-brand-link{display:none!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .inf-sidebar-context{display:flex;align-items:center;gap:11px;margin:0 0 13px;padding:12px 10px;border-radius:11px;background:#ffffff09;border:1px solid #ffffff17;color:#f1f3f7;flex:none;min-width:0}
+.inf-sidebar-context-icon{display:grid;place-items:center;width:34px;height:34px;flex:none;background:#ffffff12;color:#f2c0cf;border-radius:9px}
+.inf-sidebar-context>div{display:grid;gap:3px;min-width:0}
+.inf-sidebar-context strong{font-size:12px;font-weight:650}
+.inf-sidebar-context small{color:#b2bdcc;font-size:10px;line-height:1.35}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .app-sidebar .app-nav{padding:0 0 10px!important;scrollbar-width:thin;scrollbar-color:#ffffff24 transparent}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .inf-nav-group{margin:0 0 5px!important;padding:0 0 8px!important;border-bottom:1px solid #ffffff10!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .inf-nav-group h2{margin:0!important;padding:0!important}
+.inf-signature-shell .inf-nav-group-toggle{display:flex;justify-content:space-between;align-items:center;gap:8px;width:100%;text-align:left;padding:10px 8px 7px;background:transparent;border:0;color:#aeb8c7;font:650 10px/1.4 Inter,system-ui,sans-serif;letter-spacing:.085em;text-transform:uppercase;cursor:pointer;border-radius:7px}
+.inf-signature-shell .inf-nav-group-toggle:hover{background:#ffffff09;color:#fff}
+.inf-signature-shell .inf-nav-group-toggle svg{transition:transform .18s ease;flex:none}
+.inf-signature-shell .inf-nav-group-toggle[aria-expanded="false"] svg{transform:rotate(-90deg)}
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell .app-sidebar .app-nav-link{
+ min-height:43px!important;padding:7px 9px!important;gap:10px!important;border-radius:10px!important;margin:2px 0!important;transition:background .18s ease,border-color .18s ease!important
+}
+.inf-signature-shell .inf-nav-icon{display:grid!important;place-items:center;width:30px;height:30px;flex:none;border-radius:8px;background:#ffffff05}
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell .app-sidebar .app-nav-link.active{
+ background:linear-gradient(100deg,#703143,#55303f)!important;border:1px solid #a36a785c!important;box-shadow:0 4px 12px #100a1426!important
+}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .app-sidebar .app-nav-link.active:before{background:#f0bac7!important;left:0!important;top:10px!important;bottom:10px!important;width:3px!important}
+.inf-signature-shell .app-nav-link.active .inf-nav-icon{background:#ffffff17}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .inf-nav-text strong{font-size:13px!important;letter-spacing:-.005em}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .inf-nav-description{font-size:10px!important;line-height:1.45!important;color:#e0c9d0!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .app-nav-footer{max-height:none!important;padding:12px 0 2px!important;border-top:1px solid #ffffff18!important}
+.inf-signature-shell .app-private{display:none!important}
+.inf-signature-shell .inf-signature-profile{display:flex;align-items:center;gap:9px;padding:8px 7px;text-decoration:none;color:#f3f4f6;border:1px solid #ffffff15;background:#ffffff08;border-radius:10px;margin-bottom:9px;min-width:0}
+.inf-signature-shell .inf-signature-profile>span:nth-child(2){display:grid;gap:3px;min-width:0;flex:1}
+.inf-signature-shell .inf-signature-profile strong,.inf-signature-shell .inf-signature-profile small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.inf-signature-shell .inf-signature-profile strong{font-size:12px;font-weight:650;color:#f3f4f6}
+.inf-signature-shell .inf-signature-profile small{font-size:10px;color:#b8c2cf}
+.inf-signature-shell .inf-profile-avatar{width:33px;height:33px;flex:none;display:grid;place-items:center;border-radius:9px;background:#73404e;color:white;font-weight:700;overflow:hidden}
+.inf-signature-shell .inf-profile-avatar img{width:100%;height:100%;object-fit:cover}
+.inf-signature-shell .inf-signature-profile>svg{flex:none;color:#aeb8c7}
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell .reference-top-tools{
+ background:var(--signature-top)!important;background-image:none!important;min-height:78px!important;border-bottom:1px solid var(--signature-border)!important;padding:12px clamp(14px,2vw,28px)!important;
+}
+.inf-signature-shell .inf-signature-context{display:flex;align-items:center;gap:13px;min-width:0}
+.inf-signature-shell .inf-context-icon{display:grid;place-items:center;flex:none;width:44px;height:44px;border-radius:12px;background:var(--ui-tint);color:var(--signature-accent);border:1px solid var(--signature-border)}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .blackhole-shell-breadcrumb{align-items:flex-start!important;flex-direction:column!important;gap:3px!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .blackhole-shell-crumb-sep{display:none!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .blackhole-shell-breadcrumb>a{font-size:10px!important;letter-spacing:.08em!important;text-transform:uppercase}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .inf-current-area strong{font-size:17px!important;font-weight:700!important;letter-spacing:-.025em}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .inf-current-area small{display:none!important}
+.inf-signature-shell .inf-signature-action{display:inline-flex;align-items:center;gap:7px;white-space:nowrap;padding:9px 11px;border-radius:9px;border:1px solid var(--signature-border);background:var(--signature-panel);color:var(--signature-ink)!important;text-decoration:none;font-weight:600;font-size:12px}
+.inf-signature-shell .inf-signature-action:hover{border-color:var(--signature-accent)}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .blackhole-shell-search{background:var(--signature-panel)!important;border-color:var(--signature-border)!important;border-radius:9px!important;box-shadow:0 2px 6px #17233306!important;width:clamp(170px,22vw,320px)!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell .app-content :is(.inf-studio,.reference-dashboard,.task-shell,.task-main,.report-dashboard,.settings-dashboard,.lxd-shell,.lxi-shell,.lx-workspace,.lx-shared,.report-completo-shell,.lexis-report-root,.office-workflow-screen){
+ background:transparent!important;background-image:none!important;color:var(--signature-ink)!important
+}
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell .app-content :is(.reference-header,.inf-heading,.lxd-top,.task-header){
+ background:var(--signature-panel)!important;border:1px solid var(--signature-border)!important;border-radius:16px!important;padding:clamp(17px,2vw,28px)!important;margin-bottom:20px!important;box-shadow:var(--signature-shadow)!important;position:relative;isolation:isolate;overflow:hidden
+}
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell .app-content :is(.reference-header,.inf-heading,.lxd-top,.task-header)::after{
+ content:""!important;display:block!important;position:absolute;z-index:-1;pointer-events:none;right:-75px;top:-110px;width:300px;height:300px;border-radius:50%;border:1px solid var(--signature-border);box-shadow:0 0 0 24px #8492a009,0 0 0 48px #8492a006!important;background:none!important
+}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .app-content :is(.reference-header,.inf-heading,.lxd-top,.task-header) h1{font-size:clamp(27px,2.45vw,39px)!important;letter-spacing:-.04em!important;color:var(--signature-ink)!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell .app-content :is(.inf-panel,.reference-panel,.lxd-panel,.office-panel,.task-board,.office-record,.lx-event-card,.inf-stat,.lxd-stat,.lx-kpi,.office-kanban-column,.office-ai-header,.office-ai-rail,.wa-conversation-list,.inf-document-step,.ixr-panel,.inf-priority-board,.inf-quick-grid a){
+ background:var(--signature-panel)!important;border-color:var(--signature-border)!important;box-shadow:var(--signature-shadow)!important;border-radius:13px!important
+}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .app-content :is(.inf-stat,.lxd-stat,.lx-kpi){position:relative;overflow:hidden;isolation:isolate;min-height:125px!important;transition:transform .16s ease,border-color .16s ease,box-shadow .16s ease!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .app-content :is(.inf-stat,.lxd-stat,.lx-kpi)::after{content:"";position:absolute;pointer-events:none;z-index:-1;right:-28px;bottom:-37px;width:102px;height:102px;border:1px solid var(--signature-border);border-radius:50%;box-shadow:0 0 0 13px #8593a009,0 0 0 26px #8593a006}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .app-content :is(a.inf-stat,a.lxd-stat,button.lx-kpi,.inf-quick-grid a):hover{transform:translateY(-2px)!important;border-color:var(--signature-accent)!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .app-content :is(.inf-btn,.reference-outline,.reference-primary,.lx-event-open){border-radius:9px!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .app-content :is(.inf-btn.primary,.reference-primary){box-shadow:0 3px 8px #43203119!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .inf-portfolio-table tbody tr:nth-child(even) td{background:var(--signature-top)!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .inf-portfolio-table tbody tr:hover td{background:var(--ui-neutral-bg)!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .inf-queue-section{box-shadow:var(--signature-shadow);border-radius:14px}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .inf-queue-section .lx-event-card{box-shadow:none!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .inf-document-empty{background:var(--signature-top)!important}
+@media(min-width:881px){
+ html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell.sidebar-collapsed .inf-sidebar-context{display:none!important}
+ html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell.sidebar-collapsed .app-sidebar .app-nav-link{padding:6px!important}
+ html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell.sidebar-collapsed .inf-signature-profile{justify-content:center;padding:5px!important}
+ html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell.sidebar-collapsed .inf-signature-profile>span:nth-child(2),html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell.sidebar-collapsed .inf-signature-profile>svg{display:none!important}
+ html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell.sidebar-collapsed .app-sidebar .pr-brand{display:flex!important;justify-content:center!important}
+}
+@media(max-width:1200px){.inf-signature-shell .inf-signature-action{display:none!important}}
+@media(max-width:880px){
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.inf-signature-shell .app-sidebar{display:none!important}
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell .reference-top-tools{min-height:64px!important;padding:10px 12px!important}
+ .inf-signature-shell .inf-context-icon{width:34px;height:34px;border-radius:8px}
+ .inf-signature-shell .inf-context-icon svg{width:18px;height:18px}
+ .inf-signature-shell .inf-signature-context{gap:7px}
+ html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .blackhole-shell-breadcrumb>a{display:none!important}
+ html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .inf-current-area strong{font-size:13px!important}
+ html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .blackhole-shell-search{width:clamp(110px,31vw,220px)!important}
+ html[data-crm-theme="infinitum"][data-crm-mode] .inf-signature-shell .crm-mobile-dock{background:var(--signature-top)!important;box-shadow:0 -6px 24px #16223111!important}
+}
+@media(prefers-reduced-motion:reduce){.inf-signature-shell :is(.inf-nav-group-toggle svg,.app-nav-link,.inf-stat,.lxd-stat,.lx-kpi,.inf-quick-grid a){transition:none!important;transform:none!important}}
+}
