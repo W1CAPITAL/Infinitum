@@ -1,7 +1,7 @@
 'use client';
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import Link from 'next/link';
-import {Activity,AlertTriangle,ArrowRight,BarChart3,CalendarDays,CheckCircle2,Clock3,FileWarning,Gavel,RefreshCw,Scale,Users} from 'lucide-react';
+import {Activity,AlertTriangle,ArrowRight,BarChart3,CalendarDays,CheckCircle2,Clock3,FileWarning,Gavel,RefreshCw,Scale,Users,FileText,ClipboardList} from 'lucide-react';
 import {loadLexisCompanySources} from '../lib/lexis-company-data.mjs';
 import {summarizeLexisDashboard} from '../lib/lexis-dashboard-metrics.mjs';
 import {todayBrazil} from '../lib/tarefas.mjs';
@@ -48,11 +48,11 @@ export default function LexisDashboard({db,session}){
  const maxTribunal=Math.max(1,...(s?.tribunals||[]).map(x=>x.count));
  const maxMonth=Math.max(1,...(s?.months||[]).map(x=>x.count));
  return <main className="lxd-shell" data-lexis-dashboard="executive">
-  <header className="lxd-top"><div><small>INFINITUM · LEXISPREDICT / PAINEL EXECUTIVO</small><h1>Visão jurídica completa</h1><p>{state.company||'Carteira da empresa'} · Processos, prazos, audiências e agenda em um só lugar.</p></div><div className="lxd-actions"><button className="inf-btn" disabled={state.loading} onClick={()=>{refresh();audit.refresh()}}><RefreshCw size={15}/>{state.loading?' Consultando...':' Atualizar'}</button><Link className="inf-btn primary" href="/processos"><Scale size={15}/> Abrir carteira</Link></div></header>
+  <header className="lxd-top"><div><small>INFINITUM · LEXISPREDICT / PAINEL EXECUTIVO</small><h1>Seu dia de trabalho</h1><p>{state.company||'Carteira da empresa'} · Acompanhe as prioridades, organize os próximos compromissos e consulte sua carteira.</p></div><div className="lxd-actions"><button className="inf-btn" disabled={state.loading} onClick={()=>{refresh();audit.refresh()}}><RefreshCw size={15}/>{state.loading?' Consultando...':' Atualizar'}</button><Link className="inf-btn primary" href="/processos"><Scale size={15}/> Abrir carteira</Link></div></header>
+  <section className="inf-quick-start" aria-label="Ações rápidas"><h2>O que você precisa fazer?</h2><div className="inf-quick-grid">{[{to:"/processos",Icon:Scale,title:"Consultar processo",detail:"Andamentos, clientes e atendimentos"},{to:"/tarefas?status=hoje",Icon:ClipboardList,title:"Organizar o dia",detail:"Tarefas e retornos"},{to:"/agenda",Icon:CalendarDays,title:"Ver agenda",detail:"Prazos e compromissos"},{to:"/pecas",Icon:FileText,title:"Preparar uma peça",detail:"Minutas vinculadas ao processo"}].map(({to,Icon,title,detail})=><Link key={to} href={to}><Icon size={21}/><span><strong>{title}</strong><small>{detail}</small></span><ArrowRight size={16}/></Link>)}</div></section>
   {state.loading&&<p className="lxd-message" role="status">Conferindo todos os registros da empresa, incluindo páginas adicionais...</p>}
   {state.error&&<div className="lxd-message danger" role="alert"><AlertTriangle size={18}/><span>Falha na consulta do Lexis: {state.error}. Não exibimos totais presumidos.</span><button className="inf-btn" onClick={refresh}>Repetir consulta</button></div>}
   {state.warnings.length>0&&<p className="lxd-message" role="alert">Algumas fontes não responderam: {state.warnings.join(' · ')}. Indicadores dessas fontes aparecem indisponíveis.</p>}
-  {companyId&&<LexisAttendanceBoard audit={audit} userId={session.user.id} />}
   {s&&<><section className="lxd-stats" aria-label="Indicadores da carteira">
    <Stat name="Processos com CNJ" value={s.processes} description="Somente processos com número CNJ" to="/processos" Icon={Scale}/>
    <Stat name="Processos ativos com CNJ" value={s.active} description="Desconsidera encerrados" to="/processos" Icon={Activity}/>
@@ -62,6 +62,7 @@ export default function LexisDashboard({db,session}){
    <Stat name="Compromissos judiciais futuros" value={valid.hearings?s.hearingsFuture:null} description="Com data, não canceladas" to="/audiencias" Icon={Gavel}/>
    <Stat name="Menções a verificar" value={valid.hearings?s.hearingsUndated:null} description="Fora da agenda até confirmação" to="/audiencias" Icon={CalendarDays}/>
   </section>
+  {companyId&&<LexisAttendanceBoard audit={audit} userId={session.user.id} />}
   <section className="lxd-panels">
    <article className="lxd-panel"><Head eyebrow="ACOMPANHAMENTO AO CLIENTE" title="Retornos e atendimentos" to="/tarefas?tipo=retorno">Regra dos retornos: próximo retorno comparado com o último atendimento do cliente.</Head>
     <div className="lxd-overdue"><span>Retornos vencidos (com CNJ)</span><strong>{n(s.overdueReturns)}</strong></div>
