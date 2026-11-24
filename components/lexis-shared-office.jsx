@@ -6,6 +6,7 @@ import {Activity,Archive,BarChart3,CalendarDays,CheckCircle2,ChevronLeft,Chevron
 import {mapLexisProcess,resolveCompanyAccess,portfolioUpdate,PROCESS_FIELDS,normalizedCnj,validDay,dailyAttendanceSummary,filterPortfolioRows,createPortfolioProcess} from '../lib/lexis-shared-portfolio.mjs';
 import {fetchCompanyRows} from '../lib/lexis-company-data.mjs';
 import ProgressiveListEnd from './progressive-list-end';
+import {readConsultationResponse} from '../lib/judicial-response-client.mjs';
 import {consultHistoricalCase,mergeHistoricalContinuation} from '../lib/judicial-history-client.mjs';
 import {browseOfficialDjenNumber} from '../lib/blackhole-public-djen-browser.mjs';
 import {periodBounds} from '../lib/report.mjs';
@@ -268,10 +269,7 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
     fetchServer:async({number,source,start,end,page,signal})=>{
      const qs=new URLSearchParams({numero:number,fonte:source,pagina:String(page),...(start?{inicio:start}:{}),...(end?{fim:end}:{})});
      const resp=await fetch('/api/processos/consulta?'+qs,{headers:{Authorization:'Bearer '+s.access_token},cache:'no-store',signal});
-     const raw=await resp.text();
-     let body;try{body=JSON.parse(raw)}catch{throw Error('O servidor de consulta não respondeu com dados válidos (HTTP '+resp.status+').')}
-     if(!resp.ok&&body.ok!==false)throw Error(body.error||'Consulta indisponível (HTTP '+resp.status+').');
-     return body;
+     return readConsultationResponse(resp);
     },
     fetchBrowser:async({number,start,end,page,signal})=>browseOfficialDjenNumber({number,start,end,page,signal})
    });
