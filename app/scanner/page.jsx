@@ -149,7 +149,7 @@ function Scanner({db,session}){
    <div className="inf-stat"><label>Execuções automáticas do servidor</label><strong>{history.filter(x=>x.trigger_mode==='scheduled').length}</strong></div>
    <div className="inf-stat"><label>Restantes nesta execução</label><strong>{Math.max(0,progress.total-progress.done)}</strong></div>
   </div>
-  <section className="inf-panel"><h2><ScanSearch size={17}/> Varredura de carteira</h2>
+  <div className="inf-scanner-desk"><section className="inf-panel inf-scanner-control"><h2><ScanSearch size={17}/> Varredura de carteira</h2>
    <p>Os resultados oficiais ficam no Supabase com RLS. Consultas recentes são reutilizadas, e respostas 403/429 entram em pausa global. A execução automática desta tela ocorre enquanto a aba estiver aberta; o agendador da carteira compartilhada é independente. Uma fonte nunca substitui a confirmação da outra.</p>
    <div className="office-action-row blackhole-scanner-controls">
     <input className="inf-search" type="search" value={query} onChange={e=>setQuery(e.target.value)} placeholder="Filtrar CNJ, tribunal ou caso" aria-label="Filtrar processos"/>
@@ -182,7 +182,7 @@ function Scanner({db,session}){
    {error&&<p role="alert" className="inf-note error">{error}</p>}
    {notice&&<p role="status" className="inf-note">{notice}</p>}
   </section>
-  {!!live.length&&<section className="inf-panel"><h2>Resultado da execução atual</h2>
+  <div className="inf-scanner-results">{!!live.length&&<section className="inf-panel"><h2>Resultado da execução atual</h2>
    <div className="office-records">{live.map((r,i)=><article key={r.number+'-'+i} className="office-record">
     <strong>{r.title} · {r.number}</strong>
     {r.ok?<><p><CheckCircle2 size={14}/> DataJud: {label[r.sourceStatus?.datajud?.status]||'—'} · DJEN: {label[r.sourceStatus?.djen?.status]||'—'}</p>
@@ -207,7 +207,7 @@ function Scanner({db,session}){
     <small>{r.review?.returnReason||'Nenhuma recomendação registrada.'}</small>
    </article>)}</div>}
   </section>
-  <p className="inf-note"><ShieldCheck size={14}/> O scanner reutiliza fontes públicas CNJ, não acessa autos protegidos por certificado e não executa peticionamento, contato ou alteração de prazos automaticamente.</p>
+  </div></div><p className="inf-note"><ShieldCheck size={14}/> O scanner reutiliza fontes públicas CNJ, não acessa autos protegidos por certificado e não executa peticionamento, contato ou alteração de prazos automaticamente.</p>
  </main>
 }
 export default function ScannerPage(){return <SecuredWorkspace active="Scanner judicial">{({db,session})=><Scanner db={db} session={session}/>}</SecuredWorkspace>}

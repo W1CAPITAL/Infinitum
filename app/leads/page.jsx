@@ -8,6 +8,7 @@ const stamp=t=>t?new Date(t).toLocaleDateString('pt-BR'):'—';
 function LeadsBoard({db,session}){
  const [items,setItems]=useState([]),[intake,setIntake]=useState([]),[busy,setBusy]=useState(false),[notice,setNotice]=useState('');
  const [form,setForm]=useState(empty()),[showForm,setShowForm]=useState(false);
+ const [leadWorkspace,setLeadWorkspace]=useState('funil');
  const [visibleCount,setVisibleCount]=useState(100);
  const [filter,setFilter]=useState(''),[origin,setOrigin]=useState('todos'),[view,setView]=useState('tabela'),[importSource,setImportSource]=useState('w1');
  const load=useCallback(async()=>{
@@ -78,7 +79,7 @@ function LeadsBoard({db,session}){
  return <main className="inf-studio">
   <header className="inf-heading"><div><small>CRM / W1 CAPITAL / CAPTAÇÃO</small><h1>Leads</h1>
    <p>Captação jurídica: solicitações voluntárias pelo site e importação de contatos autorizados W1/W2. Sem envio automático de mensagens.</p></div>
-   <div className="inf-actions"><button className="inf-btn" onClick={load} disabled={busy}><RefreshCw size={15}/> Atualizar</button><button className="inf-btn primary" onClick={()=>setShowForm(x=>!x)}><Plus size={15}/> Novo lead</button></div></header>
+   <div className="inf-actions"><button className="inf-btn" onClick={load} disabled={busy}><RefreshCw size={15}/> Atualizar</button><button className="inf-btn primary" onClick={()=>{setLeadWorkspace('funil');setShowForm(x=>!x)}}><Plus size={15}/> Novo lead</button></div></header>
   <div className="inf-grid">
    <div className="inf-stat"><label>Leads da carteira</label><strong>{items.length}</strong></div>
    <div className="inf-stat"><label>Qualificados</label><strong>{count('qualificado')}</strong></div>
@@ -86,21 +87,22 @@ function LeadsBoard({db,session}){
    <div className="inf-stat"><label>Convertidos</label><strong>{count('convertido')}</strong></div>
   </div>
   {notice&&<div className={'inf-note '+(/falha|interromp|erro|rejeitad|não foi/i.test(notice)?'error':'')} role="status">{notice}</div>}
-  <section className="inf-panel"><div className="office-toolbar"><h2>Solicitações pela landing page jurídica</h2><a className="inf-btn primary" href="/captacao" target="_blank" rel="noreferrer">Abrir página de captação <ExternalLink size={12}/></a></div>
+  <div className="inf-leads-desk"><nav className="inf-leads-tabs" aria-label="Áreas de captação">{[['funil','Funil comercial'],['entrada','Solicitações do site'],['importacao','Importar contatos']].map(([id,label])=><button type="button" key={id} aria-pressed={leadWorkspace===id} onClick={()=>setLeadWorkspace(id)}>{label}{id==='entrada'?' · '+intake.filter(x=>!x.converted_at).length:''}</button>)}</nav>
+  <section hidden={leadWorkspace!=='entrada'} className="inf-panel"><div className="office-toolbar"><h2>Solicitações pela landing page jurídica</h2><a className="inf-btn primary" href="/captacao" target="_blank" rel="noreferrer">Abrir página de captação <ExternalLink size={12}/></a></div>
    <p>Contato recebido com autorização de retorno e validação antispam. Revise antes de enviar ao funil.</p>
    <div className="office-records">{intake.filter(x=>!x.converted_at).map(x=><article className="office-record" key={x.id}>
     <strong>{x.name}</strong><p>{x.practice_area} · {x.email||x.phone||'Sem contato'} · {stamp(x.created_at)}</p>
     <p>{x.message||'Sem descrição'}</p><button type="button" className="inf-btn" disabled={busy} onClick={()=>importIntake(x)}>Adicionar ao funil</button>
    </article>)}{!intake.some(x=>!x.converted_at)&&<div className="office-list-empty">Nenhum pedido de contato pendente do site.</div>}</div>
   </section>
-  <section className="inf-panel"><h2>Fontes e geradores conectados ao fluxo</h2>
+  <section hidden={leadWorkspace!=='importacao'} className="inf-panel"><h2>Fontes e geradores conectados ao fluxo</h2>
    <p>W1 Leadcheck exporta CSV; W2 LEADCHECKIN exporta dados CSV/JSON. W3 God’s Eye é uma ferramenta geográfica, não uma API de geração automática de leads.</p>
    <div className="inf-source-row">{LEAD_SOURCES.filter(s=>s.href).map(x=><a key={x.id} href={x.href} target="_blank" rel="noreferrer">{x.label} <ExternalLink size={11}/></a>)}</div>
    <div className="inf-toolbar"><label className="inf-field">Origem do arquivo<select value={importSource} onChange={e=>setImportSource(e.target.value)}>{LEAD_SOURCES.map(s=><option key={s.id} value={s.id}>{s.label}</option>)}</select></label>
    <label className="inf-field">Importar CSV ou JSON<input type="file" accept=".csv,.json,text/csv,application/json" onChange={importFile} disabled={busy}/></label></div>
    <p>Somente dados obtidos de forma autorizada. Não presume consentimento para mensagens e não envia contatos automaticamente.</p>
   </section>
-  {showForm&&<section className="inf-panel"><h2>Adicionar lead</h2><form onSubmit={add}>
+  {showForm&&<section hidden={leadWorkspace!=='funil'} className="inf-panel"><h2>Adicionar lead</h2><form onSubmit={add}>
    <div className="inf-fields">
     <label>Nome ou título<input required value={form.name} onChange={e=>setForm({...form,name:e.target.value})}/></label>
     <label>Empresa<input value={form.company} onChange={e=>setForm({...form,company:e.target.value})}/></label>
@@ -114,7 +116,7 @@ function LeadsBoard({db,session}){
     <label style={{gridColumn:'1/-1'}}>Observação / evidência<textarea value={form.source_detail} onChange={e=>setForm({...form,source_detail:e.target.value})}/></label>
    </div><div className="inf-row-end"><button type="button" className="inf-btn" onClick={()=>setShowForm(false)}>Cancelar</button><button disabled={busy} className="inf-btn primary">Salvar lead</button></div>
   </form></section>}
-  <section className="inf-panel"><div className="inf-toolbar"><input className="inf-search" placeholder="Buscar lead, empresa ou interesse..." value={filter} onChange={e=>setFilter(e.target.value)} aria-label="Buscar leads"/>
+  <section hidden={leadWorkspace!=='funil'} className="inf-panel inf-leads-pipeline"><div className="inf-toolbar"><input className="inf-search" placeholder="Buscar lead, empresa ou interesse..." value={filter} onChange={e=>setFilter(e.target.value)} aria-label="Buscar leads"/>
    <select aria-label="Filtrar por origem" className="inf-search" style={{maxWidth:180}} value={origin} onChange={e=>setOrigin(e.target.value)}><option value="todos">Todas as fontes</option>{LEAD_SOURCES.map(x=><option key={x.id} value={x.id}>{x.label}</option>)}</select>
    <div className="inf-tabs"><button aria-pressed={view==='tabela'} onClick={()=>setView('tabela')}><Table2 size={14}/> Tabela</button><button aria-pressed={view==='kanban'} onClick={()=>setView('kanban')}><Columns3 size={14}/> Kanban</button></div></div>
    {!results.length?<div className="inf-empty">Nenhum lead nesta visualização. Cadastre ou importe registros reais.</div>:
@@ -129,7 +131,7 @@ function LeadsBoard({db,session}){
     </tbody></table></div>}
    {visible.length<results.length&&<div className="inf-row-end"><button type="button" className="inf-btn" onClick={()=>setVisibleCount(n=>Math.min(n+100,1000))}>Mostrar mais {Math.min(100,results.length-visible.length)} leads</button></div>}
    {items.length>=1000&&<p>Consulta limitada aos mil registros mais recentes; filtros e paginação adicionais podem ser necessários.</p>}
-  </section>
+  </section></div>
  </main>;
 }
 export default function LeadsPage(){return <SecuredWorkspace active="Leads">{({db,session})=><LeadsBoard db={db} session={session}/>}</SecuredWorkspace>}
