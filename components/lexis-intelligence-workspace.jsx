@@ -87,7 +87,8 @@ export default function LexisIntelligenceWorkspace({db,session,mode='report'}){
     <Stat icon={AlertTriangle} title="Retornos vencidos" value={h.vencidos} description="Somente vencimentos confirmados" to="/vencidos" alert/>
     <Stat icon={Users} title="Atendimentos registrados" value={h.atendimentos} description="Eventos identificados no período selecionado" to="/tarefas"/>
     <Stat icon={CalendarClock} title="Processos atendidos" value={h.processosAtendidos} description="Processos distintos no histórico do período" to="/tarefas"/>
-    <Stat icon={FileText} title="Atividades registradas" value={h.atividades} description="Trabalho cadastrado no período, separado dos atendimentos" to="/atividades"/>
+    <Stat icon={FileText} title="Atividades registradas no período" value={h.atividades} description="Trabalho cadastrado no período, separado dos atendimentos" to="/atividades"/>
+    <Stat icon={FileText} title="Atividades · histórico completo" value={h.atividadesHistorico} description="Registros efetivamente salvos, todas as datas" to="/atividades"/>
     <Stat icon={RefreshCw} title="Novidades na carteira" value={h.novidades} description="Sinais identificados na carteira atual" to="/processos"/>
     <Stat icon={AlertTriangle} title="Sem retorno registrado" value={h.semRetorno} description="Pendências de acompanhamento, conforme fonte" to="/tarefas" alert/>
     {mode==='supervision'&&<Stat icon={Activity} title="Edições auditadas" value={h.edicoes} description="Eventos de alteração registrados pela auditoria" to="/supervisao"/>}

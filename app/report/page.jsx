@@ -18,6 +18,7 @@ import LexisIntelligenceWorkspace from '../../components/lexis-intelligence-work
 import EfferdKpi from '../../components/efferd-kpi';
 import KillaAtendimentoKpi from '../../components/killa-atendimento-kpi';
 import {fetchLexisAttendanceRows} from '../../lib/lexis-attendance-report-data.mjs';
+import {fetchCompanyRows} from '../../lib/lexis-company-data.mjs';
 
 const periods=[{id:'esta_semana',label:'Esta semana'},{id:'semana_passada',label:'Semana passada'},{id:'mes',label:'Mês atual'}];
 const periodLabel=Object.fromEntries(periods.map(p=>[p.id,p.label]));
@@ -110,25 +111,15 @@ function LegacyReportPage(){
       throw Error(user.error?.message||'Usuário sem vínculo único à organização Lexis.');
     const empresaId=user.data[0].empresa_id;
     const col='id,cliente,protocolo_ref,tribunal,advogado,atendido_por,status_interno,proximo_retorno,proximo_prazo,ultimo_retorno,observacoes';
-    const tasks=fetchLexisAttendanceRows(db,empresaId,bounds);
-    const queries=[
-     db.from('processos').select(col).eq('empresa_id',empresaId).order('id').range(0,999),
-     db.from('processos').select(col).eq('empresa_id',empresaId).order('id').range(1000,1999),
-     db.from('processos').select(col).eq('empresa_id',empresaId).order('id').range(2000,2999),
-     db.from('usuarios').select('id,auth_user_id,empresa_id,nome').eq('empresa_id',empresaId).limit(200),
-     tasks
-    ];
-    const [one,two,three,users,acts]=await Promise.all(queries);
-    const fails=[one,two,three,users,acts].filter(x=>x.error);
-    if(fails.length)throw Error(fails.map(x=>x.error.message).join(' · '));
-    const processes=[...(one.data||[]),...(two.data||[]),...(three.data||[])];
-    const adapted=adaptLexisToExecutiveReport({processes,activities:acts.data||[],members:users.data||[]});
+    const [processes,members,acts]=await Promise.all([
+     fetchCompanyRows(db,'processos',col,empresaId),
+     fetchCompanyRows(db,'usuarios','id,auth_user_id,empresa_id,nome',empresaId),
+     fetchLexisAttendanceRows(db,empresaId,bounds)
+    ]);
+    const adapted=adaptLexisToExecutiveReport({processes,activities:acts,members:members});
     setClients(adapted.clients);setAudit(adapted.audit);setManual(adapted.manual);
     setPriorityAudit(adapted.priorityAudit);setPriorityManual(adapted.priorityManual);
-    const warnings=[];
-    if((three.data||[]).length===1000)warnings.push('Acima de 3.000 processos: relatório limitado às primeiras 3.000 linhas.');
-    if((acts.data||[]).length===2500)warnings.push('Histórico limitado a 2.500 registros neste período.');
-    setNotice(warnings.join(' · '));setUpdated(new Date());
+    setNotice('');setUpdated(new Date());
    }catch(e){setNotice('Não foi possível gerar os indicadores da organização: '+e.message);
     setClients([]);setAudit([]);setManual([]);setPriorityAudit([]);setPriorityManual([]);
    }finally{setLoading(false)}

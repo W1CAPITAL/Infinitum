@@ -6,6 +6,7 @@ import {buildLexisEvents} from '../lib/lexis-operations.mjs';
 import {summarizeLexisReturns} from '../lib/lexis-return-kpis.mjs';
 import {filterLexisCompanyQueue,summarizeLexisCompanyQueue} from '../lib/lexis-company-queue.mjs';
 import {loadLexisCompanySources} from '../lib/lexis-company-data.mjs';
+import ProgressiveListEnd from './progressive-list-end';
 import LexisEventDetails from './lexis-event-details';
 import LexisAttendanceBoard from './lexis-attendance-board';
 import {useLexisAttendanceAudit} from './use-lexis-attendance-audit';
@@ -33,7 +34,7 @@ export default function LexisOperations({db,session,area='deadlines'}){
  const [month,setMonth]=useState(brazilToday().slice(0,7)),[filter,setFilter]=useState('todos'),[showPast,setShowPast]=useState(false),[view,setView]=useState('month');
  const [validSources,setValidSources]=useState({processes:false,hearings:false,tasks:false,manual:false});
  const [page,setPage]=useState(0);
- useEffect(()=>{setPage(0)},[area,search,filter,month]);
+ useEffect(()=>{setPage(0)},[area,search,filter,month,showPast,view]);
  useEffect(()=>{if(area==='tasks')setFilter('prioridades');else if(area==='overdue')setFilter('vencidos')},[area]);
  useEffect(()=>{
   if(area!=='deadlines'||typeof window==='undefined')return;
@@ -161,8 +162,8 @@ export default function LexisOperations({db,session,area='deadlines'}){
  const grid=Array.from({length:42},(_,i)=>iso(currentYear,currentMonth,1+i-offset));
  const groups=useMemo(()=>{const g=new Map();for(const x of listing){if(!x.due_on)continue;g.set(x.due_on,[...(g.get(x.due_on)||[]),x])}return g},[listing]);
  const PAGE_SIZE=60;
- const pageCount=Math.max(1,Math.ceil(listing.length/PAGE_SIZE));
- const pageRows=listing.slice(page*PAGE_SIZE,(page+1)*PAGE_SIZE);
+ const pageRows=listing.slice(0,(page+1)*PAGE_SIZE);
+ const moreRows=useCallback(()=>setPage(p=>p+1),[]);
  const subtitles={agenda:'Compromissos e audiências da organização, em uma única visão.',deadlines:'Retornos ao cliente com número CNJ e histórico de atendimento registrado.',audiencias:'Audiências registradas pelo LexisPredict e suas fontes.',tasks:'Tarefas, retornos e compromissos de toda a organização.',overdue:'Pendências vencidas da carteira empresarial.'};
  const titles={agenda:'Agenda',deadlines:'Prazos e retornos',audiencias:'Audiências',tasks:'Tarefas da organização',overdue:'Vencidos'};
  if(!profile&&!loading)return <main className="inf-studio lx-workspace"><p role="alert" className="inf-note error">{errors[0]||'Acesso não autorizado.'}</p></main>;
@@ -208,7 +209,7 @@ export default function LexisOperations({db,session,area='deadlines'}){
     </div>)}
    </div>}
    {['atendimentos_hoje','meus_atendimentos'].includes(filter)&&area!=='audiencias'?<p className="inf-note" role="status">Os processos atendidos são contabilizados na auditoria por executor e data, conforme o quadro acima. A lista de retornos mostra agendamentos e não representa os atendimentos registrados.</p>:(area!=='agenda'||view==='list')&&<div className="lx-event-list">{pageRows.map(x=><Card key={x.id} item={x} onSelect={openDetails}/>)}
-     {listing.length>PAGE_SIZE&&<div className="lx-load-more"><span>Mostrando {page*PAGE_SIZE+1}–{Math.min(listing.length,(page+1)*PAGE_SIZE)} de {listing.length} registros carregados</span><div className="inf-row-end"><button type="button" className="inf-btn" disabled={page===0} onClick={()=>setPage(v=>Math.max(0,v-1))}>Anterior</button><button type="button" className="inf-btn" disabled={page+1>=pageCount} onClick={()=>setPage(v=>Math.min(pageCount-1,v+1))}>Próxima</button></div></div>}
+     {listing.length>PAGE_SIZE&&<ProgressiveListEnd shown={pageRows.length} total={listing.length} onMore={moreRows} disabled={loading}/>}
     {!loading&&!listing.length&&<p className="pr-list-empty">Nenhum registro corresponde aos filtros. Confira as fontes e altere o período quando necessário.</p>}
    </div>}
    {area==='audiencias'&&<p className="inf-note">Audiências passadas não são prazos vencidos. Marque "Incluir audiências anteriores" para conferir eventos anteriores. As sem data ainda exigem confirmação oficial.</p>}
