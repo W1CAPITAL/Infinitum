@@ -3,7 +3,7 @@ import {useEffect,useMemo,useState} from 'react';
 import Link from 'next/link';
 import {Activity,AlertTriangle,BarChart3,BriefcaseBusiness,CalendarClock,CheckCircle2,Download,FileText,Printer,RefreshCw,ShieldCheck,Users} from 'lucide-react';
 import InfinitumExecutiveReport from './infinitum-executive-report';
-import {buildReportSections} from '../lib/infinitum-report-executive.mjs';
+import {buildReportSections,executiveSeries} from '../lib/infinitum-report-executive.mjs';
 import '../app/infinitum-executive-report.css';
 import {buildExecutivePdf} from '../lib/executive-pdf.mjs';
 import {TeamReport} from './lexis-team-report';
@@ -77,7 +77,7 @@ export default function LexisIntelligenceWorkspace({db,session,mode='report'}){
  function exportPdf(){
   if(!model||state.loading)return;
   try{
-   const bytes=buildExecutivePdf(model,{sections,period:LEXIS_PERIODS.find(p=>p.id===period)?.label||period,mode,warnings:result?.warnings||[]});
+   const bytes=buildExecutivePdf(model,{sections,daily:executiveSeries(result?.report?.historico||{}),period:LEXIS_PERIODS.find(p=>p.id===period)?.label||period,mode,warnings:result?.warnings||[]});
    const url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
    const a=document.createElement('a');a.href=url;a.download='INFINITUM-'+mode+'-'+period+'.pdf';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),30000);
    setNotice('Arquivo PDF gerado com os dados consultados.');
