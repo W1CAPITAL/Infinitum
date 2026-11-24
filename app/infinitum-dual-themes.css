@@ -3,18 +3,21 @@
  * Os dois modos compartilham os mesmos componentes, grids, rotas e interações.
  * A camada altera somente tokens, superfícies, contraste e acabamento visual.
  */
-html[data-crm-mode="light"]{
+html[data-crm-theme="infinitum"][data-crm-mode="light"]{
  color-scheme:light;
- --inf-paper:#fffdfd;--inf-canvas:#fbf7f8;--inf-ink:#392c39;--inf-muted:#756575;
- --inf-line:#e5d8e3;--inf-soft:#f3eaf1;--inf-accent:#8d6686;--inf-gold:#b48b75;
- --inf-shadow:0 4px 16px rgba(83,52,77,.055);--inf-shadow-hover:0 9px 24px rgba(83,52,77,.10);
+ --ui-page:#f5f7fa;--ui-surface:#ffffff;--ui-ink:#20242d;--ui-muted:#56606e;--ui-accent:#6f2232;--ui-accent-ink:#ffffff;--ui-nav:#161b22;--ui-nav-ink:#f3f4f6;--ui-border:#e5e7eb;--ui-tint:#f1e8eb;--ui-tint-ink:#6f2232;--ui-neutral-bg:#edf0f4;--ui-neutral-ink:#46505e;--ui-warning-bg:#fff3e8;--ui-warning-ink:#835322;--ui-success-bg:#eaf4ed;--ui-success-ink:#24613e;--ui-danger-bg:#fae9eb;--ui-danger-ink:#9b3544;
+ --inf-paper:var(--ui-surface);--inf-canvas:var(--ui-page);--inf-ink:var(--ui-ink);--inf-muted:var(--ui-muted);
+ --inf-line:var(--ui-border);--inf-soft:var(--ui-neutral-bg);--inf-accent:var(--ui-accent);--inf-gold:#a5a8b0;
+ --inf-shadow:0 2px 8px #1118270a;--inf-shadow-hover:0 6px 16px #11182715;
  --inf-radius:13px;--inf-radius-sm:9px;
 }
-html[data-crm-mode="dark"]{
+
+html[data-crm-theme="infinitum"][data-crm-mode="dark"]{
  color-scheme:dark;
- --inf-paper:#211a24;--inf-canvas:#110d14;--inf-ink:#f5edf2;--inf-muted:#c4b6c3;
- --inf-line:#493849;--inf-soft:#342638;--inf-accent:#d5a48e;--inf-gold:#e0b59d;
- --inf-shadow:0 8px 25px rgba(0,0,0,.24);--inf-shadow-hover:0 12px 32px rgba(0,0,0,.34);
+ --ui-page:#111418;--ui-surface:#1c222b;--ui-ink:#f3f4f6;--ui-muted:#bac2ce;--ui-accent:#e9a8b8;--ui-accent-ink:#2c151c;--ui-nav:#161b22;--ui-nav-ink:#f3f4f6;--ui-border:#353d48;--ui-tint:#382831;--ui-tint-ink:#f0c5d0;--ui-neutral-bg:#303844;--ui-neutral-ink:#dbe1ea;--ui-warning-bg:#49331f;--ui-warning-ink:#f3c58b;--ui-success-bg:#1e3c30;--ui-success-ink:#9bd8b0;--ui-danger-bg:#4a252e;--ui-danger-ink:#ffb2ba;
+ --inf-paper:var(--ui-surface);--inf-canvas:var(--ui-page);--inf-ink:var(--ui-ink);--inf-muted:var(--ui-muted);
+ --inf-line:var(--ui-border);--inf-soft:var(--ui-neutral-bg);--inf-accent:var(--ui-accent);--inf-gold:#a5a8b0;
+ --inf-shadow:0 2px 8px #1118270a;--inf-shadow-hover:0 6px 16px #11182715;
  --inf-radius:13px;--inf-radius-sm:9px;
 }
 
