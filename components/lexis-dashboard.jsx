@@ -8,7 +8,7 @@ import {todayBrazil} from '../lib/tarefas.mjs';
 import {resolveCompanyAccess} from '../lib/lexis-shared-portfolio.mjs';
 import LexisAttendanceBoard from './lexis-attendance-board';
 import {useLexisAttendanceAudit} from './use-lexis-attendance-audit';
-const n=v=>Number(v||0).toLocaleString('pt-BR');
+const n=v=>v==null?'—':Number(v).toLocaleString('pt-BR');
 const date=v=>v?String(v).slice(0,10).split('-').reverse().join('/'):'—';
 const labels={prazo:'Prazo',retorno:'Retorno',tarefa:'Tarefa',audiencia:'Audiência'};
 function Stat({name,value,description,to,Icon,warning}){
@@ -37,8 +37,8 @@ export default function LexisDashboard({db,session}){
      db.from('empresas').select('nome').eq('id',profile.empresa_id).maybeSingle(),
      loadLexisCompanySources(db,profile.empresa_id)
     ]);
-    if(!loaded.valid.processes)throw new Error('Fonte principal processos indisponível: '+loaded.errors.join(' · '));
-    const stats=summarizeLexisDashboard({...loaded.sources,today:todayBrazil()});
+    if(!Object.values(loaded.valid).some(Boolean))throw new Error('Fontes indisponíveis: '+loaded.errors.join(' · '));
+    const stats=summarizeLexisDashboard({...loaded.sources,today:todayBrazil(),valid:loaded.valid});
     if(mounted)setState({loading:false,error:'',stats,company:company.data?.nome||'Organização',warnings:loaded.errors,valid:loaded.valid});
    }catch(err){if(mounted)setState(old=>({...old,loading:false,error:String(err.message||err),stats:null}))}
   })();
@@ -56,8 +56,9 @@ export default function LexisDashboard({db,session}){
   {s&&<><section className="lxd-stats" aria-label="Indicadores da carteira">
    <Stat name="Processos com CNJ" value={s.processes} description="Somente processos com número CNJ" to="/processos" Icon={Scale}/>
    <Stat name="Processos ativos com CNJ" value={s.active} description="Desconsidera encerrados" to="/processos" Icon={Activity}/>
-   <Stat name="Retornos vencidos" value={s.overdueReturns} description="Próximo retorno passado, sem atendimento posterior" to="/prazos" Icon={Clock3} warning/>
-   <Stat name="Retornos para hoje" value={s.returnsToday} description="Contatos previstos para a data de hoje" to="/prazos" Icon={Users}/>
+   <Stat name="Retornos vencidos" value={s.overdueReturns} description="Próximo retorno passado, sem atendimento posterior" to="/prazos?status=vencido" Icon={Clock3} warning/>
+   <Stat name="Retornos para hoje" value={s.returnsToday} description="Contatos previstos para a data de hoje" to="/prazos?status=hoje" Icon={Users}/>
+   <Stat name="Tarefas vencidas" value={s.overdueTasks} description="Tarefas cadastradas ainda não concluídas" to="/vencidos" Icon={FileWarning} warning/>
    <Stat name="Audiências futuras" value={valid.hearings?s.hearingsFuture:null} description="Com data, não canceladas" to="/audiencias" Icon={Gavel}/>
    <Stat name="Audiências sem data" value={valid.hearings?s.hearingsUndated:null} description="Aguardando confirmação de data" to="/audiencias" Icon={CalendarDays}/>
   </section>
@@ -65,8 +66,8 @@ export default function LexisDashboard({db,session}){
    <article className="lxd-panel"><Head eyebrow="ACOMPANHAMENTO AO CLIENTE" title="Retornos e atendimentos" to="/prazos">Mesma regra da aba Prazos: próximo retorno comparado com o último atendimento do cliente.</Head>
     <div className="lxd-overdue"><span>Retornos vencidos (com CNJ)</span><strong>{n(s.overdueReturns)}</strong></div>
     <div className="lxd-lines">
-     <Link href="/prazos">Para hoje <b>{n(s.returnsToday)}</b><ArrowRight size={14}/></Link>
-     <Link href="/prazos">Nos próximos 7 dias <b>{n(s.returnsNext7)}</b><ArrowRight size={14}/></Link>
+     <Link href="/prazos?status=hoje">Para hoje <b>{n(s.returnsToday)}</b><ArrowRight size={14}/></Link>
+     <Link href="/prazos?status=proximos">Nos próximos 7 dias <b>{n(s.returnsNext7)}</b><ArrowRight size={14}/></Link>
      <Link href="/prazos?status=atendimentos_hoje">Já atendidos hoje · auditoria <b>{audit.data?n(audit.data.todayTotal):audit.loading?'…':'—'}</b><ArrowRight size={14}/></Link>
      <Link href="/prazos?status=meus_atendimentos">Meus atendimentos hoje <b>{audit.data?n(audit.data.personalToday):audit.loading?'…':'—'}</b><ArrowRight size={14}/></Link>
      <Link href="/prazos">Agendamentos concluídos por data <b>{n(s.returnsAttended)}</b><ArrowRight size={14}/></Link>
@@ -74,20 +75,22 @@ export default function LexisDashboard({db,session}){
     </div>
     <p className="lxd-subtle">Atendimentos auditados por operador são contabilizados pela consulta Lexis de auditoria, separados dos retornos concluídos por comparação de datas. Datas legadas de proximo_prazo não são consideradas vencidas.</p>
    </article>
-   <article className="lxd-panel"><Head eyebrow="PRÓXIMOS COMPROMISSOS" title="Agenda da organização" to="/agenda">{n(s.upcoming7)} compromissos datados nos próximos sete dias, incluindo hoje.</Head>
-    {s.upcoming.length?s.upcoming.slice(0,6).map(x=><Link className="lxd-row" href={x.kind==='audiencia'?'/audiencias':x.kind==='prazo'?'/prazos':'/agenda'} key={x.id}><time>{date(x.due_on)}</time><span><strong>{x.title}</strong><small>{labels[x.kind]} · {x.responsible||'Sem responsável'}</small></span><ArrowRight size={14}/></Link>):<p className="lxd-subtle">Nenhum compromisso datado.</p>}
+   <article className="lxd-panel"><Head eyebrow="PRÓXIMOS COMPROMISSOS" title="Agenda da organização" to="/agenda">{s.upcoming7==null?"Total indisponível: parte das fontes não respondeu. Lista parcial abaixo.":n(s.upcoming7)+" compromissos datados nos próximos sete dias, incluindo hoje."}</Head>
+    {s.upcoming.length?s.upcoming.slice(0,6).map(x=><Link className="lxd-row" href={x.kind==='audiencia'?'/audiencias':x.kind==='prazo'?'/prazos':'/agenda'} key={x.id}><time>{date(x.due_on)}</time><span><strong>{x.title}</strong><small>{labels[x.kind]} · {x.responsible||'Sem responsável'}</small></span><ArrowRight size={14}/></Link>):<p className="lxd-subtle">{s.upcoming7==null?"Nenhum compromisso nas fontes disponíveis.":"Nenhum compromisso datado."}</p>}
    </article>
    <article className="lxd-panel"><Head eyebrow="PANORAMA" title="Situação dos processos" to="/processos">Distribuição da carteira por situação interna.</Head>
-    <div className="lxd-rail"><i style={{width:(100*s.active/Math.max(1,s.processes))+'%'}}/></div><div className="lxd-pair"><span>Em andamento <strong>{n(s.active)}</strong></span><span>Encerrados ou arquivados <strong>{n(s.closed)}</strong></span></div>
-    <p className="lxd-subtle"><CheckCircle2 size={15}/> {n(s.excludedNoCnj)} registros sem número CNJ de 20 dígitos foram excluídos dos indicadores.</p>
+    {valid.processes?<><div className="lxd-rail"><i style={{width:(100*s.active/Math.max(1,s.processes))+'%'}}/></div><div className="lxd-pair"><span>Em andamento <strong>{n(s.active)}</strong></span><span>Encerrados ou arquivados <strong>{n(s.closed)}</strong></span></div>
+    <p className="lxd-subtle"><CheckCircle2 size={15}/> {n(s.excludedNoCnj)} registros sem número CNJ de 20 dígitos foram excluídos dos indicadores.</p></>:<p className="lxd-subtle">Carteira indisponível nesta consulta.</p>}
    </article>
    <article className="lxd-panel"><Head eyebrow="AUDIÊNCIAS MONITORADAS" title="Conferência de pautas" to="/audiencias">Registros sem data precisam de revisão, não representam eventos já vencidos.</Head>
     {valid.hearings?<><div className="lxd-hearings">{[['Registradas',s.hearingsTotal],['Futuras',s.hearingsFuture],['Passadas',s.hearingsPast],['Sem data',s.hearingsUndated]].map(([label,value])=><div key={label}><strong>{n(value)}</strong><span>{label}</span></div>)}</div><p className="lxd-subtle">{n(s.hearingsCanceled)} canceladas ou suspensas; verificar realização das passadas nos autos.</p></>:<p className="lxd-subtle">Dados de audiências indisponíveis.</p>}
    </article>
    <article className="lxd-panel"><Head eyebrow="DISTRIBUIÇÃO" title="Tribunais da carteira" to="/processos">Processos em andamento por tribunal informado.</Head>
+    {!valid.processes&&<p className="lxd-subtle">Distribuição indisponível nesta consulta.</p>}
     <div className="lxd-bars">{s.tribunals.map(x=><div key={x.label}><div><span title={x.label}>{x.label}</span><b>{n(x.count)}</b></div><progress value={x.count} max={maxTribunal}/></div>)}</div>
    </article>
    <article className="lxd-panel"><Head eyebrow="EVOLUÇÃO" title="Cadastros dos últimos meses" to="/relatorios">Processos cadastrados, não andamentos judiciais.</Head>
+    {!valid.processes&&<p className="lxd-subtle">Histórico indisponível nesta consulta.</p>}
     <div className="lxd-months">{s.months.map(x=><div key={x.month}><b>{n(x.count)}</b><div><i style={{height:(100*x.count/maxMonth)+'%'}}/></div><small>{x.month.slice(5)}/{x.month.slice(2,4)}</small></div>)}</div>
    </article>
   </section><p className="lxd-bottom"><BarChart3 size={15}/> Dados filtrados pelo vínculo de empresa do usuário no Supabase W1 Capital. Sempre confira prazos e audiências em documento judicial oficial.</p></>}
