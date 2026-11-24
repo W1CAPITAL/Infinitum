@@ -442,7 +442,7 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
    <p>{area==='clients'?'Consulte os dados de contato e registre o atendimento. Cadastros sem identificação comum permanecem separados.':'Cada linha representa um processo real. Consulte o andamento oficial e gerencie a situação judicial.'}</p>
    <div className="inf-portfolio-table" role="region" aria-label="Carteira de processos" tabIndex={0}>
     <table><thead><tr><th scope="col">Cliente / Processo</th><th scope="col">Situação</th><th scope="col">Responsável</th><th scope="col">Próximo retorno</th><th scope="col">Ações</th></tr></thead><tbody>
-    {visibleRows.map(p=><tr key={p.id}>
+    {visibleRows.map(p=><tr className="lx-process-record" key={p.id}>
       <td data-label="Cliente / Processo"><div className="inf-portfolio-person"><strong>{p.client_name||'Cliente não identificado'}</strong><small>{p.process_number||'Sem número CNJ'}</small><small>{[p.tribunal,p.advogado].filter(Boolean).join(' · ')||'Tribunal e advogado não informados'}</small><small>{[p.phone,p.email].filter(Boolean).join(' · ')}</small></div></td>
       <td data-label="Situação"><span className={'lx-status lx-status--'+processStatus(p.status_detail).key}>{processStatus(p.status_detail).label}</span><small className="inf-portfolio-court">{p.court_status||'Sem andamento cadastrado'}</small></td>
       <td data-label="Responsável">{responsibleDisplay(p.last_responsible,team)}</td>
