@@ -32,3 +32,10 @@ test('conclusão de tarefa atualiza a linha original com escopo da empresa',()=>
  assert.match(details,/event\.task_id/);
  assert.match(details,/onFinish\?\.\(event\)/);
 });
+
+test('vencidos inicia no filtro vencido mas os demais KPIs podem abrir seus próprios resultados',()=>{
+ const operations=source('components/lexis-operations.jsx');
+ assert.doesNotMatch(operations,/if\(area==='overdue'\)filtered=filtered\.filter\(x=>x\.status==='vencido'\)/);
+ assert.match(operations,/useState\(area==='tasks'\?'prioridades':area==='overdue'\?'vencidos':'todos'\)/);
+ assert.match(operations,/if\(area==='tasks'\|\|area==='overdue'\)return filterLexisCompanyQueue\(areaRows,\{view:filter,/);
+});
