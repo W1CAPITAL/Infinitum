@@ -33,3 +33,8 @@ test('Poppler extracts the actual report and Portuguese text when installed',t=>
  const extracted=execFileSync('pdftotext',['-','-'],{input:Buffer.from(bytes),encoding:'utf8'});
  assert.match(extracted,/Relatório executivo/);assert.match(extracted,/João da Silva/);assert.match(extracted,/55/);
 });
+
+test('export includes the same detailed sections and daily closures shown on screen',()=>{
+ const pdf=decode(buildExecutivePdf({headline:{total:20},team:[]},{sections:[{title:'Auditoria judicial',subtitle:'DataJud',metrics:[{label:'Procedência identificada',value:17}],note:'Fonte consultada'}],daily:[{ymd:'2026-11-24',encerramentos:4}]}));
+ for(const value of ['Auditoria judicial','Procedência identificada','Encerramentos manuais por dia','Fonte consultada'])assert.ok(pdf.includes(Buffer.from(value,'latin1').toString('hex').toUpperCase()),value);
+});
