@@ -11,3 +11,5 @@
 .inf-editorial-shell .wa-contact.selected{box-shadow:inset 3px 0 var(--ed-brand)}
 @media(max-width:880px){.inf-editorial-shell .inf-workspace-quick{padding:6px 10px;min-height:44px}.inf-editorial-shell .inf-workspace-quick a{padding:7px 9px}.inf-editorial-shell .wa-chat-layout{border-radius:0}}
 }
+
+@media screen{.inf-editorial-shell .inf-local-ai-opt{display:flex;align-items:center;gap:7px;padding:8px 12px;border:1px solid var(--ed-line);border-radius:7px;background:var(--ed-paper);color:var(--ed-ink);white-space:nowrap;cursor:pointer}.inf-editorial-shell .inf-local-ai-opt[aria-pressed=true]{background:var(--ed-tint);color:var(--ed-brand)}.inf-editorial-shell .inf-history-more{align-self:center;margin:8px auto;font-size:12px;max-width:95%}}

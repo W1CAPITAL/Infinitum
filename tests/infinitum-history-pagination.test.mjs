@@ -1,0 +1,3 @@
+import test from 'node:test';import assert from 'node:assert/strict';import{mergeMessages,mergeChats}from'../lib/wa-auto-archive.mjs';
+test('extended history retains more than 300 messages while default remains bounded',()=>{const rows=Array.from({length:450},(_,i)=>({id:String(i),timestamp:new Date(i*1000).toISOString()}));assert.equal(mergeMessages([],rows,5000).length,450);assert.equal(mergeMessages([],rows).length,300)});
+test('extended archive preserves unique conversations',()=>{const rows=Array.from({length:450},(_,i)=>({jid:i+'@s.whatsapp.net'}));assert.equal(mergeChats([],rows,5000).length,450);assert.equal(mergeChats([],rows).length,300)});

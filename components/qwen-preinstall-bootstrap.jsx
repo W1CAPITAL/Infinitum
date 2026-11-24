@@ -1,5 +1,5 @@
 'use client';
-import {useEffect} from 'react';
+import {useEffect,useState} from 'react';
 import {usePathname} from 'next/navigation';
 import {canPrefetchQwen,QWEN_PREINSTALL_ORIGIN,chooseQwenDownloadConcurrency} from '../lib/qwen-preinstall-policy.mjs';
 import {getQwenCacheStatus} from '../lib/blackhole-local-llm.mjs';
@@ -9,10 +9,12 @@ import {getQwenCacheStatus} from '../lib/blackhole-local-llm.mjs';
 // transferred to the model host. On reload the worker resumes saved chunks.
 export default function QwenPreinstallBootstrap(){
  const pathname=usePathname();
+ const [enabled,setEnabled]=useState(false);
+ useEffect(()=>{const sync=()=>{try{setEnabled(localStorage.getItem('infinitum.qwen.preinstall.enabled')==='1')}catch{setEnabled(false)}};sync();window.addEventListener('infinitum:qwen-preinstall',sync);return()=>window.removeEventListener('infinitum:qwen-preinstall',sync)},[]);
  useEffect(()=>{
   // The standalone OpenBot Studio loads local models only after explicit consent.
   if(pathname!=='/agentes'&&pathname!=='/superagente')return;
-  try{if(localStorage.getItem('infinitum.qwen.preinstall.enabled')!=='1')return}catch{return;}
+  if(!enabled)return;
   if(typeof window==='undefined'||window.location.hostname!==QWEN_PREINSTALL_ORIGIN)return;
   if(typeof Worker==='undefined'||!navigator.storage?.estimate)return;
   let stopped=false,installer=null,renew=null;
@@ -78,6 +80,6 @@ export default function QwenPreinstallBootstrap(){
    window.removeEventListener('online',onOnline);
    release();
   };
- },[pathname]);
+ },[pathname,enabled]);
  return null;
 }
