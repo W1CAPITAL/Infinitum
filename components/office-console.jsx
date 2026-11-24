@@ -17,7 +17,9 @@ import BlackholeOfficialHearings from './blackhole-official-hearings';
 import {withAuthDeadline} from '../lib/auth-deadline.mjs';
 import {loadOfficeCollections} from '../lib/office-paginated-data.mjs';
 import {makeStandalonePetition} from '../lib/blackhole-petitions.mjs';
-import {inspectJudicialDocument} from '../lib/legal-draft-engine.mjs';
+import {fetchCompanyRows} from '../lib/lexis-company-data.mjs';
+import {resolveCompanyAccess} from '../lib/lexis-shared-portfolio.mjs';
+import {inspectJudicialDocument,sharedPetitionCase,SHARED_PETITION_FIELDS,petitionsForCnj} from '../lib/legal-draft-engine.mjs';
 import {blackholeWhatsAppWebUrl} from '../lib/blackhole-whatsapp-web.mjs';
 import {browseOfficialDjenNumber} from '../lib/blackhole-public-djen-browser.mjs';
 import {consultHistoricalCase} from '../lib/judicial-history-client.mjs';
@@ -61,17 +63,30 @@ function OfficeUI({area,db,session}){
  const [miniResult,setMiniResult]=useState(null),[deadlineFilter,setDeadlineFilter]=useState('abertos');
  const [agentSearch,setAgentSearch]=useState(''),[agentFilter,setAgentFilter]=useState('todos');
  const [showAdvancedAgents,setShowAdvancedAgents]=useState(false);
+ const sharedDocuments=area==='documents'&&process.env.NEXT_PUBLIC_LEXIS_SHARED_DB==='1';
+ const [documentCompany,setDocumentCompany]=useState(null),[documentCasesReady,setDocumentCasesReady]=useState(false);
  const need=LOADED[area]||LOADED.dashboard;
  const load=useCallback(async()=>{
   setLoading(true);
   try{
+   if(sharedDocuments){
+    setDocumentCasesReady(false);
+    const {data:profiles,error}=await db.from('usuarios').select('id,auth_user_id,empresa_id,nome').eq('auth_user_id',session.user.id).limit(2);
+    const profile=resolveCompanyAccess(profiles,session.user.id);
+    if(error||!profile)throw Error('Organização não identificada.');
+    const [portfolio,docs]=await Promise.allSettled([fetchCompanyRows(db,'processos',SHARED_PETITION_FIELDS,profile.empresa_id),fetchCompanyRows(db,'office_documents','id,title,kind,body,evidence,status,created_at,owner_id',profile.empresa_id)]);
+    if(portfolio.status==='rejected'){setData(old=>({...old,cases:[]}));throw portfolio.reason;}
+    setDocumentCompany(profile.empresa_id);setData(old=>({...old,cases:portfolio.value.map(sharedPetitionCase),documents:docs.status==='fulfilled'?docs.value:[]}));setDocumentCasesReady(true);
+    if(docs.status==='rejected')setNotice('Carteira carregada; histórico de peças indisponível: '+docs.reason.message);
+    return;
+   }
    const {datasets,errors}=await withAuthDeadline(loadOfficeCollections(db,need),30000);
    // Só fontes completas podem substituir o estado. Não transformar erro em zero.
    if(Object.keys(datasets).length)setData(old=>({...old,...datasets}));
    if(errors.length)setNotice('Carregamento incompleto: '+errors.join(' · ')+'. Os dados incompletos não foram exibidos como totais.');
   }catch(error){setNotice('Falha ao carregar a carteira: '+String(error?.message||'Erro de conexão')+'. Atualize para tentar novamente.')}
   finally{setLoading(false)}
- },[db,area]);
+ },[db,area,session.user.id,sharedDocuments]);
  useEffect(()=>{load()},[load]);
  const clients=data.clients,cases=data.cases,deadlines=data.deadlines,documents=data.documents,messages=data.messages,leads=data.leads,runs=data.runs;
  const getClientName=id=>clients.find(x=>x.id===id)?.name||'Cliente não vinculado';
@@ -86,6 +101,7 @@ function OfficeUI({area,db,session}){
  };
  const save=(table,row)=>async()=>{const r=await db.from(table).insert(row);if(r.error)throw r.error;};
  useEffect(()=>{if(area==='documents')setSelectedCase(new URLSearchParams(window.location.search).get('case')||'')},[area]);
+ useEffect(()=>{if(area!=='documents'||!sourceInfo?.cnj||selectedCase)return;const matches=petitionsForCnj(cases,sourceInfo.cnj);if(matches.length===1)setSelectedCase(matches[0].id)},[area,sourceInfo?.cnj,cases,selectedCase]);
  async function createClient(e){e.preventDefault();
   if(busy)return;
   const name=String(client.name||'').trim();
@@ -174,20 +190,22 @@ function OfficeUI({area,db,session}){
    setQwenPetitionResult(answer.reply);setQwenPetitionStatus('Sugestão local recebida. Use somente após revisão do advogado.');
   }catch(e){setQwenPetitionStatus('Qwen indisponível neste aparelho: '+e.message)}
  }
- async function saveEditedDocument(){if(!docResult?.id)return;setBusy(true);const r=await db.from('office_documents').update({body:docResult.body,status:'revisao',updated_at:new Date().toISOString()}).eq('id',docResult.id);setBusy(false);setNotice(r.error?'Minuta não salva: '+r.error.message:'Minuta atualizada e encaminhada para revisão.');if(!r.error)await load();}
+ async function saveEditedDocument(){if(!docResult?.id)return;setBusy(true);try{let q=db.from('office_documents').update({body:docResult.body,status:'revisao',updated_at:new Date().toISOString()}).eq('id',docResult.id);if(sharedDocuments){if(!documentCompany)throw Error('Organização não identificada.');q=q.eq('empresa_id',documentCompany)}const r=await q.select('id').maybeSingle();if(r.error||!r.data?.id)throw Error(r.error?.message||'Gravação não confirmada.');setNotice('Minuta atualizada e encaminhada para revisão.');await load()}catch(e){setNotice('Minuta não salva: '+e.message)}finally{setBusy(false)}}
  const exportWord=(body,id,title)=>{try{downloadLegalDocx(body,{id,title});setNotice('Documento Word (.docx) gerado com papel timbrado, margens A4 e assinatura para revisão.')}catch(e){setNotice('Não foi possível gerar Word: '+e.message)}};
  const exportPdf=body=>{try{printLegalPdf(body);setNotice('Página A4 aberta para imprimir ou salvar PDF. Confira o documento antes de protocolar.')}catch(e){setNotice('Não foi possível abrir impressão: '+e.message)}};
  async function generateDocument(e){
-  e.preventDefault();const caseRecord=selectedCase?cases.find(x=>x.id===selectedCase):null;
+  e.preventDefault();if(sharedDocuments&&(!documentCasesReady||!documentCompany)){setNotice('Aguarde o carregamento da carteira autorizada.');return}const caseRecord=selectedCase?cases.find(x=>x.id===selectedCase):null;
    if(selectedCase&&!caseRecord){setNotice('Processo informado não consta da carteira atual.');return}
   setBusy(true);setNotice('');
   try{
-   const client=caseRecord?clients.find(x=>x.id===caseRecord.client_id):null;
+   const client=caseRecord?.shared_process_id?{name:caseRecord.client_name}:caseRecord?clients.find(x=>x.id===caseRecord.client_id):null;
    let evidence=[];
    if(caseRecord?.process_number){
-    const r=await db.from('crm_judicial_snapshots').select('source,checked_at,payload').eq('process_number',caseRecord.process_number).order('checked_at',{ascending:false}).limit(8);
+    let q=db.from('crm_judicial_snapshots').select('source,checked_at,payload').eq('process_number',caseRecord.process_number);
+    if(sharedDocuments)q=q.eq('empresa_id',documentCompany);
+    const r=await q.order('checked_at',{ascending:false}).limit(8);
     if(r.error)throw Error('Não foi possível conferir as fontes oficiais: '+r.error.message);
-    evidence=(r.data||[]).map(x=>({source:x.source,checked_at:x.checked_at,summary:safeText(x.payload?.items?.[0]?.title||x.payload?.items?.[0]?.description,200)}));
+    evidence=(r.data||[]).filter(x=>x.payload?.ok===true&&x.payload?.demo!==true&&x.payload?.official!==false&&['djen','datajud'].includes(x.source)).map(x=>({source:x.source,checked_at:x.checked_at,summary:safeText(x.payload?.items?.[0]?.title||x.payload?.items?.[0]?.description,200)}));
    }
    const options={kind:docKind,instructions:docInstructions,sourceDocument:docSourceDocument,appealType:docAppealType};
    let draft=caseRecord?makePetitionSkeleton({...options,caseRecord,client,evidence}):makeStandalonePetition(options),
@@ -198,13 +216,13 @@ function OfficeUI({area,db,session}){
      if(!s?.access_token)throw Error('Sessão expirada');
      const response=await fetch('/api/office/ai',{method:'POST',
       headers:{Authorization:'Bearer '+s.access_token,'Content-Type':'application/json'},
-      body:JSON.stringify({caseId:caseRecord?.id||null,...options,externalAiConsent:true})});
+      body:JSON.stringify({caseId:caseRecord?.shared_process_id?null:caseRecord?.id||null,sharedProcessId:caseRecord?.shared_process_id||null,...options,externalAiConsent:true})});
      const output=await response.json();
      if(!response.ok||!output.ok)throw Error(output.error||'Provedor de IA não respondeu.');
      draft={...draft,body:output.content};modelUsed=output.model;usedRemoteAi=true;
     }catch(error){avisoAi='IA externa não utilizada: '+String(error?.message||'falha').slice(0,180)+'. Minuta local preservada.'}
    }
-   const rec={owner_id:session.user.id,case_id:caseRecord?.id||null,client_id:caseRecord?.client_id||null,title:draft.title,kind:docKind,body:draft.body,
+   const rec={owner_id:session.user.id,case_id:caseRecord?.shared_process_id?null:caseRecord?.id||null,client_id:caseRecord?.client_id||null,...(sharedDocuments?{empresa_id:documentCompany}:{}),title:draft.title,kind:docKind,body:draft.body,
     evidence:draft.evidence,status:'rascunho',external_ai_consent:usedRemoteAi,model_used:modelUsed};
    const result=await db.from('office_documents').insert(rec).select('id').single();
    if(result.error)throw result.error;
@@ -320,7 +338,7 @@ function OfficeUI({area,db,session}){
        <button className="inf-btn" disabled={busy} onClick={()=>markDeadline(x)}><CheckCircle2 size={14}/> Concluir</button></>}</div>
     </article>)}{!deadlines.length&&<div className="office-list-empty">Nenhum prazo cadastrado.</div>}</div>
    </section></>}
-  {area==='documents'&&<OfficeDocumentWorkspace {...{cases,selectedCase,setSelectedCase,docKind,setDocKind,docAppealType,setDocAppealType,docSourceDocument,setDocSourceDocument,sourceInfo,docInstructions,setDocInstructions,useAi,setUseAi,busy,generateDocument,docResult,setDocResult,saveEditedDocument,exportWord,showPreview,setShowPreview,exportPdf,qwenPetitionConsent,setQwenPetitionConsent,askQwenPetition,webGpuAvailable,qwenPetitionStatus,qwenPetitionResult,documents}}/>}
+  {area==='documents'&&<OfficeDocumentWorkspace {...{cases,loading:loading||(sharedDocuments&&!documentCasesReady),selectedCase,setSelectedCase,docKind,setDocKind,docAppealType,setDocAppealType,docSourceDocument,setDocSourceDocument,sourceInfo,docInstructions,setDocInstructions,useAi,setUseAi,busy,generateDocument,docResult,setDocResult,saveEditedDocument,exportWord,showPreview,setShowPreview,exportPdf,qwenPetitionConsent,setQwenPetitionConsent,askQwenPetition,webGpuAvailable,qwenPetitionStatus,qwenPetitionResult,documents}}/>}
   {area==='whatsapp'&&<><div className="w1-whatsapp-head"><div><small>CENTRAL DE ATENDIMENTO</small><h2>WhatsApp no CRM</h2><p>Selecione uma conversa, consulte o histórico e responda aqui pela API oficial quando ela estiver configurada.</p></div><button type="button" className="inf-btn" onClick={()=>setShowManualWeb(x=>!x)}>{showManualWeb?'Ocultar acesso manual':'Usar WhatsApp Web manual'}</button></div>{showManualWeb&&<section className="inf-panel" aria-label="WhatsApp Web gratuito">
     <h2>WhatsApp Web · atendimento sem API oficial</h2>
     <p>Abra uma conversa com seu aparelho já vinculado. Você confirma o destinatário e clica em Enviar no próprio WhatsApp; abrir a conversa não registra nem confirma atendimento.</p>
