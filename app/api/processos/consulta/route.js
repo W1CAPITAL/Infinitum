@@ -20,7 +20,7 @@ async function datajud(number){
  const digits=number.replace(/\D/g,'');
  const key=currentPublicKey(process.env.DATAJUD_API_KEY,PUBLIC_DATAJUD_KEY);
  const payload=await requestOfficialJson(url,{method:'POST',headers:{Authorization:'APIKey '+key,'Content-Type':'application/json',Accept:'application/json'},
-  body:JSON.stringify({size:1,query:{match:{numeroProcesso:digits}}})},{source:'datajud'});
+  body:JSON.stringify({size:1,track_total_hits:false,query:{match:{numeroProcesso:digits}}})},{source:'datajud'});
  validatePublicDataJudResponse(payload);
  const match=payload.hits.hits.find(h=>h?._source&&String(h._source.numeroProcesso||'').replace(/\D/g,'')===digits)?._source;
  const parsed=normalizeDataJud(match,number);
@@ -205,6 +205,6 @@ export async function GET(request){
   const upstreamStatus=Number(error?.status);
   const timeout=error?.name==='TimeoutError'||error?.name==='AbortError';
   const status=[403,429,502,503,504].includes(upstreamStatus)?upstreamStatus:timeout?504:badInput?400:502;
-  return json({ok:false,error:message,code:error?.code||null},status);
+  return json({ok:false,error:message,status,code:error?.code||(status===504?'upstream_timeout':null)},status);
  }
 }

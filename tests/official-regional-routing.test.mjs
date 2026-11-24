@@ -9,7 +9,7 @@ test('Infinitum prioritizes verified regional DJEN exit instead of 403 Vercel eg
 test('DataJud uses bounded transport for rate-limited 429 and always validates timed_out/shards',()=>{
  assert.match(s,/requestOfficialJson/);
  assert.match(s,/validatePublicDataJudResponse\(payload\)/);
- assert.match(s,/body:JSON\.stringify\(\{size:1,query:\{match:\{numeroProcesso:digits\}\}\}\)/);
+ assert.match(s,/body:JSON\.stringify\(\{size:1,track_total_hits:false,query:\{match:\{numeroProcesso:digits\}\}\}\)/);
 });
 test('Brazilian Edge uses operator JWT and never service-role or arbitrary browser identity',()=>{
  assert.match(s,/Authorization:'Bearer '\+userJwt/);
