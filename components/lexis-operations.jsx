@@ -2,7 +2,7 @@
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import Link from 'next/link';
 import {Archive,CalendarDays,CheckCircle2,ChevronLeft,ChevronRight,Clock3,ExternalLink,FileText,Gavel,Plus,RefreshCw,Search,Users,X} from 'lucide-react';
-import {buildLexisEvents} from '../lib/lexis-operations.mjs';
+import {buildLexisEvents,filterAgendaEvents} from '../lib/lexis-operations.mjs';
 import {summarizeLexisReturns} from '../lib/lexis-return-kpis.mjs';
 import {filterLexisCompanyQueue,summarizeLexisCompanyQueue} from '../lib/lexis-company-queue.mjs';
 import {loadLexisCompanySources} from '../lib/lexis-company-data.mjs';
@@ -33,8 +33,8 @@ export default function LexisOperations({db,session,area='deadlines'}){
  const [errors,setErrors]=useState([]),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[search,setSearch]=useState('');
  const [month,setMonth]=useState(brazilToday().slice(0,7)),[filter,setFilter]=useState(area==='tasks'?'prioridades':area==='overdue'?'vencidos':'todos'),[showPast,setShowPast]=useState(false),[view,setView]=useState('month');
  const [validSources,setValidSources]=useState({processes:false,hearings:false,tasks:false,manual:false});
- const [page,setPage]=useState(0);
- useEffect(()=>{setPage(0)},[area,search,filter,month,showPast,view]);
+ const [page,setPage]=useState(0),[kindFilter,setKindFilter]=useState('todos'),[responsibleFilter,setResponsibleFilter]=useState('todos'),[selectedDay,setSelectedDay]=useState('');
+ useEffect(()=>{setPage(0)},[area,search,filter,month,showPast,view,kindFilter,responsibleFilter,selectedDay]);
  useEffect(()=>{if(area==='tasks')setFilter('prioridades');else if(area==='overdue')setFilter('vencidos')},[area]);
  useEffect(()=>{
   if(area!=='deadlines'||typeof window==='undefined')return;
@@ -82,13 +82,16 @@ export default function LexisOperations({db,session,area='deadlines'}){
   if(area==='tasks'||area==='overdue')filtered=queueItems;
   if(area==='audiencias')filtered=filtered.filter(x=>x.kind==='audiencia');
   if(area==='deadlines')filtered=filtered.filter(x=>x.kind==='retorno'&&x.process_id!=null&&x.status!=='encerrado');
-  if(area==='agenda'&&filter==='todos')filtered=filtered.filter(x=>x.due_on&&x.due_on>=rangeStart&&x.due_on<=rangeEnd);
+  if(area==='agenda')filtered=filterAgendaEvents(filtered,{today:brazilToday(),start:['hoje','proximos'].includes(filter)?undefined:rangeStart,end:['hoje','proximos'].includes(filter)?undefined:rangeEnd,filter,kind:kindFilter,selectedDay,responsible:responsibleFilter});
+  if(area!=='agenda'&&kindFilter!=='todos')filtered=filtered.filter(x=>x.kind===kindFilter);
+  if(area!=='agenda'&&responsibleFilter!=='todos')filtered=filtered.filter(x=>x.responsible===responsibleFilter);
   if(area==='audiencias'&&!showPast)filtered=filtered.filter(x=>!x.due_on||x.due_on>=brazilToday());
   if(search.trim()&&area!=='tasks'&&area!=='overdue'){const term=search.toLocaleLowerCase('pt-BR').trim();
     filtered=filtered.filter(x=>[x.title,x.client_name,x.process_number,x.responsible,x.notes].some(z=>String(z||'').toLocaleLowerCase('pt-BR').includes(term)))}
   return filtered;
- },[items,queueItems,area,search,showPast,rangeStart,rangeEnd,filter]);
+ },[items,queueItems,area,search,showPast,rangeStart,rangeEnd,filter,kindFilter,selectedDay,responsibleFilter]);
  const listing=useMemo(()=>{
+  if(area==='agenda')return areaRows;
   if(area==='tasks'||area==='overdue')return filterLexisCompanyQueue(areaRows,{view:filter,today:brazilToday(),query:search});
   return areaRows.filter(x=>{
    if(filter==='todos')return true;
@@ -104,6 +107,7 @@ export default function LexisOperations({db,session,area='deadlines'}){
   });
  },[areaRows,filter,area,search]);
  const returnKpis=useMemo(()=>summarizeLexisReturns(sourceRows.processes,brazilToday()),[sourceRows.processes]);
+ const responsibleOptions=useMemo(()=>[...new Set(items.map(x=>x.responsible).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR')),[items]);
  const allHearings=useMemo(()=>items.filter(x=>x.kind==='audiencia'),[items]);
  const hearingMetrics=[
   ['Registradas',allHearings.length,'todos'],
@@ -120,7 +124,8 @@ export default function LexisOperations({db,session,area='deadlines'}){
   ['Sem data',queueSummary.sem_data,'sem_data'],
   ['Concluídos',queueSummary.finalizados+queueSummary.atendidos,'finalizados']
  ];
- const displayedMetrics=area==='tasks'||area==='overdue'?queueMetrics:area==='audiencias'?hearingMetrics:[
+ const agendaMetrics=[['Compromissos no mês',filterAgendaEvents(items,{today:brazilToday(),start:first,end:last}).length,'todos'],['Para hoje',filterAgendaEvents(items,{today:brazilToday(),filter:'hoje'}).length,'hoje'],['Próximos 7 dias',filterAgendaEvents(items,{today:brazilToday(),filter:'proximos'}).length,'proximos'],['Sem data',filterAgendaEvents(items,{today:brazilToday(),filter:'sem_data'}).length,'sem_data']];
+ const displayedMetrics=area==='agenda'?agendaMetrics:area==='tasks'||area==='overdue'?queueMetrics:area==='audiencias'?hearingMetrics:[
   ['Retornos agendados',returnKpis.scheduled,'retornos'],
   ['Retornos vencidos',returnKpis.overdue,'vencido'],
   ['Retornos hoje',returnKpis.today,'hoje'],
@@ -128,7 +133,7 @@ export default function LexisOperations({db,session,area='deadlines'}){
   ['Já atendidos hoje',audit.data?.todayTotal??null,'atendimentos_hoje'],
   ['Meus atendimentos hoje',audit.data?.personalToday??null,'meus_atendimentos']
  ];
- function chooseFilter(value){if(area==='audiencias'&&value==='vencido')setShowPast(true);if(area==='agenda')setView(value==='todos'?'month':'list');setFilter(value)}
+ function chooseFilter(value){if(area==='audiencias'&&value==='vencido')setShowPast(true);if(area==='agenda'){setSelectedDay('');setView(value==='todos'?'month':'list');if(['hoje','proximos'].includes(value))setMonth(brazilToday().slice(0,7));}setFilter(value)}
  const save=async e=>{
   e.preventDefault();if(busy||!profile?.empresa_id)return;
   if(form.title.trim().length<3||form.title.length>250){setErrors(['O compromisso precisa ter título de 3 a 250 caracteres.']);return}
@@ -154,8 +159,17 @@ export default function LexisOperations({db,session,area='deadlines'}){
    setSelected(null);await load();
   }catch(err){setErrors(['Não foi possível concluir: '+err.message])}finally{setBusy(false)}
  };
+ const reopen=async x=>{
+  if(!profile?.empresa_id||busy||(!x.task_id&&!x.manual_id))return;
+  setBusy(true);setErrors([]);
+  try{
+   const result=x.task_id?await db.from('crm_tarefas').update({feito:false,updated_at:new Date().toISOString()}).eq('id',x.task_id).eq('empresa_id',profile.empresa_id).select('id').maybeSingle():await db.from('office_deadlines').update({status:'aberto',completed_at:null,updated_at:new Date().toISOString()}).eq('id',x.manual_id).eq('empresa_id',profile.empresa_id).select('id').maybeSingle();
+   if(result.error||!result.data?.id)throw Error(result.error?.message||'O banco não confirmou a reabertura.');
+   setSelected(null);await load();
+  }catch(err){setErrors(['Não foi possível reabrir: '+err.message])}finally{setBusy(false)}
+ };
  const openDetails=event=>setSelected(event);
- const gotoMonth=delta=>setMonth(iso(currentYear,currentMonth+delta,1).slice(0,7));
+ const gotoMonth=delta=>{setSelectedDay('');setMonth(iso(currentYear,currentMonth+delta,1).slice(0,7))};
  const offset=(new Date(first+'T12:00:00Z').getUTCDay()+6)%7;
  const grid=Array.from({length:42},(_,i)=>iso(currentYear,currentMonth,1+i-offset));
  const groups=useMemo(()=>{const g=new Map();for(const x of listing){if(!x.due_on)continue;g.set(x.due_on,[...(g.get(x.due_on)||[]),x])}return g},[listing]);
@@ -176,7 +190,7 @@ export default function LexisOperations({db,session,area='deadlines'}){
   <div className="lx-kpis">
    {displayedMetrics.map(([label,value,status])=>{
     const byAudit=status==='atendimentos_hoje'||status==='meus_atendimentos';
-    const available=byAudit?!!audit.data:area==='audiencias'?validSources.hearings:(area==='tasks'||area==='overdue')?queueSourcesAvailable:validSources.processes;
+    const available=byAudit?!!audit.data:area==='audiencias'?validSources.hearings:area==='agenda'?Object.values(validSources).every(Boolean):(area==='tasks'||area==='overdue')?queueSourcesAvailable:validSources.processes;
     const pending=byAudit?audit.loading:loading;
     return <button key={status} type="button" className={'lx-kpi '+(filter===status?'is-active':'')}
      onClick={()=>chooseFilter(status)} aria-pressed={filter===status}>
@@ -190,22 +204,25 @@ export default function LexisOperations({db,session,area='deadlines'}){
     <p>Retornos vencidos usam último/próximo retorno e somente processos com CNJ. Atendimentos realizados vêm da auditoria do CRM por dia e operador; são métricas diferentes. A Agenda filtra somente a lista pelo mês.</p></div>
    <div className="lx-toolbar"><label className="lx-search"><Search size={16}/><input aria-label="Buscar nos compromissos" placeholder="Buscar cliente, processo ou responsável" value={search} onChange={e=>setSearch(e.target.value)}/></label>
     <select aria-label="Situação" value={filter} onChange={e=>chooseFilter(e.target.value)}>
-      {area==='tasks'||area==='overdue'?<><option value="prioridades">Prioridades</option><option value="vencidos">Somente vencidos</option><option value="hoje">Para hoje</option><option value="proximos">Próximos 7 dias</option><option value="em_dia">Em dia</option><option value="sem_data">Sem data</option><option value="finalizados">Finalizados</option><option value="atendidos">Retornos atendidos</option><option value="todos">Todos os registros</option></>:<><option value="todos">Todas as situações</option>{area==='audiencias'?<><option value="futuras">Futuras</option>{Object.entries(statuses).filter(([k])=>k!=='atendido').map(([k,v])=><option key={k} value={k}>{k==='vencido'?'Passadas':v}</option>)}</>:<><option value="retornos">Retornos agendados</option><option value="hoje">Para hoje</option><option value="proximos">Próximos 7 dias</option><option value="atendimentos_hoje">Já atendidos hoje · auditoria</option><option value="meus_atendimentos">Meus atendimentos hoje · auditoria</option><option value="atendido">Agendamentos concluídos por data</option>{Object.entries(statuses).filter(([k])=>!['atendido','encerrado'].includes(k)).map(([k,v])=><option key={k} value={k}>{v}</option>)}</>}</>}
+      {area==='agenda'?<><option value="todos">Todas as situações</option><option value="hoje">Hoje</option><option value="proximos">Próximos 7 dias</option>{Object.entries(statuses).map(([k,v])=><option key={k} value={k}>{v}</option>)}</>:area==='tasks'||area==='overdue'?<><option value="prioridades">Prioridades</option><option value="vencidos">Somente vencidos</option><option value="hoje">Para hoje</option><option value="proximos">Próximos 7 dias</option><option value="em_dia">Em dia</option><option value="sem_data">Sem data</option><option value="finalizados">Finalizados</option><option value="atendidos">Retornos atendidos</option><option value="todos">Todos os registros</option></>:<><option value="todos">Todas as situações</option>{area==='audiencias'?<><option value="futuras">Futuras</option>{Object.entries(statuses).filter(([k])=>k!=='atendido').map(([k,v])=><option key={k} value={k}>{k==='vencido'?'Passadas':v}</option>)}</>:<><option value="retornos">Retornos agendados</option><option value="hoje">Para hoje</option><option value="proximos">Próximos 7 dias</option><option value="atendimentos_hoje">Já atendidos hoje · auditoria</option><option value="meus_atendimentos">Meus atendimentos hoje · auditoria</option><option value="atendido">Agendamentos concluídos por data</option>{Object.entries(statuses).filter(([k])=>!['atendido','encerrado'].includes(k)).map(([k,v])=><option key={k} value={k}>{v}</option>)}</>}</>}
      </select>
+    {['agenda','tasks','overdue'].includes(area)&&<select aria-label="Tipo de compromisso" value={kindFilter} onChange={e=>setKindFilter(e.target.value)}><option value="todos">Todos os tipos</option>{Object.entries(kinds).filter(([k])=>area==='agenda'||k!=='audiencia').map(([k,v])=><option key={k} value={k}>{v}</option>)}</select>}
+    <select aria-label="Responsável" value={responsibleFilter} onChange={e=>setResponsibleFilter(e.target.value)}><option value="todos">Todos os responsáveis</option>{responsibleOptions.map(name=><option key={name} value={name}>{name}</option>)}</select>
     {area==='audiencias'&&<label className="lx-check"><input type="checkbox" checked={showPast} onChange={e=>setShowPast(e.target.checked)}/> Incluir audiências anteriores</label>}
-    {area==='agenda'&&<div className="lx-view-toggle"><button className="inf-btn" onClick={()=>setView('month')} aria-pressed={view==='month'}>Mês</button><button className="inf-btn" onClick={()=>setView('list')} aria-pressed={view==='list'}>Lista</button></div>}
+    {area==='agenda'&&<div className="lx-view-toggle"><button className="inf-btn" onClick={()=>{setSelectedDay('');setFilter('todos');setView('month')}} aria-pressed={view==='month'}>Mês</button><button className="inf-btn" onClick={()=>setView('list')} aria-pressed={view==='list'}>Lista</button></div>}
    </div>
    {area==='agenda'&&<div className="lx-calendar-header"><button className="inf-btn" aria-label="Mês anterior" onClick={()=>gotoMonth(-1)}><ChevronLeft size={18}/></button>
     <strong>{new Date(first+'T12:00:00Z').toLocaleDateString('pt-BR',{timeZone:'UTC',month:'long',year:'numeric'})}</strong>
     <button className="inf-btn" aria-label="Próximo mês" onClick={()=>gotoMonth(1)}><ChevronRight size={18}/></button>
-    <button className="inf-btn" onClick={()=>setMonth(brazilToday().slice(0,7))}>Hoje</button></div>}
+    <button className="inf-btn" onClick={()=>{setSelectedDay('');setMonth(brazilToday().slice(0,7))}}>Hoje</button></div>}
    {area==='agenda'&&view==='month'&&<div className="lx-calendar-grid">
     {['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'].map(d=><div key={d} className="lx-calendar-weekday">{d}</div>)}
     {grid.map(d=><div key={d} className={'lx-calendar-day '+(d.slice(0,7)!==month?'is-outside':'')+(d===brazilToday()?' is-today':'')}>
      <span>{Number(d.slice(8))}</span>{(groups.get(d)||[]).slice(0,3).map(e=><button key={e.id} type="button" title={e.title} onClick={()=>openDetails(e)} className={'lx-calendar-entry lx-calendar-entry--'+e.status}>{e.title}</button>)}
-     {(groups.get(d)||[]).length>3&&<small>+{groups.get(d).length-3} registros</small>}
+     {(groups.get(d)||[]).length>3&&<button type="button" className="inf-btn" onClick={()=>{setSelectedDay(d);setView('list')}}>+{groups.get(d).length-3} registros</button>}
     </div>)}
    </div>}
+   {area==='agenda'&&selectedDay&&<div className="lx-toolbar"><strong>{fmt(selectedDay)} · {listing.length} registros</strong><button type="button" className="inf-btn" onClick={()=>setSelectedDay('')}>Ver todos os dias</button></div>}
    {['atendimentos_hoje','meus_atendimentos'].includes(filter)&&area!=='audiencias'?<p className="inf-note" role="status">Os processos atendidos são contabilizados na auditoria por executor e data, conforme o quadro acima. A lista de retornos mostra agendamentos e não representa os atendimentos registrados.</p>:(area!=='agenda'||view==='list')&&<div className="lx-event-list">{pageRows.map(x=><Card key={x.id} item={x} onSelect={openDetails}/>)}
      {listing.length>PAGE_SIZE&&<ProgressiveListEnd shown={pageRows.length} total={listing.length} onMore={moreRows} disabled={loading}/>}
     {!loading&&!listing.length&&<p className="pr-list-empty">Nenhum registro corresponde aos filtros. Confira as fontes e altere o período quando necessário.</p>}
@@ -213,7 +230,7 @@ export default function LexisOperations({db,session,area='deadlines'}){
    {area==='audiencias'&&<p className="inf-note">Audiências passadas não são prazos vencidos. Marque "Incluir audiências anteriores" para conferir eventos anteriores. As sem data ainda exigem confirmação oficial.</p>}
    {area==='deadlines'&&<p className="inf-note">Regra do LexisPredict: retorno vencido = próximo retorno anterior a hoje, sem atendimento na data combinada ou posterior, em processo ativo com CNJ. Datas antigas de proximo_prazo e compromissos manuais não são contabilizados. Confira tarefas manuais na Agenda.</p>}
   </section>
-  {selected&&<LexisEventDetails key={selected.id} event={selected} db={db} profile={profile} onClose={()=>setSelected(null)} onSaved={load} onFinish={finish} busy={busy}/>}
+  {selected&&<LexisEventDetails key={selected.id} event={selected} db={db} profile={profile} onClose={()=>setSelected(null)} onSaved={async()=>{setSelected(null);await load()}} onFinish={finish} onReopen={reopen} team={team} busy={busy}/>}
   {editing&&<section className="pr-module lx-detail"><div className="lx-detail-head"><div><small>CADASTRO OPERACIONAL</small><h2>Novo compromisso</h2></div><button className="inf-btn" onClick={()=>setEditing(false)}><X size={14}/> Cancelar</button></div>
    <p>O compromisso será salvo para a organização, sem alterar movimentos oficiais do tribunal.</p>
    <form onSubmit={save} className="lx-form">
