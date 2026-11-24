@@ -53,7 +53,7 @@ function Body({db}){
     <small>{status(item.type)}</small>
    </Link>})}
   </div>
-  <section className="inf-panel"><h2><ShieldCheck size={16}/> WA.Auto · WhatsApp sem API oficial</h2>
+  <div className="inf-integrations-desk"><section className="inf-panel"><h2><ShieldCheck size={16}/> WA.Auto · WhatsApp sem API oficial</h2>
    <p>O CRM usa o WA.Auto/Baileys em um worker persistente. Abra as conversas aqui mesmo, conecte seu aparelho e envie após revisar a mensagem. O serviço precisa de credenciais configuradas no Vercel.</p>
    <div className="office-action-row"><Link href="/whatsapp" className="inf-btn primary">Abrir atendimento e conversa</Link>
     <a href="https://web.whatsapp.com/" className="inf-btn" rel="noopener noreferrer" target="_blank">Abrir WhatsApp Web <ExternalLink size={13}/></a></div>
@@ -74,7 +74,7 @@ function Body({db}){
      <label>Observações<input maxLength={300} value={event.description} onChange={e=>setEvent({...event,description:e.target.value})}/></label>
     </div><div className="inf-row-end"><button type="submit" className="inf-btn primary">Exportar compromisso</button></div></form>
   </section>
-  {courts.length>0&&<section className="inf-panel"><h2>Fontes dos tribunais · links oficiais públicos</h2>
+  </div>{courts.length>0&&<section className="inf-panel"><h2>Fontes dos tribunais · links oficiais públicos</h2>
    <p>{courts.length} fontes cadastradas para abrir no portal do tribunal. Links não substituem consulta autenticada ou confirmação de audiências.</p>
    <div className="blackhole-native-integrations-grid">
     {courts.slice(0,more?courts.length:9).map(item=><a key={item.id} className="blackhole-native-integration" href={item.url} rel="noopener noreferrer" target="_blank"><strong>{item.label}</strong><small>Consultar site oficial <ExternalLink size={12}/></small></a>)}
