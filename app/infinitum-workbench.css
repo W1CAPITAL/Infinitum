@@ -87,17 +87,17 @@ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shel
 .workbench-step-actions{display:flex;justify-content:flex-end;gap:8px;margin:10px 0}
 .workbench-generate{display:grid;gap:12px}
 .workbench-paper-stage{min-height:570px;padding:28px;background:var(--wb-canvas);border:1px solid var(--wb-line);border-radius:12px;display:flex;align-items:flex-start;justify-content:center;overflow:hidden}
-html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-content .inf-studio-frame .workbench-paper{background:#fff!important;color:#30313b!important;width:min(100%,440px);min-height:530px;border:1px solid #d8d8df;border-top:5px solid #71364f;box-shadow:0 9px 24px #0002;padding:32px;display:flex;flex-direction:column;box-sizing:border-box}
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-content .inf-studio-frame .workbench-paper{background:#fff!important;color:#30313b!important;color-scheme:light;width:min(100%,440px);min-height:530px;border:1px solid #d8d8df;border-top:5px solid #71364f;box-shadow:0 9px 24px #0002;padding:32px;display:flex;flex-direction:column;box-sizing:border-box}
 .workbench-paper-mark{display:flex;gap:9px;align-items:center;color:#71364f;font-weight:750;letter-spacing:.085em;padding-bottom:19px;border-bottom:1px solid #ded9e0}
 .workbench-paper-mark span{display:grid;gap:3px;font-size:13px}
-html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-content .inf-studio-frame .workbench-paper small{color:#66566b!important;font-size:9px}
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-content .inf-studio-frame .inf-document-editor .workbench-paper small{color:#66566b!important;font-size:9px}
 .workbench-paper-label{font-size:10px;font-weight:650;letter-spacing:.08em;color:#71364f;margin-top:28px}
-html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-content .inf-studio-frame .workbench-paper h3{font:650 24px/1.25 var(--wb-font)!important;color:#2d2630!important;margin:9px 0 18px!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-content .inf-studio-frame .inf-document-editor .workbench-paper h3{font:650 24px/1.25 var(--wb-font)!important;color:#2d2630!important;margin:9px 0 18px!important}
 .workbench-paper-meta{display:grid;gap:5px;border-bottom:1px solid #ded9e0;padding-bottom:20px;overflow-wrap:anywhere}
 .workbench-paper-meta>span{font-size:11px;color:#655b69}
-html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-content .inf-studio-frame .workbench-paper strong{color:#30313b!important;font-size:13px}
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-content .inf-studio-frame .inf-document-editor .workbench-paper :is(.workbench-paper-meta,.workbench-paper-placeholder) strong{color:#30313b!important;font-size:13px}
 .workbench-paper-placeholder{flex:1;display:grid;place-content:center;justify-items:center;text-align:center;gap:8px;padding:26px 0;color:#71364f}
-html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-content .inf-studio-frame .workbench-paper-placeholder p{color:#655b69!important;font-size:13px!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-content .inf-studio-frame .inf-document-editor .workbench-paper .workbench-paper-placeholder p{color:#655b69!important;font-size:13px!important}
 .workbench-paper footer{border-top:1px solid #ded9e0;padding-top:12px;color:#655b69;font-size:10px}
 /* Consistent touch, focus and compact navigation; no motion dependency. */
 .inf-studio-frame :is(.workbench-home-nav,.workbench-portfolio-segments,.workbench-operation-nav,.workbench-document-steps) button:focus-visible{outline:3px solid var(--wb-brand);outline-offset:3px}
