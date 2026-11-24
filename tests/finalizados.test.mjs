@@ -7,7 +7,7 @@ const read=(file)=>readFileSync(new URL('../'+file,import.meta.url),'utf8');
 test('finalizados da negociação antiga não aparecem no novo menu jurídico',()=>{
  assert.equal(CRM_AREAS.some(x=>x.label==='Finalizados'),false);
  assert.equal(CRM_AREAS.some(x=>x.label==='Painel jurídico'),true);
- assert.equal(crmAreaHref('Clientes'),'/clientes');
+ assert.equal(crmAreaHref('Clientes'),'/processos');
  assert.equal(areaFromQuery('?aba=finalizados'),'Painel jurídico');
 });
 test('Finalizados lists only explicitly completed workflow, regardless of sheet labels',()=>{
