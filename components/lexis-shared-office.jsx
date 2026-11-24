@@ -3,7 +3,7 @@ import {withAuthDeadline} from '../lib/auth-deadline.mjs';
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import Link from 'next/link';
 import {Activity,Archive,BarChart3,CalendarDays,CheckCircle2,ChevronLeft,ChevronRight,ClipboardList,Download,Edit3,FileText,Gavel,History,Plus,Printer,RefreshCw,Search,ShieldCheck,Users} from 'lucide-react';
-import {mapLexisProcess,resolveCompanyAccess,portfolioUpdate,PROCESS_FIELDS,normalizedCnj,validDay,dailyAttendanceSummary} from '../lib/lexis-shared-portfolio.mjs';
+import {mapLexisProcess,resolveCompanyAccess,portfolioUpdate,PROCESS_FIELDS,normalizedCnj,validDay,dailyAttendanceSummary,filterPortfolioRows,createPortfolioProcess} from '../lib/lexis-shared-portfolio.mjs';
 import {fetchCompanyRows} from '../lib/lexis-company-data.mjs';
 import ProgressiveListEnd from './progressive-list-end';
 import {consultHistoricalCase} from '../lib/judicial-history-client.mjs';
@@ -27,10 +27,11 @@ const FIELDS_CLIENT=['cliente','telefone','email','cpf'];
 const FIELDS_PROCESS=['cliente','protocolo_ref','tribunal','advogado','observacoes','proximo_retorno','proximo_prazo','status_interno'];
 const initialForm=p=>({cliente:p.client_name||'',telefone:p.phone||'',email:p.email||'',cpf:p.cpf||'',tribunal:p.tribunal||'',advogado:p.advogado||'',observacoes:p.observacoes||'',proximo_retorno:p.next_attendance||'',proximo_prazo:p.next_deadline||'',status_interno:p.status==='outro'?'preservar':p.status||'ativo'});
 const recentPeriod=()=>({start:'',end:'',source:'auto',page:1});
-function Summary({title,count,href}){return <Link href={href} className="inf-stat" style={{textDecoration:'none'}}><label>{title}</label><strong>{Number(count||0).toLocaleString('pt-BR')}</strong></Link>;}
+function Summary({title,count,href}){return <Link href={href} className="inf-stat" style={{textDecoration:'none'}}><label>{title}</label><strong>{count==null?'—':Number(count).toLocaleString('pt-BR')}</strong></Link>;}
 export default function LexisSharedOffice({area='dashboard',db,session}){
  const [profile,setProfile]=useState(null),[company,setCompany]=useState(''),[team,setTeam]=useState([]);
  const [authChecking,setAuthChecking]=useState(true),[rows,setRows]=useState([]);
+ const [responsibleFilter,setResponsibleFilter]=useState('todos'),[creating,setCreating]=useState(false),[portfolioReady,setPortfolioReady]=useState(false);
  const [activeFilter,setActiveFilter]=useState('em_andamento'),[loading,setLoading]=useState(false),[busy,setBusy]=useState(false);
  const [notice,setNotice]=useState(''),[editing,setEditing]=useState(null),[mode,setMode]=useState('processo'),[form,setForm]=useState({});
 
@@ -114,10 +115,10 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
   if(area==='audiencias')loadHearings();
  },[area,profile,loadDeadlinesFromProcessos,loadHearings]);
 
- const [page,setPage]=useState(0),[type,setType]=useState('cliente'),[draft,setDraft]=useState(''),[search,setSearch]=useState('');
+ const [page,setPage]=useState(0),[type,setType]=useState('todos'),[draft,setDraft]=useState(''),[search,setSearch]=useState('');
  useEffect(()=>{if(typeof window==='undefined'||!['cases','clients'].includes(area))return;
   const cnj=new URLSearchParams(window.location.search).get('buscar');
-  if(cnj){setType('numero');setSearch(cnj);setDraft(cnj);setPage(0)}
+  if(cnj){setType('numero');setSearch(cnj);setDraft(cnj);setActiveFilter('todos');setPage(0)}
  },[area]);
  const [selected,setSelected]=useState(null),[history,setHistory]=useState([]),[attendNote,setAttendNote]=useState(''),[nextDate,setNextDate]=useState('');
  const [confirmed,setConfirmed]=useState(false),[consulted,setConsulted]=useState(null);
@@ -126,7 +127,7 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
  const [officialHistory,setOfficialHistory]=useState([]),[historyErrors,setHistoryErrors]=useState([]);
  const [consultBusy,setConsultBusy]=useState(false),[consultRange,setConsultRange]=useState(recentPeriod);
  useEffect(()=>()=>{historyRequest.current++;consultController.current?.abort()},[]);
- const closeAction=()=>{if(busy)return;historyRequest.current++;consultController.current?.abort();attendanceRequest.current='';setSelected(null);setEditing(null);setConsulted(null);setHistory([]);setOfficialHistory([]);setHistoryErrors([]);setHistoryLoading(false);setConsultBusy(false)};
+ const closeAction=()=>{if(busy)return;historyRequest.current++;consultController.current?.abort();attendanceRequest.current='';setSelected(null);setEditing(null);setCreating(false);setConsulted(null);setHistory([]);setOfficialHistory([]);setHistoryErrors([]);setHistoryLoading(false);setConsultBusy(false)};
  const [period,setPeriod]=useState('mes'),[scope,setScope]=useState('empresa'),[attendance,setAttendance]=useState([]),[reportTotal,setReportTotal]=useState(0);
  const [reportBusy,setReportBusy]=useState(false),[teamStats,setTeamStats]=useState([]),[selectedMode,setSelectedMode]=useState('atendimento');
  useEffect(()=>{
@@ -154,7 +155,7 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
  },[db,session.user.id]);
  const load=useCallback(async()=>{
   if(!profile?.empresa_id||area==='reports')return;
-  setLoading(true);setNotice('');
+  setLoading(true);setPortfolioReady(false);setNotice('');
   try{
    // Carrega a carteira inteira em páginas estáveis do banco. A paginação visual é local:
    // pesquisar, filtrar e trocar de página não dispara novas consultas nem oculta registros.
@@ -163,27 +164,15 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
    const mapped=data.map(mapLexisProcess).sort((a,b)=>
     String(b.updated_at||'').localeCompare(String(a.updated_at||''))
    );
-   setRows(mapped);setPage(0);
+   setRows(mapped);setPage(0);setPortfolioReady(true);
   }catch(e){
    setRows([]);setPage(0);
    setNotice('Carteira não carregada por completo: '+e.message);
   }finally{setLoading(false)}
  },[db,profile?.empresa_id,area]);
  useEffect(()=>{load()},[load]);
- const filteredRows=useMemo(()=>{
-  const term=String(search||'').trim().toLocaleLowerCase('pt-BR');
-  return rows.filter(p=>{
-   const status=String(p.status_detail||'').toLocaleUpperCase('pt-BR');
-   if(activeFilter==='em_andamento'&&['ENCERRADO','EXCLUIDO'].includes(status))return false;
-   if(activeFilter==='encerrado'&&status!=='ENCERRADO')return false;
-   if(activeFilter==='excluido'&&status!=='EXCLUIDO')return false;
-   if(term){
-    const value=type==='numero'?p.process_number:type==='tribunal'?p.tribunal:p.client_name;
-    if(!String(value||'').toLocaleLowerCase('pt-BR').includes(term))return false;
-   }
-   return true;
-  });
- },[rows,search,type,activeFilter]);
+ const filteredRows=useMemo(()=>filterPortfolioRows(rows,{query:search,type,status:activeFilter,responsible:responsibleFilter}),[rows,search,type,activeFilter,responsibleFilter]);
+ const responsibleOptions=useMemo(()=>[...new Set(rows.map(x=>x.last_responsible).filter(Boolean))].sort((a,b)=>responsibleDisplay(a,team).localeCompare(responsibleDisplay(b,team),'pt-BR')),[rows,team]);
  const total=filteredRows.length;
  const visibleRows=filteredRows.slice(0,(page+1)*PAGE);
  const moreRows=useCallback(()=>setPage(p=>p+1),[]);
@@ -222,7 +211,16 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
   }catch(e){setNotice('Não foi possível confirmar o registro. A tentativa foi preservada; confira o histórico antes de abrir outro atendimento. '+e.message)}
   finally{setBusy(false)}
  };
- const startEdit=(p,what)=>{historyRequest.current++;consultController.current?.abort();setSelected(null);setEditing(p);setMode(what);setForm(initialForm(p));setNotice('')};
+ const startCreate=()=>{closeAction();setForm({});setCreating(true);setNotice('')};
+ const saveCreate=async e=>{
+  e.preventDefault();if(busy||!portfolioReady||!profile?.empresa_id)return;
+  setBusy(true);setNotice('');
+  try{
+   const result=await createPortfolioProcess(db,{profile,userId:session.user.id,values:form,existingRows:rows});
+   setCreating(false);setType('numero');setSearch(result.process_number);setDraft(result.process_number);setActiveFilter('todos');setResponsibleFilter('todos');await load();
+  }catch(err){setNotice(err.message)}finally{setBusy(false)}
+ };
+ const startEdit=(p,what)=>{historyRequest.current++;consultController.current?.abort();setSelected(null);setCreating(false);setEditing(p);setMode(what);setForm(initialForm(p));setNotice('')};
  const saveEdit=async e=>{
   e.preventDefault();if(!editing||busy||!profile?.empresa_id)return;
   const fields=mode==='cliente'?FIELDS_CLIENT:FIELDS_PROCESS.filter(f=>f!=='protocolo_ref' && !(f==='status_interno'&&form.status_interno==='preservar'));
@@ -418,17 +416,18 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
  return <main className="inf-studio lx-shared" data-lexis-shared="portfolio">
   <header className="reference-header"><div><div className="reference-overline">INFINITUM · GESTÃO DA ORGANIZAÇÃO</div><h1>{area==='clients'?'Clientes':area==='cases'?'Processos':'Carteira da organização'}</h1>
   <p>{company} · consultas da empresa inteira, conforme permissões do LexisPredict.</p></div>
-  <div className="reference-actions"><button type="button" className="inf-btn" onClick={load} disabled={loading}><RefreshCw size={16}/> Atualizar</button><Link href="/relatorios" className="inf-btn"><BarChart3 size={16}/> Relatórios</Link></div></header>
+  <div className="reference-actions">{area==='cases'&&<button type="button" className="inf-btn primary" onClick={startCreate} disabled={!portfolioReady||busy||loading}><Plus size={16}/> Novo processo</button>}<button type="button" className="inf-btn" onClick={load} disabled={loading}><RefreshCw size={16}/> Atualizar</button><Link href="/relatorios" className="inf-btn"><BarChart3 size={16}/> Relatórios</Link></div></header>
   {notice&&<div className="inf-note" role="status">{notice}</div>}
-  <div className="inf-grid"><Summary title="Processos carregados" count={rows.length} href="/processos"/><Summary title="Resultados do filtro" count={total} href="/processos"/><Summary title="Membros da organização" count={team.length} href="/relatorios"/></div>
+  <div className="inf-grid"><Summary title="Processos carregados" count={portfolioReady?rows.length:null} href="/processos"/><Summary title="Resultados do filtro" count={portfolioReady?total:null} href="/processos"/><Summary title="Membros da organização" count={team.length} href="/relatorios"/></div>
   <section className="inf-panel"><h2><Search size={18}/> Buscar em toda a organização</h2>
    <form className="inf-row-end" style={{justifyContent:'flex-start',gap:10,flexWrap:'wrap'}} onSubmit={e=>{e.preventDefault();setPage(0);setSearch(draft.trim())}}>
-    <select aria-label="Campo da pesquisa" value={type} onChange={e=>{setType(e.target.value);setPage(0);setSearch('');setDraft('')}}><option value="cliente">Cliente</option><option value="numero">Número processual</option><option value="tribunal">Tribunal</option></select>
-    <input aria-label="Pesquisar em toda empresa" placeholder="Buscar cliente, número CNJ ou tribunal" value={draft} onChange={e=>setDraft(e.target.value)} style={{minWidth:220,flex:1}}/>
+    <select aria-label="Campo da pesquisa" value={type} onChange={e=>{setType(e.target.value);setPage(0);setSearch('');setDraft('')}}><option value="todos">Todos os campos</option><option value="cliente">Cliente</option><option value="numero">Número processual</option><option value="tribunal">Tribunal</option><option value="advogado">Advogado</option><option value="telefone">Telefone</option><option value="cpf">CPF</option><option value="email">E-mail</option></select>
+    <input aria-label="Pesquisar em toda empresa" placeholder="Buscar cliente, CNJ, advogado ou contato" value={draft} onChange={e=>{setDraft(e.target.value);setSearch(e.target.value);setPage(0)}} style={{minWidth:220,flex:1}}/>
     <button className="inf-btn primary" type="submit"><Search size={16}/> Buscar</button>
     <button className="inf-btn" type="button" onClick={()=>{setDraft('');setSearch('');setPage(0)}}>Limpar</button>
    </form>
-   <label>Mostrar <select value={activeFilter} onChange={e=>{setActiveFilter(e.target.value);setPage(0)}}><option value="todos">Todos</option><option value="em_andamento">Em andamento</option><option value="encerrado">Encerrados internamente</option><option value="excluido">Arquivados / excluídos da vista</option></select></label>
+   <label>Mostrar <select value={activeFilter} onChange={e=>{setActiveFilter(e.target.value);setPage(0)}}><option value="todos">Todos</option><option value="em_andamento">Em andamento</option><option value="suspenso">Suspensos</option><option value="encerrado">Encerrados internamente</option><option value="excluido">Arquivados / excluídos da vista</option></select></label>
+   <label>Responsável <select value={responsibleFilter} onChange={e=>{setResponsibleFilter(e.target.value);setPage(0)}}><option value="todos">Todos</option><option value="sem_responsavel">Sem responsável registrado</option>{responsibleOptions.map(value=><option key={value} value={value}>{responsibleDisplay(value,team)}</option>)}</select></label>
   </section>
   {loading&&<p className="inf-note">Carregando todos os processos da organização em lotes automáticos...</p>}
   <section className="inf-panel"><h2>{area==='clients'?'Cadastros de clientes por processo':'Processos cadastrados no LexisPredict'}</h2>
@@ -447,10 +446,16 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
      {p.status!=='excluido'&&<button className="inf-btn" onClick={()=>changeStatus(p,'excluido')} disabled={busy}><Archive size={14}/> Excluir da vista</button>}
     </div>
    </article>)}
-   {!visibleRows.length&&!loading&&<p>Nenhum registro encontrado com os filtros atuais.</p>}</div>
+   {!visibleRows.length&&!loading&&<p>{portfolioReady?"Nenhum registro encontrado com os filtros atuais.":"Carteira indisponível. Atualize para tentar novamente."}</p>}</div>
    <ProgressiveListEnd shown={visibleRows.length} total={total} onMore={moreRows} disabled={loading}/>
   </section>
   {area==='clients'&&<InfinitumLegacyClients db={db} profile={profile} team={team}/>}
+  {creating&&<PortfolioDialog title="Cadastrar processo" busy={busy} notice={notice} onClose={closeAction}>
+   <p>Cadastro na carteira compartilhada da empresa. A situação judicial será consultada posteriormente nas fontes oficiais.</p>
+   <form onSubmit={saveCreate}><fieldset disabled={busy}><div className="inf-fields">
+    {[['cliente','Cliente'],['protocolo_ref','Número CNJ'],['telefone','Telefone'],['email','E-mail'],['cpf','CPF'],['tribunal','Tribunal'],['advogado','Advogado'],['proximo_retorno','Próximo retorno'],['observacoes','Observações']].map(([field,label])=><label key={field}>{label}{field==='observacoes'?<textarea value={form[field]||''} onChange={e=>setForm(old=>({...old,[field]:e.target.value}))}/>:<input required={['cliente','protocolo_ref'].includes(field)} type={field==='proximo_retorno'?'date':field==='email'?'email':field==='telefone'?'tel':'text'} value={form[field]||''} onChange={e=>setForm(old=>({...old,[field]:e.target.value}))}/>}</label>)}
+   </div></fieldset><div className="inf-row-end lx-dialog-actions"><button type="submit" className="inf-btn primary" disabled={busy}>{busy?'Salvando...':'Cadastrar processo'}</button><button type="button" className="inf-btn" disabled={busy} onClick={closeAction}>Cancelar</button></div></form>
+  </PortfolioDialog>}
   {editing&&<PortfolioDialog title={'Editar '+(mode==='cliente'?'cliente':'processo')} busy={busy} notice={notice} onClose={closeAction}>
    <p>{editing.client_name||'Cliente não identificado'} · {editing.process_number||'Sem número CNJ'}</p>
    <form onSubmit={saveEdit}><fieldset disabled={busy}><div className="inf-fields">

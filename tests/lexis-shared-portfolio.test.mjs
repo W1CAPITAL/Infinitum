@@ -64,3 +64,26 @@ test('Lexis original usa situação EM ANDAMENTO e ENCERRADO maiúsculas',()=>{
  assert.equal(mapLexisProcess({id:3,empresa_id:'a',status_interno:'EM ANDAMENTO'}).status,'em_andamento');
  assert.equal(portfolioUpdate({status_interno:'em_andamento'}).status_interno,'EM ANDAMENTO');
 });
+
+import {filterPortfolioRows,createPortfolioProcess} from '../lib/lexis-shared-portfolio.mjs';
+test('carteira pesquisa sem acentos, CNJ sem pontuação e telefones e respeita filtros',()=>{
+ const rows=[{id:1,client_name:'João Luís',process_number:'0000001-00.2026.8.26.0100',phone:'(11) 99999-1234',status:'em_andamento',status_detail:'EM ANDAMENTO',last_responsible:'u1'},{id:2,client_name:'Joana',status:'encerrado',status_detail:'ENCERRADO',last_responsible:'u2'}];
+ assert.deepEqual(filterPortfolioRows(rows,{query:'joao luis'}).map(x=>x.id),[1]);
+ assert.deepEqual(filterPortfolioRows(rows,{query:'00000010020268260100',type:'numero'}).map(x=>x.id),[1]);
+ assert.deepEqual(filterPortfolioRows(rows,{query:'11999991234',type:'telefone'}).map(x=>x.id),[1]);
+ assert.deepEqual(filterPortfolioRows(rows,{status:'encerrado'}).map(x=>x.id),[2]);
+ assert.deepEqual(filterPortfolioRows(rows,{responsible:'u1'}).map(x=>x.id),[1]);
+});
+test('cadastro usa empresa e autor autenticados, não inventa andamento, recusa duplicado e confirma ID',async()=>{
+ const profile={id:'staff',auth_user_id:'auth',empresa_id:'tenant',nome:'Operador'};
+ const values={cliente:'Cliente Teste',protocolo_ref:'00000010020268260100',empresa_id:'outra',created_by:'outra',status:'sentença',dados:{fake:true}};
+ const writes=[];
+ const db={from(table){assert.equal(table,'processos');const q={select(){return q},eq(k,v){assert.equal(k==='empresa_id'?v:'tenant','tenant');return q},limit:async()=>({data:[]}),insert(row){writes.push(row);return q},single:async()=>({data:{id:5}})};return q}};
+ const result=await createPortfolioProcess(db,{profile,userId:'auth',values,existingRows:[]});
+ assert.equal(result.id,5);
+ assert.equal(writes[0].empresa_id,'tenant');assert.equal(writes[0].created_by,'staff');assert.equal(writes[0].protocolo_ref,'0000001-00.2026.8.26.0100');
+ assert.equal(writes[0].status,undefined);assert.equal(writes[0].dados.fake,undefined);
+ await assert.rejects(createPortfolioProcess(db,{profile,userId:'other',values}),/sessão|autorizad/i);
+ await assert.rejects(createPortfolioProcess(db,{profile,userId:'auth',values,existingRows:[{process_number:'0000001-00.2026.8.26.0100'}]}),/já cadastr/i);
+ assert.equal(writes.length,1);
+});
