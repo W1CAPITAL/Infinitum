@@ -1,7 +1,7 @@
 /* INFINITUM interiors: independently composed screens, preserving Studio navigation. */
 @media screen{
 html[data-crm-theme="infinitum"][data-crm-mode] .inf-studio-chrome .inf-studio-frame{
- --desk-paper:#fff;--desk-bg:#edf1f7;--desk-ink:#233044;--desk-muted:#53647a;--desk-line:#d8e1ec;--desk-tint:#e9edf4;
+ --desk-paper:#ffffff;--desk-bg:#edf1f7;--desk-ink:#233044;--desk-muted:#53647a;--desk-line:#d8e1ec;--desk-tint:#e9edf4;
  --desk-brand:#763a57;--desk-blue:#345b85;--desk-teal:#126257;--desk-danger:#963448;--desk-shadow:0 5px 18px #263a5710;
  --desk-hero-surface:#35465e;--desk-hero-ink:#ffffff;--desk-hero-muted:#dce7f4;--desk-hero:linear-gradient(115deg,#273345,#34465e 76%,#4e3b52);
  background:linear-gradient(125deg,#f5f7fb,#e9eef6)!important;
