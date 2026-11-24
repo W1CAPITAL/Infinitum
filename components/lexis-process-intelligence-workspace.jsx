@@ -1,13 +1,14 @@
 'use client';
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import Link from 'next/link';
+import ProgressiveListEnd from './progressive-list-end';
 import {Activity,AlertTriangle,ArrowRight,BookOpen,CheckCircle2,Clock3,Download,ExternalLink,FileSearch,Filter,PauseCircle,RefreshCw,Search,ShieldCheck,Users} from 'lucide-react';
 import {
  loadLexisProcessIntelligence,classifyFasesProvas,sortTriageRows,formatFasesDate,
  exportFasesCsv,listProcessosParados,exportParadosCsv,loadHandledParados,saveHandledParado,clearHandledParado,matchFiltrosFase,PARADOS_BANDS
 } from '../lib/lexis-process-intelligence.mjs';
 
-const number=v=>Number(v||0).toLocaleString('pt-BR');
+const number=v=>v==null?'—':Number(v).toLocaleString('pt-BR');
 const safe=v=>String(v||'');
 function Panel({children,className=''}){return <section className={'lxp-panel '+className}>{children}</section>}
 function Stat({label,value,description,icon:Icon}){return <article className="lxp-stat"><span><Icon size={17}/>{label}</span><strong>{number(value)}</strong><small>{description}</small></article>}
@@ -19,6 +20,8 @@ function exportDownload(text,name){
  a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 function FasesWorkspace({cases,loading,error,refresh,stale}){
+ const available=!loading&&!error||stale;
+ const moreRows=useCallback(()=>setLimit(n=>n+60),[]);
  const [query,setQuery]=useState(''),[type,setType]=useState('todos'),[source,setSource]=useState('todos'),[category,setCategory]=useState('todos'),[priority,setPriority]=useState('todos'),[limit,setLimit]=useState(60);
  const all=useMemo(()=>sortTriageRows(classifyFasesProvas(cases)),[cases]);
  const rows=useMemo(()=>all.filter(r=>(type==='todos'||r.tipo===type)&&(source==='todos'||r.nivel===source)&&(category==='todos'||r.categoria===category)&&(priority==='todos'||r.prioridade===priority)&&(!query.trim()||[r.cliente,r.cnj,r.advogado,r.fase,r.acao,r.evidencia,r.escritorio].join(' ').toLocaleLowerCase('pt-BR').includes(query.trim().toLocaleLowerCase('pt-BR')))),[all,type,source,category,priority,query]);
@@ -27,11 +30,11 @@ function FasesWorkspace({cases,loading,error,refresh,stale}){
  return <main className="lxp-shell" data-lexis-fases-provas>
   <header className="lxp-hero"><div><small>INFINITUM · INTELIGÊNCIA PROCESSUAL</small><h1>Réplica, provas e perícias</h1><p>Localize referências a réplicas, provas, documentos e perícias na carteira inteira. Cada ocorrência mostra se veio do último registro DataJud/DJEN ou de uma anotação interna.</p></div><ShieldCheck size={30}/></header>
   <div className="lxp-stats">
-   <Stat icon={BookOpen} label="Ocorrências" value={all.length} description="Referências encontradas na carteira"/>
-   <Stat icon={FileSearch} label="Réplica" value={counts.replica} description="Registros relacionados à contestação"/>
-   <Stat icon={Activity} label="Provas e perícias" value={counts.provas} description="Documentos e especificação de provas"/>
-   <Stat icon={CheckCircle2} label="Último ato oficial" value={counts.official} description="DataJud/DJEN armazenado"/>
-   <Stat icon={AlertTriangle} label="Prioridade alta" value={counts.high} description="Exige leitura e validação humana"/>
+   <Stat icon={BookOpen} label="Ocorrências" value={available?all.length:null} description="Referências encontradas na carteira"/>
+   <Stat icon={FileSearch} label="Réplica" value={available?counts.replica:null} description="Registros relacionados à contestação"/>
+   <Stat icon={Activity} label="Provas e perícias" value={available?counts.provas:null} description="Documentos e especificação de provas"/>
+   <Stat icon={CheckCircle2} label="Último ato oficial" value={available?counts.official:null} description="DataJud/DJEN armazenado"/>
+   <Stat icon={AlertTriangle} label="Prioridade alta" value={available?counts.high:null} description="Exige leitura e validação humana"/>
   </div>
   <Panel>
    <div className="lxp-toolbar"><div><h2>Consulta da carteira</h2><p>{number(cases.length)} processos carregados de forma paginada</p></div><button className="lxp-button" onClick={refresh} disabled={loading}><RefreshCw size={15}/>Atualizar</button></div>
@@ -62,10 +65,12 @@ function FasesWorkspace({cases,loading,error,refresh,stale}){
     <footer><span>{row.advogado} · {row.escritorio||row.tribunal||'Sem escritório'}</span><CaseLink cnj={row.cnj}/></footer>
    </article>)}
   </div>
-  {rows.length>limit&&<button className="lxp-button lxp-more" onClick={()=>setLimit(n=>n+60)}>Mostrar mais {Math.min(60,rows.length-limit)} ocorrências</button>}
+  {rows.length>limit&&<ProgressiveListEnd shown={Math.min(limit,rows.length)} total={rows.length} onMore={moreRows} disabled={loading}/> }
  </main>;
 }
 function ParadosWorkspace({cases,companyId,userId,loading,error,refresh,stale}){
+ const available=!loading&&!error||stale;
+ const moreRows=useCallback(()=>setLimit(n=>n+50),[]);
  const [minDays,setMinDays]=useState(15),[search,setSearch]=useState(''),[lawyer,setLawyer]=useState('ALL'),[state,setState]=useState('pendentes'),[phaseFilters,setPhaseFilters]=useState([]),[onlyPhone,setOnlyPhone]=useState(false),[limit,setLimit]=useState(50),[treated,setTreated]=useState({});
  const [now,setNow]=useState(()=>new Date());
  useEffect(()=>{if(companyId&&userId)setTreated(loadHandledParados({companyId,userId}))},[companyId,userId]);
@@ -84,7 +89,7 @@ function ParadosWorkspace({cases,companyId,userId,loading,error,refresh,stale}){
   if(!matchFiltrosFase({temContestacao:item.temContestacao,temSentenca:item.temSentenca,temReplica:item.temReplica,cumprimentoRecebido:!!item.cumprimentoRecebido,cumprimentoAberto:!!item.cumprimentoAberto,replicaPendente:!!item.replicaPendente,temCitacao:false,temAudiencia:false},phaseFilters,item.diasParadoTribunal))return false;
   return true;
  }),[all,search,lawyer,onlyPhone,state,phaseFilters]);
- const kpis=useMemo(()=>({pending:all.filter(x=>!x.tratado).length,confirmed:all.filter(x=>x.estado!=='sem_scan'&&!x.tratado).length,unscanned:all.filter(x=>x.estado==='sem_scan'&&!x.tratado).length,old:all.filter(x=>x.estado!=='sem_scan'&&x.diasParadoTribunal>=90&&!x.tratado).length,treated:all.filter(x=>x.tratado).length}),[all]);
+ const kpis=useMemo(()=>({pending:all.filter(x=>!x.tratado).length,confirmed:all.filter(x=>x.estado==='parado_confirmado'&&!x.tratado).length,unscanned:all.filter(x=>x.estado==='sem_scan'&&!x.tratado).length,old:all.filter(x=>x.estado!=='sem_scan'&&x.diasParadoTribunal>=90&&!x.tratado).length,treated:all.filter(x=>x.tratado).length}),[all]);
  const togglePhase=value=>setPhaseFilters(old=>old.includes(value)?old.filter(x=>x!==value):[...old,value]);
  const mark=item=>{
   const cnj=String(item.case.protocolo||'').trim();if(!cnj)return;
@@ -99,11 +104,11 @@ function ParadosWorkspace({cases,companyId,userId,loading,error,refresh,stale}){
  return <main className="lxp-shell" data-lexis-processos-parados>
   <header className="lxp-hero lxp-hero-stalled"><div><small>INFINITUM · GESTÃO DA CARTEIRA</small><h1>Processos parados com ação possível</h1><p>Identifique processos sem movimentação oficial recente, pendências de fase e oportunidades de impulso. A fila separa processos confirmados daqueles que ainda precisam de consulta DataJud/DJEN.</p></div><PauseCircle size={31}/></header>
   <div className="lxp-stats">
-   <Stat icon={Activity} label="Fila pendente" value={kpis.pending} description="Processos ainda não tratados"/>
-   <Stat icon={CheckCircle2} label="Parados confirmados" value={kpis.confirmed} description="Último movimento oficial registrado"/>
-   <Stat icon={Search} label="Sem consulta oficial" value={kpis.unscanned} description="Precisa auditar DataJud + DJEN"/>
-   <Stat icon={Clock3} label="90 dias ou mais" value={kpis.old} description="Sem sinal oficial recente"/>
-   <Stat icon={Users} label="Tratados" value={kpis.treated} description="Marcados neste navegador e usuário"/>
+   <Stat icon={Activity} label="Fila pendente" value={available?kpis.pending:null} description="Processos ainda não tratados"/>
+   <Stat icon={CheckCircle2} label="Parados confirmados" value={available?kpis.confirmed:null} description="Último movimento oficial registrado"/>
+   <Stat icon={Search} label="Sem consulta oficial" value={available?kpis.unscanned:null} description="Precisa auditar DataJud + DJEN"/>
+   <Stat icon={Clock3} label="90 dias ou mais" value={available?kpis.old:null} description="Sem sinal oficial recente"/>
+   <Stat icon={Users} label="Tratados" value={available?kpis.treated:null} description="Marcados neste navegador e usuário"/>
   </div>
   <Panel>
    <div className="lxp-toolbar"><div><h2>Fila da empresa</h2><p>{number(cases.length)} processos consultados · ordenação por prioridade operacional</p></div><button className="lxp-button" onClick={()=>{setNow(new Date());refresh()}} disabled={loading}><RefreshCw size={15}/>Atualizar</button></div>
@@ -115,7 +120,7 @@ function ParadosWorkspace({cases,companyId,userId,loading,error,refresh,stale}){
     <label className="lxp-search"><Search size={16}/><input value={search} onChange={e=>{setSearch(e.target.value);setLimit(50)}} placeholder="Buscar cliente, CNJ ou advogado"/></label>
     <label>Sem movimento há<select value={minDays} onChange={e=>{setMinDays(Number(e.target.value));setLimit(50)}}>{PARADOS_BANDS.map(x=><option key={x} value={x}>{x===0?'Todos os períodos':x+' dias ou mais'}</option>)}</select></label>
     <label>Responsável<select value={lawyer} onChange={e=>setLawyer(e.target.value)}><option value="ALL">Todos</option>{lawyers.map(x=><option key={x} value={x}>{x}</option>)}</select></label>
-    <label>Estado<select value={state} onChange={e=>{setState(e.target.value);setLimit(50)}}><option value="pendentes">Pendentes</option><option value="confirmados">Parados confirmados</option><option value="sem_scan">Sem consulta</option><option value="tratados">Tratados</option><option value="todos">Todos</option></select></label>
+    <label>Estado<select value={state} onChange={e=>{setState(e.target.value);setLimit(50)}}><option value="pendentes">Pendentes</option><option value="confirmados">Parados confirmados ou prováveis</option><option value="sem_scan">Sem consulta</option><option value="tratados">Tratados</option><option value="todos">Todos</option></select></label>
    </div>
    <div className="lxp-chip-row">
     {[['replica_pendente','Réplica pendente'],['cumprimento_aberto','Cumprimento aberto'],['sem_contestacao','Sem contestação'],['sem_sentenca','Sem sentença'],['sem_replica','Sem réplica'],['janela_recente','Janela recente (30 dias)']].map(([id,label])=><button key={id} type="button" className={'lxp-chip '+(phaseFilters.includes(id)?'selected':'')} aria-pressed={phaseFilters.includes(id)} onClick={()=>togglePhase(id)}>{label}</button>)}
@@ -133,7 +138,7 @@ function ParadosWorkspace({cases,companyId,userId,loading,error,refresh,stale}){
     <footer><CaseLink cnj={item.case.protocolo}/><div>{item.tratado?<button className="lxp-button" type="button" onClick={()=>reopen(item)}>Reabrir na fila</button>:<button className="lxp-button lxp-button-primary" type="button" onClick={()=>mark(item)} disabled={!item.case.protocolo}>Marcar tratado</button>}<Link className="lxp-link" href={item.case.protocolo?'/scanner?cnj='+encodeURIComponent(item.case.protocolo):'/scanner'}>Abrir Scanner <ExternalLink size={13}/></Link></div></footer>
    </article>)}
   </div>
-  {rows.length>limit&&<button className="lxp-button lxp-more" onClick={()=>setLimit(n=>n+50)}>Mostrar mais {Math.min(50,rows.length-limit)} processos</button>}
+  {rows.length>limit&&<ProgressiveListEnd shown={Math.min(limit,rows.length)} total={rows.length} onMore={moreRows} disabled={loading}/> }
  </main>;
 }
 export default function LexisProcessIntelligenceWorkspace({db,session,mode='fases'}){
