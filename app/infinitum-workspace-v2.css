@@ -148,3 +148,19 @@ html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .inf-mobile-gr
  html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 :is(.app-sidebar,.reference-top-tools,.crm-mobile-dock,.crm-mobile-more){display:none!important}
  html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .app-content{margin:0!important;width:100%!important;background:white!important;color:black!important}
 }
+
+/* Start with the user's next task, not a wall of statistics. */
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .inf-quick-start{margin:0 0 22px}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .inf-quick-start h2{font:650 17px/1.4 var(--v2-font)!important;color:var(--v2-text)!important;margin:0 0 10px!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .inf-quick-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .inf-quick-grid a{display:flex;align-items:center;gap:11px;padding:14px 12px;border:1px solid var(--v2-line);background:var(--v2-panel);border-radius:11px;color:var(--v2-text)!important;text-decoration:none!important;min-width:0}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .inf-quick-grid a:hover{border-color:var(--v2-accent);background:var(--v2-accent-soft)}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .inf-quick-grid a>svg{flex:none;color:var(--v2-accent)}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .inf-quick-grid a>span{display:grid;gap:3px;min-width:0;flex:1}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .inf-quick-grid strong{font:650 13px/1.4 var(--v2-font)!important;color:var(--v2-text)!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .inf-quick-grid small{font:400 11px/1.45 var(--v2-font)!important;color:var(--v2-muted)!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .lxd-stats{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .lxd-stat-danger{border-left:3px solid var(--v2-accent)!important}
+html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .blackhole-shell-search input{border:0!important;background:transparent!important;padding:0!important;min-height:32px!important}
+@media(max-width:1260px){html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 :is(.inf-quick-grid,.lxd-stats){grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:420px){html[data-crm-theme="infinitum"][data-crm-mode] .inf-workspace-v2 .inf-quick-grid{grid-template-columns:minmax(0,1fr)}}
