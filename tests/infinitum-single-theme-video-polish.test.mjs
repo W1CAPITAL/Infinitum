@@ -16,7 +16,7 @@ test('shell e configuração permitem trocar o tema sem criar uma segunda estrut
  const settings=read('app/configuracoes/page.jsx');
  assert.match(shell,/app-sidebar/);
  assert.match(shell,/app-content/);
- assert.match(shell,/CRM_AREAS\.map/);
+ assert.match(shell,/CRM_NAV_GROUPS\.map/);
  assert.match(shell,/projectw1sc:theme-change/);
  assert.match(settings,/settings-theme-grid/);
  assert.match(settings,/selectTheme/);

@@ -3,7 +3,7 @@ import {useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import {usePathname} from 'next/navigation';
 import {ClipboardList,LayoutDashboard,Users,CheckCircle2,Landmark,LogOut,KeyRound,NotebookPen,Bell,Mail,BarChart3,PanelLeftOpen,PanelLeftClose,Settings2,Gavel,CalendarDays,Scale,Target,Bot,Radar,FileText,MessageSquare,Clock3,BriefcaseBusiness,BookOpen,UserRoundCheck,Workflow,PlugZap,ScanSearch,Search,Command,Menu,X,ShieldCheck,FileSearch,PauseCircle} from 'lucide-react';
-import {CRM_AREAS} from '../lib/crm-navigation.mjs';
+import {CRM_AREAS,CRM_NAV_GROUPS,searchCrmAreas} from '../lib/crm-navigation.mjs';
 import {CRM_THEMES,resolveTheme} from '../lib/crm-themes.mjs';
 import {getClient} from '../lib/supabase-client';
 import {DEMO_GUEST_EMAIL} from '../lib/demo-tenant.mjs';
@@ -27,10 +27,14 @@ export default function CrmShell({active='Painel jurídico',email='',onNavigate,
  const pathname=usePathname()||'/';
  const [sidebarExpanded,setSidebarExpanded]=useState(false);
  const [mobileMenuOpen,setMobileMenuOpen]=useState(false);
- useEffect(()=>{if(window.innerWidth<880)setSidebarExpanded(false)},[]);
+ const [sidebarPinned,setSidebarPinned]=useState(false);
+ useEffect(()=>{if(window.innerWidth<880)setSidebarExpanded(false);else{let pinned=true;try{pinned=localStorage.getItem('infinitum.sidebar.pinned')!=='0'}catch{}setSidebarPinned(pinned);setSidebarExpanded(pinned)}},[]);
+ function toggleSidebar(){const next=!sidebarPinned;setSidebarPinned(next);setSidebarExpanded(next);try{localStorage.setItem('infinitum.sidebar.pinned',next?'1':'0')}catch{}}
+ const menuExpanded=sidebarPinned||sidebarExpanded;
+ const currentArea=CRM_NAV_GROUPS.flatMap(group=>group.items).find(item=>item.path===pathname)||CRM_NAV_GROUPS.flatMap(group=>group.items).find(item=>item.label===active);
  const [navSearch,setNavSearch]=useState('');
  const navSearchRef=useRef(null);
- const matches=navSearch.trim()?CRM_AREAS.filter(x=>x.label.toLocaleLowerCase('pt-BR').includes(navSearch.trim().toLocaleLowerCase('pt-BR'))).slice(0,6):[];
+ const matches=searchCrmAreas(navSearch);
  const [profile,setProfile]=useState({display_name:'',avatar_path:''});
  const [avatarUrl,setAvatarUrl]=useState('');
  const appearanceRef=useRef({colors:{},backgroundUrl:''});
@@ -82,10 +86,10 @@ export default function CrmShell({active='Painel jurídico',email='',onNavigate,
  },[]);
  useEffect(()=>{
   function onPointerDown(event){
-   if(!sidebarRef.current?.contains(event.target))setSidebarExpanded(false);
+   if(!sidebarPinned&&!sidebarRef.current?.contains(event.target))setSidebarExpanded(false);
   }
   function onKeyDown(event){
-   if(event.key==='Escape')setSidebarExpanded(false);
+   if(event.key==='Escape'){if(!sidebarPinned)setSidebarExpanded(false);setMobileMenuOpen(false)}
   }
   function onCommandKey(event){
    if((event.ctrlKey||event.metaKey)&&event.key.toLowerCase()==='k'){
@@ -101,16 +105,16 @@ export default function CrmShell({active='Painel jurídico',email='',onNavigate,
    document.removeEventListener('pointerdown',onPointerDown,true);
    document.removeEventListener('keydown',onKeyDown);
   };
- },[]);
+ },[sidebarPinned]);
 
- return <div className={'app-shell blackhole-studio-shell '+(sidebarExpanded?'sidebar-expanded':'sidebar-collapsed')}>
+ return <div className={'app-shell blackhole-studio-shell inf-workspace-v2 '+(menuExpanded?'sidebar-expanded':'sidebar-collapsed')+(sidebarPinned?' sidebar-pinned':'')}>
   <aside ref={sidebarRef} className="app-sidebar"
     onPointerEnter={()=>setSidebarExpanded(true)}
-    onPointerLeave={()=>setSidebarExpanded(false)}
+    onPointerLeave={()=>{if(!sidebarPinned)setSidebarExpanded(false)}}
     onFocusCapture={()=>setSidebarExpanded(true)}
-    onBlurCapture={event=>{if(!event.currentTarget.contains(event.relatedTarget))setSidebarExpanded(false)}}>
+    onBlurCapture={event=>{if(!sidebarPinned&&!event.currentTarget.contains(event.relatedTarget))setSidebarExpanded(false)}}>
    <div className="app-identity"><Link href="/" className="pr-brand" aria-label="INFINITUM — Painel jurídico"><img className="pr-brand-symbol" src="/branding/infinitum-symbol-preto.svg" alt="" width="46" height="24"/><strong className="pr-brand-name">INFINITUM</strong><small className="pr-brand-sub">CRM | JURÍDICO</small></Link>
-    <button type="button" className="app-sidebar-toggle" aria-label={sidebarExpanded?'Recolher menu lateral':'Expandir menu lateral'} aria-expanded={sidebarExpanded} onClick={()=>setSidebarExpanded(x=>!x)}>{sidebarExpanded?<PanelLeftClose size={19}/>:<PanelLeftOpen size={19}/>}</button>
+    <button type="button" className="app-sidebar-toggle" aria-label={sidebarPinned?'Recolher menu lateral':'Fixar menu lateral'} aria-expanded={sidebarExpanded} aria-pressed={sidebarPinned} title={sidebarPinned?'Recolher menu':'Fixar menu aberto'} onClick={toggleSidebar}>{menuExpanded?<PanelLeftClose size={19}/>:<PanelLeftOpen size={19}/>}</button>
     <Link className="app-brand-link" href="/" aria-label="INFINITUM — Painel jurídico" title="Ir ao painel jurídico" prefetch={false}>
      <img className="app-brand-compact" src="/branding/blackhole-symbol.svg" alt="" width="54" height="58"/>
      <img className="app-brand-full" src="/branding/blackhole-logo.svg" alt="" width="202" height="65"/>
@@ -122,14 +126,14 @@ export default function CrmShell({active='Painel jurídico',email='',onNavigate,
    </div>
    <div className="app-section-name">ESPAÇO DE TRABALHO</div>
    <nav aria-label="Navegação principal" className="app-nav">
-    {CRM_AREAS.map(item=>{
+    {CRM_NAV_GROUPS.map(group=><section key={group.label} className="inf-nav-group" aria-label={group.label}><h2>{group.label}</h2>{group.items.map(item=>{
      const Icon=icons[item.label];
-     return <Link key={item.key} href={item.path} prefetch={false} aria-current={active===item.label?'page':undefined} className={'app-nav-link '+(active===item.label?'active':'')} title={sidebarExpanded?undefined:item.label} aria-label={item.label} onClick={e=>{
+     return <Link key={item.key} href={item.path} prefetch={false} aria-current={(pathname===item.path||currentArea?.key===item.key)?'page':undefined} className={'app-nav-link '+((pathname===item.path||currentArea?.key===item.key)?'active':'')} title={item.name+' — '+item.description} aria-label={item.name} onClick={e=>{
        if(onNavigate&&!['Clientes','Processos','Encerrados','Atividades','Análises internas','Scanner judicial','Prazos','Tarefas','Vencidos','Fases e provas','Processos parados','Fluxos (POP)','Audiências','Agenda','Peças e petições','WhatsApp','Leads','Superagente','Mini Agentes','Gerador de processos','Relatórios','Integrações','Configurações'].includes(item.label)&&!e.metaKey&&!e.ctrlKey&&!e.shiftKey&&!e.altKey){
         e.preventDefault();onNavigate(item.label);setSidebarExpanded(false);
        }
-      }} ><Icon size={17} aria-hidden="true"/><span>{displayLabels[item.label]||item.label}</span></Link>;
-    })}
+      }} ><Icon size={19} aria-hidden="true"/><span className="inf-nav-text"><strong>{item.name}</strong>{(pathname===item.path||currentArea?.key===item.key)&&<small className="inf-nav-description">{item.description}</small>}</span>{item.key==='vencidos'&&overdueCount>0&&<b className="inf-nav-count">{overdueCount}</b>}</Link>;
+    })}</section>)}
    </nav>
    <footer className="app-nav-footer">
     <div className="app-private"><span>Operação privada com trilha de auditoria.</span></div>
@@ -142,14 +146,14 @@ export default function CrmShell({active='Painel jurídico',email='',onNavigate,
    </footer>
   </aside>
   <div className="app-content" key={pathname} data-route={pathname}>{String(email||'').toLowerCase()===DEMO_GUEST_EMAIL&&<div className="inf-demo-banner" role="note"><ShieldCheck size={17}/><strong>AMBIENTE DE DEMONSTRAÇÃO</strong><span>Empresa, clientes, processos, leads, mensagens e movimentações são 100% fictícios. Sem consultas judiciais reais ou envio de WhatsApp.</span></div>}<div className="reference-top-tools">
-   <div className="blackhole-shell-breadcrumb"><img src="/branding/blackhole-symbol.svg" alt="" width="31" height="20"/><Link href="/" prefetch={false}>PROJECTW1SC</Link><span className="blackhole-shell-crumb-sep">/</span><strong>{active}</strong></div>
+   <div className="blackhole-shell-breadcrumb"><img src="/branding/blackhole-symbol.svg" alt="" width="31" height="20"/><Link href="/" prefetch={false}>INFINITUM</Link><span className="blackhole-shell-crumb-sep">/</span><span className="inf-current-area"><strong>{currentArea?.name||active}</strong><small>{currentArea?.description||'Espaço de trabalho jurídico'}</small></span></div>
    <div className="blackhole-shell-tools">
-    <div className="blackhole-shell-search"><Search size={15}/><input ref={navSearchRef} type="search" value={navSearch} onChange={e=>setNavSearch(e.target.value)} aria-label="Pesquisar abas do escritório" placeholder="Buscar uma área..."/><kbd><Command size={12}/> K</kbd>
-     {!!navSearch.trim()&&<div className="blackhole-shell-search-results" role="listbox">{matches.length?matches.map(x=><Link key={x.key} href={x.path} prefetch={false} onClick={()=>setNavSearch('')}>{x.label}</Link>):<span>Nenhuma área encontrada.</span>}</div>}
+    <div className="blackhole-shell-search"><Search size={15}/><input ref={navSearchRef} type="search" value={navSearch} onChange={e=>setNavSearch(e.target.value)} aria-label="Pesquisar abas do escritório" placeholder="Ir para processos, prazos, documentos..."/><kbd><Command size={12}/> K</kbd>
+     {!!navSearch.trim()&&<div className="blackhole-shell-search-results" role="listbox">{matches.length?matches.map(x=><Link key={x.key} href={x.path} prefetch={false} onClick={()=>setNavSearch('')}><strong>{x.name}</strong><small>{x.description}</small></Link>):<span>Nenhuma área encontrada.</span>}</div>}
     </div>
 
    <span className="bh-theme-identity" title="BLACKHOLE · horizonte de eventos"><img src="/branding/blackhole-symbol.svg" alt="" width="29" height="19"/> INFINITUM</span>
-   <button type="button" className="crm-visible-signout" onClick={onSignOut} title="Sair da conta" aria-label="Sair da conta"><LogOut size={18}/><span>Sair</span></button><Link href="/vencidos" prefetch={false} aria-label="Ver itens vencidos" title="Ver itens vencidos" className="reference-top-alert"><Bell size={20}/>{overdueCount>0&&<span className="reference-notification-dot"/>}</Link><span className="reference-top-divider"/><Link className="reference-top-avatar" href="/configuracoes" prefetch={false} title={profile.display_name||'Configurações do perfil'} aria-label="Abrir configurações do perfil">{avatarUrl?<img src={avatarUrl} alt="Foto do perfil"/>:(profile.display_name||email||'W').charAt(0).toLocaleUpperCase('pt-BR')}</Link></div></div>{children}{mobileMenuOpen&&<div className="crm-mobile-more" role="dialog" aria-label="Todas as áreas do CRM"><header><strong>Todas as áreas</strong><button type="button" onClick={()=>setMobileMenuOpen(false)} aria-label="Fechar menu"><X size={19}/></button></header><div className="crm-mobile-more-links">{CRM_AREAS.map(item=>{const Icon=icons[item.label];return <Link href={item.path} key={item.key} prefetch={false} onClick={()=>setMobileMenuOpen(false)}><Icon size={17}/>{displayLabels[item.label]||item.label}</Link>})}</div><button type="button" className="crm-more-signout" onClick={onSignOut}><LogOut size={16}/> Sair da conta</button></div>}
+   <button type="button" className="crm-visible-signout" onClick={onSignOut} title="Sair da conta" aria-label="Sair da conta"><LogOut size={18}/><span>Sair</span></button><Link href="/vencidos" prefetch={false} aria-label="Ver itens vencidos" title="Ver itens vencidos" className="reference-top-alert"><Bell size={20}/>{overdueCount>0&&<span className="reference-notification-dot"/>}</Link><span className="reference-top-divider"/><Link className="reference-top-avatar" href="/configuracoes" prefetch={false} title={profile.display_name||'Configurações do perfil'} aria-label="Abrir configurações do perfil">{avatarUrl?<img src={avatarUrl} alt="Foto do perfil"/>:(profile.display_name||email||'W').charAt(0).toLocaleUpperCase('pt-BR')}</Link></div></div>{children}{mobileMenuOpen&&<div className="crm-mobile-more" role="dialog" aria-label="Todas as áreas do CRM"><header><strong>Todas as áreas</strong><button type="button" onClick={()=>setMobileMenuOpen(false)} aria-label="Fechar menu"><X size={19}/></button></header><div className="crm-mobile-more-links">{CRM_NAV_GROUPS.map(group=><section className="inf-mobile-group" key={group.label}><h2>{group.label}</h2>{group.items.map(item=>{const Icon=icons[item.label];return <Link href={item.path} key={item.key} prefetch={false} aria-current={pathname===item.path?'page':undefined} onClick={()=>setMobileMenuOpen(false)}><Icon size={19}/><span><strong>{item.name}</strong><small>{item.description}</small></span></Link>})}</section>)}</div><button type="button" className="crm-more-signout" onClick={onSignOut}><LogOut size={16}/> Sair da conta</button></div>}
    <nav className="crm-mobile-dock" aria-label="Navegação móvel">{[{href:'/',Icon:LayoutDashboard,name:'Início'},{href:'/tarefas',Icon:ClipboardList,name:'Tarefas'},{href:'/processos',Icon:Scale,name:'Processos'},{href:'/agenda',Icon:CalendarDays,name:'Agenda'},{href:'/whatsapp',Icon:MessageSquare,name:'Mensagens'}].map(({href,Icon,name})=><Link key={href} href={href} prefetch={false} title={name} aria-label={name}><Icon size={18}/><span>{name}</span></Link>)}<button type="button" aria-label="Todas as áreas" aria-expanded={mobileMenuOpen} onClick={()=>setMobileMenuOpen(x=>!x)}>{mobileMenuOpen?<X size={18}/>:<Menu size={18}/>}<span>Mais</span></button></nav></div>
  </div>;
 }
