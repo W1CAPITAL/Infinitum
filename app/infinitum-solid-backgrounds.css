@@ -1,0 +1,46 @@
+/* Solid workspace backgrounds. Scoped to the authenticated shell; login and PDF remain independent. */
+@media screen{
+ html[data-crm-theme="infinitum"][data-crm-mode] body:has(.app-shell.inf-workspace-v2){
+  background:var(--ui-page)!important;background-image:none!important;color:var(--ui-ink)!important;
+ }
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2,
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2 .app-content[data-route]{
+  background:var(--ui-page)!important;background-image:none!important;color:var(--ui-ink)!important;
+ }
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2 .app-sidebar{
+  background:var(--ui-nav)!important;background-image:none!important;color:var(--ui-nav-ink)!important;
+  border-right:1px solid #353d48!important;backdrop-filter:none!important;
+ }
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2::before,
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2::after,
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2 .app-sidebar::before,
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2 .app-sidebar::after,
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2 .app-content[data-route]::before,
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2 .app-content[data-route]::after{
+  content:none!important;display:none!important;background-image:none!important;
+ }
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2 .app-sidebar :is(.app-nav,.app-identity,.app-nav-footer,.inf-nav-group,.app-mobile-account){
+  background:transparent!important;background-image:none!important;
+ }
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2 .app-sidebar .app-nav-link.active{
+  background:#6f2232!important;background-image:none!important;color:#fff!important;border-color:#8f4555!important;
+ }
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2 .app-sidebar .app-nav-link:not(.active):hover{
+  background:#232a34!important;background-image:none!important;color:#fff!important;
+ }
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2 .reference-top-tools{
+  background:var(--ui-surface)!important;background-image:none!important;backdrop-filter:none!important;border-bottom:1px solid var(--ui-border)!important;
+ }
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2 .app-content :is(.inf-studio,.reference-dashboard,.task-shell,.task-main,.report-dashboard,.settings-dashboard,.lxd-shell,.lxi-shell,.lx-workspace,.lx-shared,.report-completo-shell,.lexis-report-root,.office-workflow-screen){
+  background:var(--ui-page)!important;background-image:none!important;color:var(--ui-ink)!important;
+ }
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2 .app-content :is(.reference-header,.inf-heading,.lxd-top,.task-header){
+  background:transparent!important;background-image:none!important;box-shadow:none!important;
+ }
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2 .app-content :is(.reference-header,.inf-heading,.lxd-top,.task-header)::after{
+  content:none!important;display:none!important;
+ }
+ html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2 .app-content :is(.inf-panel,.reference-panel,.lxd-panel,.office-panel,.task-board,.task-card,.office-record,.lx-event-card,.inf-stat,.lxd-stat,.lx-kpi,.office-kanban-column,.office-ai-header,.office-ai-rail,.wa-conversation-list){
+  background:var(--ui-surface)!important;background-image:none!important;border-color:var(--ui-border)!important;
+ }
+}
