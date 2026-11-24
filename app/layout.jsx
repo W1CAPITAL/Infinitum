@@ -38,6 +38,7 @@ import './lexis-process-intelligence.css';
 // Vídeo permanece restrito ao login; a camada de temas é aplicada por último no CRM.
 import './infinitum-login-video.css';
 import './infinitum-dual-themes.css';
+import './infinitum-workspace-v2.css';
 import {WorkspaceSessionProvider} from '../components/workspace-session-provider';
 import QwenPreinstallBootstrap from '../components/qwen-preinstall-bootstrap';
 export const metadata={title:'INFINITUM • CRM Jurídico W1',description:'Gestão operacional de processos, agenda, clientes e atendimentos',icons:{icon:'/branding/projectw1sc-symbol.svg'}};
