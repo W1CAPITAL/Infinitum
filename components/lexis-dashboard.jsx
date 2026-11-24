@@ -53,12 +53,12 @@ export default function LexisDashboard({db,session}){
   {state.loading&&<p className="lxd-message" role="status">Conferindo todos os registros da empresa, incluindo páginas adicionais...</p>}
   {state.error&&<div className="lxd-message danger" role="alert"><AlertTriangle size={18}/><span>Falha na consulta do Lexis: {state.error}. Não exibimos totais presumidos.</span><button className="inf-btn" onClick={refresh}>Repetir consulta</button></div>}
   {state.warnings.length>0&&<p className="lxd-message" role="alert">Algumas fontes não responderam: {state.warnings.join(' · ')}. Indicadores dessas fontes aparecem indisponíveis.</p>}
-  {s&&<><section className="lxd-stats" aria-label="Indicadores da carteira">
+  {s&&<><section className="inf-priority-board" aria-label="Prioridades do dia">
+   <div className="inf-priority-lead"><small>PAINEL DE TRABALHO</small><h2>Por onde começar?</h2><p>Abra uma das filas abaixo para agir sobre as pendências reais da sua organização.</p><Link href="/vencidos" className="inf-btn primary">Ver todas as pendências <ArrowRight size={16}/></Link></div>
+   <div className="inf-priority-actions">{[{label:'Retornos atrasados',value:s.overdueReturns,to:'/tarefas?tipo=retorno&status=vencido',Icon:Clock3,level:'danger',hint:'Clientes aguardando atualização'},{label:'Retornos hoje',value:s.returnsToday,to:'/tarefas?tipo=retorno&status=hoje',Icon:Users,level:'today',hint:'Contatos programados para hoje'},{label:'Tarefas atrasadas',value:s.overdueTasks,to:'/vencidos',Icon:FileWarning,level:'danger',hint:'Atividades ainda não concluídas'},{label:'Próximos compromissos',value:s.upcoming7,to:'/agenda',Icon:CalendarDays,level:'normal',hint:'Calendário dos próximos sete dias'}].map(({label,value,to,Icon,level,hint})=><Link href={to} key={label} data-priority={level}><span className="inf-priority-icon"><Icon size={20}/></span><span className="inf-priority-caption"><strong>{label}</strong><small>{hint}</small></span><b>{n(value)}</b><ArrowRight size={16}/></Link>)}</div>
+  </section><section className="lxd-stats" aria-label="Indicadores da carteira">
    <Stat name="Processos com CNJ" value={s.processes} description="Somente processos com número CNJ" to="/processos" Icon={Scale}/>
    <Stat name="Processos ativos com CNJ" value={s.active} description="Desconsidera encerrados" to="/processos" Icon={Activity}/>
-   <Stat name="Retornos vencidos" value={s.overdueReturns} description="Próximo retorno passado, sem atendimento posterior" to="/tarefas?tipo=retorno&status=vencido" Icon={Clock3} warning/>
-   <Stat name="Retornos para hoje" value={s.returnsToday} description="Contatos previstos para a data de hoje" to="/tarefas?tipo=retorno&status=hoje" Icon={Users}/>
-   <Stat name="Tarefas vencidas" value={s.overdueTasks} description="Tarefas cadastradas ainda não concluídas" to="/vencidos" Icon={FileWarning} warning/>
    <Stat name="Compromissos judiciais futuros" value={valid.hearings?s.hearingsFuture:null} description="Com data, não canceladas" to="/audiencias" Icon={Gavel}/>
    <Stat name="Menções a verificar" value={valid.hearings?s.hearingsUndated:null} description="Fora da agenda até confirmação" to="/audiencias" Icon={CalendarDays}/>
   </section>
