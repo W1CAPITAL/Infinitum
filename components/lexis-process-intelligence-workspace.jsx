@@ -8,7 +8,7 @@ import {
  exportFasesCsv,listProcessosParados,exportParadosCsv,loadHandledParados,saveHandledParado,clearHandledParado,matchFiltrosFase,PARADOS_BANDS
 } from '../lib/lexis-process-intelligence.mjs';
 
-const number=v=>v==null?'—':Number(v).toLocaleString('pt-BR');
+const number=value=>value==null?'—':Number(value).toLocaleString('pt-BR');
 const safe=v=>String(v||'');
 function Panel({children,className=''}){return <section className={'lxp-panel '+className}>{children}</section>}
 function Stat({label,value,description,icon:Icon}){return <article className="lxp-stat"><span><Icon size={17}/>{label}</span><strong>{number(value)}</strong><small>{description}</small></article>}
@@ -21,8 +21,8 @@ function exportDownload(text,name){
 }
 function FasesWorkspace({cases,loading,error,refresh,stale}){
  const available=!loading&&!error||stale;
- const moreRows=useCallback(()=>setLimit(n=>n+60),[]);
  const [query,setQuery]=useState(''),[type,setType]=useState('todos'),[source,setSource]=useState('todos'),[category,setCategory]=useState('todos'),[priority,setPriority]=useState('todos'),[limit,setLimit]=useState(60);
+ const moreRows=useCallback(()=>setLimit(n=>n+60),[]);
  const all=useMemo(()=>sortTriageRows(classifyFasesProvas(cases)),[cases]);
  const rows=useMemo(()=>all.filter(r=>(type==='todos'||r.tipo===type)&&(source==='todos'||r.nivel===source)&&(category==='todos'||r.categoria===category)&&(priority==='todos'||r.prioridade===priority)&&(!query.trim()||[r.cliente,r.cnj,r.advogado,r.fase,r.acao,r.evidencia,r.escritorio].join(' ').toLocaleLowerCase('pt-BR').includes(query.trim().toLocaleLowerCase('pt-BR')))),[all,type,source,category,priority,query]);
  const counts=useMemo(()=>({replica:all.filter(x=>x.tipo==='replica').length,provas:all.filter(x=>x.tipo==='provas').length,official:all.filter(x=>x.nivel==='tribunal').length,high:all.filter(x=>x.prioridade==='alta').length}),[all]);
@@ -70,8 +70,8 @@ function FasesWorkspace({cases,loading,error,refresh,stale}){
 }
 function ParadosWorkspace({cases,companyId,userId,loading,error,refresh,stale}){
  const available=!loading&&!error||stale;
- const moreRows=useCallback(()=>setLimit(n=>n+50),[]);
  const [minDays,setMinDays]=useState(15),[search,setSearch]=useState(''),[lawyer,setLawyer]=useState('ALL'),[state,setState]=useState('pendentes'),[phaseFilters,setPhaseFilters]=useState([]),[onlyPhone,setOnlyPhone]=useState(false),[limit,setLimit]=useState(50),[treated,setTreated]=useState({});
+ const moreRows=useCallback(()=>setLimit(n=>n+50),[]);
  const [now,setNow]=useState(()=>new Date());
  useEffect(()=>{if(companyId&&userId)setTreated(loadHandledParados({companyId,userId}))},[companyId,userId]);
  const base=useMemo(()=>listProcessosParados(cases,minDays,{includeSemScan:true,onlyConfirmados:false,now}),[cases,minDays,now]);
