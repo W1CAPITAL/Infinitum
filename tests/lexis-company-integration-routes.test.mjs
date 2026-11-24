@@ -7,7 +7,8 @@ const source=path=>readFileSync(new URL('../'+path,import.meta.url),'utf8');
 test('carteira carrega todos os processos da empresa e pagina somente no cliente',()=>{
  const page=source('components/lexis-shared-office.jsx');
  assert.match(page,/fetchCompanyRows\(db,'processos',PROCESS_FIELDS,profile\.empresa_id/);
- assert.match(page,/const visibleRows=filteredRows\.slice\(page\*PAGE/);
+ assert.match(page,/const visibleRows=filteredRows\.slice\(0,\(page\+1\)\*PAGE\)/);
+ assert.match(page,/<ProgressiveListEnd/);
  assert.match(page,/visibleRows\.map\(p=>/);
  assert.doesNotMatch(page,/\.range\(page\*PAGE/);
 });
