@@ -5,3 +5,7 @@ test('failed status is unknown, not confirmed disconnected',()=>{assert.equal(se
 test('configured AI is not a successful generation',()=>assert.match(serviceState({status:'fulfilled',value:{ok:true,configured:true}},'ai').label,/geração não testada/));
 test('history merges chronologically without duplicate records',()=>assert.deepEqual(mergeHistory([{id:'2',created_at:'2026-11-02'}],[{id:'1',created_at:'2026-11-01'},{id:'2',created_at:'2026-11-02'}]).map(x=>x.id),['1','2']));
 test('remote fallback requires separate authorization',()=>{assert.equal(allowsExternalFallback(true,false),false);assert.equal(allowsExternalFallback(false,true),false);assert.equal(allowsExternalFallback(true,true),true)});
+
+import {planRemoteEngines} from '../lib/infinitum-agent-policy.mjs';
+test('named motor is used without cascade consent',()=>{const motors=[{id:'groq'},{id:'claude'}];const plan=planRemoteEngines({preferred:'claude',motors,consent:true,fallback:false});assert.deepEqual(plan.motors,[{id:'claude'}]);assert.equal(plan.allowFallback,false);assert.equal(planRemoteEngines({preferred:'gemini',motors,consent:true,defaultProvider:true}).mode,'missing')});
+test('auto only cascades when separately authorized',()=>{const motors=[{id:'groq'},{id:'claude'}];assert.equal(planRemoteEngines({motors,consent:true}).motors.length,1);assert.equal(planRemoteEngines({motors,consent:true,fallback:true}).motors.length,2);assert.equal(planRemoteEngines({motors,consent:false,fallback:true}).mode,'none')});

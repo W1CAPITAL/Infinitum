@@ -11,7 +11,7 @@ import {ZAPFAST_SINGLE_SESSION_URL} from '../lib/openbot-workspace-policy.mjs';
 import styles from './openbot-studio.module.css';
 import OpenBotConnectedApps from './openbot-connected-apps.jsx';
 
-const starterModels=[{id:'rules',label:'Rascunho rápido (sem IA generativa)',mode:'rules'}];
+const starterModels=[{id:'rules',label:'Rascunho rápido (sem IA generativa)',mode:'rules'},{id:'qwen',label:'Qwen 0,5B (navegador, opcional)',mode:'local'}];
 const timeLabel=value=>{
  const d=new Date(value);return Number.isNaN(d.getTime())?'':d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
 };
@@ -100,7 +100,7 @@ export default function OpenBotStudio({db,session,initialBot,initialThreadId,sta
   return()=>{alive=false};
  },[owner,loadSidebar,api]);
 
- useEffect(()=>{bottomRef.current?.scrollIntoView({behavior:'smooth',block:'end'})},[messages.length,busy]);
+ useEffect(()=>{if(!olderLoading)bottomRef.current?.scrollIntoView({behavior:'auto',block:'end'})},[messages.length,busy]);
  useEffect(()=>{setCustomInstruction(profile?.instructions||'')},[activeBot,profile?.instructions]);
 
  async function openThread(x){
@@ -151,7 +151,7 @@ export default function OpenBotStudio({db,session,initialBot,initialThreadId,sta
 
  async function changeModel(model){
   if(busy)return;
-  setSelectedModel(model);setError('');setNotice('');
+  setSelectedModel(model);setOnlineConsent(false);setLocalConsent(false);setFallbackConsent(false);setError('');setNotice('');
   if(!thread)return;
   const result=await db.from('openbot_threads').update({model,updated_at:new Date().toISOString()})
    .eq('id',thread.id).eq('owner_id',owner);
@@ -360,7 +360,7 @@ export default function OpenBotStudio({db,session,initialBot,initialThreadId,sta
     </form>
     {online&&<label className={styles.consent}><input type="checkbox" checked={onlineConsent}
       onChange={e=>setOnlineConsent(e.target.checked)}/> Autorizo enviar este texto e o contexto recente ao provedor de IA online.</label>}
-    {online&&onlineConsent&&<label className={styles.consent}><input type="checkbox" checked={fallbackConsent} onChange={e=>setFallbackConsent(e.target.checked)}/> Permitir outros provedores se o motor escolhido falhar</label>}
+    {online&&onlineConsent&&selectedModel==='auto'&&<label className={styles.consent}><input type="checkbox" checked={fallbackConsent} onChange={e=>setFallbackConsent(e.target.checked)}/> Permitir outros provedores se o motor escolhido falhar</label>}
     {local&&<label className={styles.consent}><input type="checkbox" checked={localConsent}
       onChange={e=>setLocalConsent(e.target.checked)}/> Autorizo baixar e executar o Qwen no meu navegador.</label>}
     <p className={styles.disclaimer}><ShieldCheck size={13}/> Respostas exigem revisão. O OpenBot não envia WhatsApp nem executa ações externas sozinho.</p>

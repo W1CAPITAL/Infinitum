@@ -44,3 +44,5 @@
 .cardAvatarButton:hover img{transform:scale(1.045);border-color:#e17b9d}
 .agentNameButton{padding:0;border:0;background:transparent;color:#fff;font:inherit;font-size:inherit;font-weight:750;text-align:left;cursor:pointer}
 .agentNameButton:hover{color:#f19ab7}
+
+.areaSelect{width:100%;margin:0 0 10px;padding:8px 10px;border:1px solid #51414a;border-radius:8px;background:#171318;color:#f7eef3}.help{display:grid;place-items:center}.page .card{min-width:0}.page .card h3{overflow-wrap:anywhere}@media(prefers-reduced-motion:reduce){.page *{scroll-behavior:auto!important;transition:none!important;animation:none!important}}

@@ -17,6 +17,7 @@ export default function WaAutoInbox({db,userId}){
  const [chatOffset,setChatOffset]=useState(180),[moreChats,setMoreChats]=useState(true),[chatBusy,setChatBusy]=useState(false);
  const activeJid=useRef(null);
  activeJid.current=selected?.jid||null;
+ const actionLock=useRef(false);
  const [busy,setBusy]=useState(''),[error,setError]=useState(''),[notice,setNotice]=useState('');
  const [drafts,setDrafts]=useState({}),[pairPhone,setPairPhone]=useState(''),[newPhone,setNewPhone]=useState('');
  const draft=draftForChat(drafts,selected?.jid);
@@ -192,7 +193,7 @@ export default function WaAutoInbox({db,userId}){
   return()=>{active=false};
  },[connection.qr]);
  async function action(name,payload={}){
-  if(busy)return;
+  if(busy||actionLock.current)return;actionLock.current=true;
   setBusy(name);setError('');setNotice('');
   const targetJid=selected?.jid;let accepted=false;
   try{
@@ -213,10 +214,10 @@ export default function WaAutoInbox({db,userId}){
    else if(name==='logout'){setChats([]);setMessages([]);setSelected(null);setDrafts({});setNotice('Aparelho desvinculado desta sessão.')}
    else setNotice(name==='connect'?'Solicitação de conexão enviada. Leia o QR quando aparecer.':'Pareamento iniciado. Confira o código no aparelho.');
    await reloadStatus().catch(e=>{setStatus(old=>old?{...old,connected:false}:old);if(accepted)setNotice(acceptedSendState(true,true).notice);else setArchiveWarning('Status não atualizado: '+e.message)});
-  }catch(e){if(accepted)setNotice(acceptedSendState(true,true).notice);else if(name==='send')setError(acceptedSendState(false,false).notice+' '+e.message);else setError(e.message)}finally{setBusy('')}
+  }catch(e){if(accepted)setNotice(acceptedSendState(true,true).notice);else if(name==='send')setError(acceptedSendState(false,false).notice+' '+e.message);else setError(e.message)}finally{actionLock.current=false;setBusy('')}
  }
  function startChat(e){
-  e.preventDefault();setError('');
+  e.preventDefault();if(busy)return;setError('');
   let phone=String(newPhone||'').replace(/\D/g,'');
   if(/^\d{10,11}$/.test(phone))phone='55'+phone;
   if(!/^55\d{10,11}$/.test(phone)){setError('Informe um telefone brasileiro com DDD.');return}

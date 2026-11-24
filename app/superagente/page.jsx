@@ -86,7 +86,7 @@ function Console({db,session}){
     const {data:{session:s}}=await db.auth.getSession();if(!s?.access_token)throw Error('Sessão expirada.');
     const response=await fetch('/api/superagente',{method:'POST',
      headers:{'Content-Type':'application/json',Authorization:'Bearer '+s.access_token},
-     body:JSON.stringify({prompt:q,externalAiConsent:engine==='online'&&externalAiConsent,allowEngineFallback:engine==='online'&&allowEngineFallback,preferredMotor:engine==='online'&&allowEngineFallback?preferredMotor:'auto',messages:messages.slice(-8).map(x=>({role:x.role,content:x.content}))})});
+     body:JSON.stringify({prompt:q,externalAiConsent:engine==='online'&&externalAiConsent,allowEngineFallback:engine==='online'&&allowEngineFallback,preferredMotor:engine==='online'?preferredMotor:'auto',messages:messages.slice(-8).map(x=>({role:x.role,content:x.content}))})});
     payload=await response.json();
    }
    if(!payload?.ok||typeof payload.reply!=='string')throw Error(payload?.error||'Não foi possível responder');
@@ -120,7 +120,7 @@ function Console({db,session}){
    {activeTab?<div className="office-ai-content">
     {tab==='historico'&&<><h1>Buscar conversas</h1><p>Atividades que foram efetivamente registradas na carteira privada.</p>
      <input className="inf-search" aria-label="Pesquisar no histórico" placeholder="Buscar pedido" value={search} onChange={e=>setSearch(e.target.value)}/>
-     <div className="office-ai-history">{history.filter(x=>x.task.toLowerCase().includes(search.toLowerCase())).map(r=><button type="button" key={r.id} onClick={()=>openHistory(r)}><strong>{r.task}</strong><small>{new Date(r.created_at).toLocaleDateString('pt-BR')} · {r.status}</small></button>)}
+     <div className="office-ai-history">{history.filter(x=>String(x.task||'').toLowerCase().includes(search.toLowerCase())).map(r=><button type="button" key={r.id} onClick={()=>openHistory(r)}><strong>{r.task}</strong><small>{new Date(r.created_at).toLocaleDateString('pt-BR')} · {r.status}</small></button>)}
       {!history.length&&<p>Nenhuma conversa registrada.</p>}</div></>}
     {tab==='habilidades'&&<><h1>Habilidades e mini agentes</h1><p>Cada especialista encaminha seu pedido ao motor de análise verificável. Nenhuma ação é executada sem autorização.</p>
       <div className="office-agent-grid">{OFFICE_AGENTS.map(x=><button className="office-agent-card" type="button" key={x.id} onClick={()=>chooseAction('Analise a carteira como especialista de '+x.name+'. Objetivo: '+x.role+'. Aponte somente o que estiver comprovado nos registros disponíveis.')}>
@@ -154,7 +154,7 @@ function Console({db,session}){
    </div>}
    <div className="office-ai-bottom">
     {notice&&<p className="office-ai-notice" role="status">{notice}</p>}
-    <form onSubmit={ask} className="office-ai-composer"><textarea required minLength={1} maxLength={3500} rows={2} value={prompt}
+    <form onSubmit={ask} className="office-ai-composer"><textarea required minLength={1} maxLength={3500} rows={2} value={prompt} disabled={busy}
       onChange={e=>setPrompt(e.target.value)}
       onKeyDown={e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.nativeEvent.isComposing){e.preventDefault();ask()}}}
       placeholder="Ex.: consulte DJEN e DataJud do processo 0000000-00.2026.8.26.0001"/>
@@ -167,7 +167,7 @@ function Console({db,session}){
     </div>
     {engine==='online'&&<label className="office-ai-consent"><input type="checkbox" checked={externalAiConsent} onChange={e=>setExternalAiConsent(e.target.checked)}/> Autorizo o envio desta conversa ao modelo online gratuito (pode haver limites e tratamento pelo provedor).</label>}
     {engine==='online'&&externalAiConsent&&<label className="office-ai-consent"><input type="checkbox" checked={allowEngineFallback} onChange={e=>setAllowEngineFallback(e.target.checked)}/> Autorizo cascata LexisPredict/PredictLM: esta conversa poderá ser enviada a provedores remotos configurados, em sequência, se houver falha.</label>}
-     {engine==='online'&&externalAiConsent&&allowEngineFallback&&<label className="office-ai-consent office-motor-preference"><span>Motor preferido</span><select aria-label="Selecionar motor preferido" value={preferredMotor} onChange={e=>setPreferredMotor(e.target.value)}><option value="auto">Automático · Lexis + PredictLM</option><option value="predictlm">PredictLM · se configurado</option>{['colibri','minicpm','minimax','claude','groq','xai','openrouter','gemini'].map(id=><option value={id} key={id}>{id.toUpperCase()} · se configurado</option>)}</select></label>}
+     {engine==='online'&&externalAiConsent&&<label className="office-ai-consent office-motor-preference"><span>Motor preferido</span><select aria-label="Selecionar motor preferido" value={preferredMotor} onChange={e=>setPreferredMotor(e.target.value)}><option value="auto">Automático · Lexis + PredictLM</option><option value="predictlm">PredictLM · se configurado</option>{['colibri','minicpm','minimax','claude','groq','xai','openrouter','gemini'].map(id=><option value={id} key={id}>{id.toUpperCase()} · se configurado</option>)}</select></label>}
     {engine==='qwen'&&<p className="office-ai-disclaimer">Qwen local por CPU/WebAssembly selecionado; o modelo é carregado quando você envia a primeira solicitação. Não depende de WebGPU nem servidor pago. Sem limite diário artificial de perguntas.</p>}
     {modelProgress&&<p className="office-ai-progress" role="status">{modelProgress}</p>}
     <p className="office-ai-disclaimer">Para consultar, escreva "Consulte DJEN do processo" e o CNJ de 20 dígitos. A busca usa as fontes oficiais com acesso autorizado ao processo, mesmo quando o motor de IA está selecionado. Os resultados do DataJud não são publicações DJEN.</p>

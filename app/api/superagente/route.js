@@ -5,6 +5,7 @@ import {createClient} from '@supabase/supabase-js';
 import {checkCrmAccess} from '../../../lib/crm-access.mjs';
 import {buildSuperAgentReview,targetCNJ} from '../../../lib/superagent-core.mjs';
 import {formatProcessNumber} from '../../../lib/processos-oficiais.mjs';
+import {planRemoteEngines} from '../../../lib/infinitum-agent-policy.mjs';
 import {configuredLexisMotors,runLexisCascade} from '../../../lib/lexis-motor-cascade.mjs';
 import {predictLmConfig,runPredictLmChat} from '../../../lib/predictlm-gateway.mjs';
 import {qualityGate} from '../../../lib/lexis-predictlm-quality.mjs';
@@ -46,43 +47,20 @@ export async function POST(request){
      'Consulta judicial nao confirmada: '+String(officialResult.error||'fonte indisponivel').slice(0,180)+'. Nenhum dado foi inventado.'});
   }
   const provider=configuredBlackholeProvider(process.env);
-  const cascaded=body?.allowEngineFallback===true?configuredLexisMotors(process.env):[];
-  const predictlm=body?.allowEngineFallback===true?predictLmConfig(process.env):null;
-  const preferredMotor=['auto','colibri','minicpm','minimax','claude','groq','xai','openrouter','gemini','predictlm']
-   .includes(body?.preferredMotor)?body.preferredMotor:'auto';
-  // Motor escolhido explicitamente não pode trocar de fornecedor quando
-  // as credenciais Colibri/Modelo não estão configuradas.
-  if(body?.externalAiConsent===true&&body?.allowEngineFallback===true&&
-    preferredMotor!=='auto'&&preferredMotor!=='predictlm'&&
-    !cascaded.some(m=>m.id===preferredMotor))
-    return json({ok:false,error:'Motor '+preferredMotor+' não está configurado e validado neste servidor.'},503);
-  // Provedores recebem somente a mensagem/histórico fornecidos explicitamente.
-  // Carteira, snapshots, números e nomes não são enviados por esta rota.
-  if((provider||cascaded.length||predictlm)&&body?.externalAiConsent===true){
+  const configured=configuredLexisMotors(process.env),predictlm=predictLmConfig(process.env);
+  const preferredMotor=['auto','colibri','minicpm','minimax','claude','groq','xai','openrouter','gemini','predictlm'].includes(body?.preferredMotor)?body.preferredMotor:'auto';
+  const plan=planRemoteEngines({preferred:preferredMotor,motors:configured,predictlm:!!predictlm,defaultProvider:!!provider,consent:body?.externalAiConsent===true,fallback:body?.allowEngineFallback===true});
+  if(plan.mode==='missing')return json({ok:false,error:'Motor '+preferredMotor+' não está configurado neste servidor.'},503);
+  if(plan.mode!=='none'){
    try{
-    const history=Array.isArray(body?.messages)?body.messages.slice(-8):[];
+    const history=Array.isArray(body?.messages)?body.messages.slice(-8).filter(m=>['user','assistant'].includes(m?.role)&&typeof m.content==='string').map(m=>({role:m.role,content:m.content.slice(0,3400)})):[];
     const messages=[...history,{role:'user',content:prompt}];
     let answer;
-    if(preferredMotor==='predictlm'){
-     if(!predictlm)throw Error('PredictLM não configurado com host e chave privada do servidor.');
-     answer=await runPredictLmChat(messages,{config:predictlm});
-    }else if(cascaded.length){
-     const ordered=preferredMotor==='auto'?cascaded:[
-      ...cascaded.filter(m=>m.id===preferredMotor),
-      ...cascaded.filter(m=>m.id!==preferredMotor)
-     ];
-     if(preferredMotor!=='auto'&&!cascaded.some(m=>m.id===preferredMotor))
-      throw Error('Motor '+preferredMotor+' não configurado no servidor.');
-     try{answer=await runLexisCascade(messages,{motors:ordered,allowFallback:preferredMotor==='auto'});}
-     catch(e){
-      if(!predictlm||preferredMotor!=='auto')throw e;
-      answer=await runPredictLmChat(messages,{config:predictlm});
-     }
-    }else if(predictlm){
-     answer=await runPredictLmChat(messages,{config:predictlm});
-    }else{
-     answer={reply:await generativeBlackholeReply(provider,messages),model:provider.model,engine:'motor-online'};
-    }
+    if(plan.mode==='predictlm')answer=await runPredictLmChat(messages,{config:predictlm});
+    else if(plan.mode==='cascade'){
+     try{answer=await runLexisCascade(messages,{motors:plan.motors,allowFallback:plan.allowFallback})}
+     catch(e){if(!plan.predictlm)throw e;answer=await runPredictLmChat(messages,{config:predictlm})}
+    }else answer={reply:await generativeBlackholeReply(provider,messages),model:provider.model,engine:'motor-online'};
     const gate=qualityGate(answer.reply);
     if(!gate.ok)throw Error('Resposta do modelo bloqueada por inconsistência; revisão necessária.');
     return json({ok:true,reply:gate.text,predictLmLocalCore,model:answer.model,engine:answer.engine,
