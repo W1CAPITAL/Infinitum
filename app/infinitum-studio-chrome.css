@@ -14,7 +14,7 @@ html[data-crm-theme="infinitum"][data-crm-mode="dark"] .app-shell.inf-studio-chr
  --studio-backdrop:radial-gradient(ellipse at 94% 0%,#2a3349 0%,transparent 55%),linear-gradient(125deg,#1c2331,#141b28);
  --studio-side-bg:radial-gradient(ellipse at 8% 0%,#493045 0%,transparent 44%),linear-gradient(160deg,#2b2232,#1c1927 75%);
 }
-html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.inf-signature-shell.inf-studio-chrome,
+html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome,
 html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome .app-content[data-route]{
  background:var(--studio-edge)!important;background-image:none!important;color:var(--studio-ink)!important
 }
