@@ -199,7 +199,7 @@ export default function LexisOperations({db,session,area='deadlines'}){
   {errors.map((e,i)=><p key={i} className="inf-note error" role="status">{e}</p>)}
   {loading&&<p className="inf-note">Consultando registros da organização no Supabase do LexisPredict...</p>}
   {area==='deadlines'&&<div className="lx-toolbar"><button type="button" className="inf-btn" aria-pressed={deadlineMode==='juridicos'} onClick={()=>{setDeadlineMode('juridicos');setFilter('todos')}}>Prazos jurídicos cadastrados</button><button type="button" className="inf-btn" aria-pressed={deadlineMode==='retornos'} onClick={()=>{setDeadlineMode('retornos');setFilter('todos')}}>Retornos de clientes</button></div>}
-  <div className="inf-operation-desk"><div className="lx-kpis">
+  <div className="inf-operation-desk">{['tasks','overdue'].includes(area)&&<nav className="workbench-operation-nav" aria-label="Fila de trabalho">{[['prioridades','Prioridades'],['vencidos','Vencidos'],['hoje','Hoje'],['proximos','Próximos 7 dias'],['finalizados','Finalizados'],['todos','Todos']].map(([id,label])=><button key={id} type="button" aria-pressed={filter===id} onClick={()=>chooseFilter(id)}>{label}</button>)}</nav>}<div className="lx-kpis">
    {displayedMetrics.map(([label,value,status])=>{
     const byAudit=status==='atendimentos_hoje'||status==='meus_atendimentos';
     const available=byAudit?!!audit.data:area==='audiencias'?validSources.hearings:area==='deadlines'&&deadlineMode==='juridicos'?validSources.manual:area==='agenda'?(kindFilter==='prazo'?validSources.manual:Object.values(validSources).every(Boolean)):(area==='tasks'||area==='overdue')?queueSourcesAvailable:validSources.processes;
