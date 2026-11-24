@@ -132,7 +132,7 @@ function Generator({db,session}){
   <small>BLACKHOLE / GERADOR DE PROCESSOS</small><h1>Gerador de processos</h1>
   <p>Pesquise classes ou assuntos por tribunal no DataJud ou publicações no DJEN. O CNJ é extraído somente de campos oficiais; resultados precisam de conferência.</p></div>
   <a className="inf-btn" href="/processos"><FileSearch size={15}/> Minha carteira</a></header>
-  <section className="inf-panel"><h2>Filtros de consulta judicial</h2>
+  <div className="inf-generator-desk"><section className="inf-panel"><h2>Filtros de consulta judicial</h2>
    <div className="office-action-row" style={{marginBottom:15}}>
     <button type="button" className={'inf-btn '+(sourceMode==='datajud'?'primary':'')} onClick={()=>setSourceMode('datajud')} aria-pressed={sourceMode==='datajud'}>DataJud · classe/assunto</button>
     <button type="button" className={'inf-btn '+(sourceMode==='djen'?'primary':'')} onClick={()=>setSourceMode('djen')} aria-pressed={sourceMode==='djen'}>DJEN · publicações</button>
@@ -148,7 +148,7 @@ function Generator({db,session}){
    </form>
    <div className="inf-note">DataJud: pesquisa por classe/assunto em um tribunal, até 20 candidatos por consulta; a data exibida é a de ajuizamento, não de publicação. DJEN: datas longas são divididas automaticamente em consultas mensais de até 31 dias. Erros 403/429 representam bloqueios reais; resultados anteriores permanecem preservados.</div>
   </section>
-  <section className="inf-panel"><h2><ShieldCheck size={16}/> Cadastrar CNJ manualmente</h2>
+  <section className="inf-panel inf-generator-manual"><h2><ShieldCheck size={16}/> Cadastrar CNJ manualmente</h2>
    <p>Alternativa gratuita que funciona mesmo quando o DJEN bloqueia pesquisas por palavras. Cadastro não implica confirmação de tramitação.</p>
    <form onSubmit={addManual}><div className="inf-fields">
     <label>Número CNJ<input required value={manual.cnj} onChange={e=>setManual({...manual,cnj:e.target.value})} placeholder="0000000-00.0000.0.00.0000" maxLength={32}/></label>
@@ -157,7 +157,7 @@ function Generator({db,session}){
    </div>
    <div className="inf-row-end"><button className="inf-btn primary" disabled={busy} type="submit"><Plus size={14}/> Cadastrar CNJ manualmente</button></div></form>
   </section>
-  {notice&&<p className={'inf-note '+(status==='error'?'error':'')} role="status">{notice}</p>}
+  </div>{notice&&<p className={'inf-note '+(status==='error'?'error':'')} role="status">{notice}</p>}
   {accessHelp&&<section className="office-official-access" role="status" aria-label="Orientações para validação judicial">
    <div className="office-official-access-heading"><ShieldCheck size={20}/><strong>{accessHelp.action==='manual_check'?'Validação humana no portal oficial':'Consulta oficial temporariamente indisponível'}</strong></div>
    <p>{accessHelp.message}</p>
