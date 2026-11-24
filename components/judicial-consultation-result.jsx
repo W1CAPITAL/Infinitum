@@ -1,10 +1,12 @@
 'use client';
-import {useState} from 'react';
+import {useCallback,useState} from 'react';
+import ProgressiveListEnd from './progressive-list-end';
 const labels={checking:'Consultando...',simulated:'Simulação · tribunal não consultado',ok:'Consultado agora',ok_browser:'Consultado no navegador',cached_previous:'Consulta anterior salva',not_checked:'Não consultado',unavailable:'Indisponível',timeout:'Tempo esgotado',blocked_403:'Acesso recusado pela fonte',rate_limited_429:'Limite de consultas atingido'};
 const date=value=>{const day=String(value||'').slice(0,10);return /^\d{4}-\d{2}-\d{2}$/.test(day)?day.split('-').reverse().join('/'):'Data não informada'};
 function officialLink(value){try{const u=new URL(value);return u.protocol==='https:'&&/(^|\.)jus\.br$/.test(u.hostname)?u.href:null}catch{return null}}
 export function JudicialEvents({items=[],title='Movimentações e publicações'}){
  const [limit,setLimit]=useState(50);
+ const more=useCallback(()=>setLimit(n=>n+50),[]);
  return <section className="lx-judicial-events"><h3>{title} ({items.length})</h3>
   {items.slice(0,limit).map((item,i)=><article className="lx-judicial-event" key={item.source+'|'+item.id+'|'+i}>
    <small>{date(item.date)} · {item.source}{item.savedAt?' · Salvo em '+date(item.savedAt):''}</small>
@@ -12,7 +14,7 @@ export function JudicialEvents({items=[],title='Movimentações e publicações'
    {item.description&&<p className="lx-judicial-description">{item.description}</p>}
    {officialLink(item.link)&&<a href={officialLink(item.link)} target="_blank" rel="noopener noreferrer">Abrir publicação oficial</a>}
   </article>)}
-  {items.length>limit&&<button type="button" className="inf-btn" onClick={()=>setLimit(n=>n+50)}>Mostrar mais movimentações</button>}
+  {items.length>limit&&<ProgressiveListEnd shown={Math.min(limit,items.length)} total={items.length} onMore={more}/> }
  </section>;
 }
 export default function JudicialConsultationResult({result}){
@@ -30,7 +32,7 @@ export default function JudicialConsultationResult({result}){
   {!bySource.djen&&result.sourceStatus?.djen==='ok'&&<p className="inf-note">O DJEN respondeu sem publicações para o CNJ e a pesquisa realizada. As movimentações do DataJud rotuladas como publicação não substituem o teor do diário.</p>}
   {result.persistenceErrors?.length>0&&<p role="status">{result.persistenceErrors.join(' ')}</p>}
   {result.windowsPending>0&&<p role="status">{result.windowsChecked} de {result.windowsTotal} períodos consultados; {result.windowsPending} pendente(s). Continue pelo formulário acima.</p>}
-  {result.limited&&<p>Há mais resultados na fonte. Consulte a próxima página para continuar.</p>}
+  {result.limited&&<p>{result.nextPage?"Há mais resultados na fonte. Consulte a próxima página para continuar sem perder os registros anteriores.":"A fonte limitou os resultados; o histórico completo não está confirmado."}</p>}
   {items.length>0&&<JudicialEvents key={result.checkedAt} items={items}/>}
  </section>;
 }
