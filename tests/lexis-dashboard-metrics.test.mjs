@@ -37,3 +37,15 @@ test('consulta paginada inclui mais de mil processos sem cortar KPIs',async()=>{
  assert.equal((await fetchCompanyRows(db,'processos','id','company')).length,1205);
  assert.equal(calls,3);
 });
+
+test('dashboard mantém fontes independentes e não transforma falha de leitura em zero',()=>{
+ const today='2026-11-24';
+ const s=summarizeLexisDashboard({today,processes:[],hearings:[],tasks:[{id:'t',feito:false,titulo:'Revisar',due_at:'2026-11-23'}],manual:[],valid:{processes:false,hearings:true,tasks:true,manual:false}});
+ assert.equal(s.processes,null);
+ assert.equal(s.returnsToday,null);
+ assert.equal(s.hearingsFuture,0);
+ assert.equal(s.overdueTasks,null);
+ assert.equal(s.upcoming7,null);
+ assert.deepEqual(s.tribunals,[]);
+ assert.deepEqual(s.months,[]);
+});

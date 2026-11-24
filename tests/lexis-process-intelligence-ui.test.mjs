@@ -32,3 +32,10 @@ test('atalho do Scanner recebe o CNJ escolhido, sem disparar consulta automatica
  assert.match(scanner,/setDirectCNJ\(cnj\)/);
  assert.match(scanner,/Consultar DJEN pelo meu navegador/);
 });
+
+test('triagem e processos parados ampliam as listas sem clique e distinguem KPI indisponível',()=>{
+ const source=read('components/lexis-process-intelligence-workspace.jsx');
+ assert.equal((source.match(/<ProgressiveListEnd/g)||[]).length,2);
+ assert.match(source,/value==null\?'—'/);
+ assert.match(source,/const available=!loading&&!error\|\|stale/);
+});
