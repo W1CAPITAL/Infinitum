@@ -6,7 +6,7 @@ import {Activity,Archive,BarChart3,CalendarDays,CheckCircle2,ChevronLeft,Chevron
 import {mapLexisProcess,resolveCompanyAccess,portfolioUpdate,PROCESS_FIELDS,normalizedCnj,validDay,dailyAttendanceSummary,filterPortfolioRows,createPortfolioProcess} from '../lib/lexis-shared-portfolio.mjs';
 import {fetchCompanyRows} from '../lib/lexis-company-data.mjs';
 import ProgressiveListEnd from './progressive-list-end';
-import {consultHistoricalCase} from '../lib/judicial-history-client.mjs';
+import {consultHistoricalCase,mergeHistoricalContinuation} from '../lib/judicial-history-client.mjs';
 import {browseOfficialDjenNumber} from '../lib/blackhole-public-djen-browser.mjs';
 import {periodBounds} from '../lib/report.mjs';
 import {todayBrazil} from '../lib/tarefas.mjs';
@@ -249,15 +249,17 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
   if(!p.process_number||!normalizedCnj(p.process_number)){setNotice('Número CNJ incompleto. Consulta oficial não iniciada.');return}
   consultController.current?.abort();const controller=new AbortController();consultController.current=controller;
   const request=++historyRequest.current;
-  setEditing(null);setConsultRange({...recentPeriod(),...options});
-  setSelected(p);setSelectedMode('consulta');setConsulted(null);setConsultBusy(true);setNotice('Consultando as fontes oficiais...');
+  const previous=options.continueHistory&&selected?.id===p.id?consulted:null;
+  const {continueHistory,...range}=options;
+  setEditing(null);setConsultRange({...recentPeriod(),...range});
+  setSelected(p);setSelectedMode('consulta');setConsulted(previous);setConsultBusy(true);setNotice('Consultando as fontes oficiais...');
   void loadHistory(p,request);
   try{
    const {data:{session:s}}=await withAuthDeadline(db.auth.getSession());
    if(!s?.access_token)throw Error('Sessão expirada.');
    const result=await consultHistoricalCase({
     signal:controller.signal,independentSources:true,
-    onResult:result=>{if(request===historyRequest.current)setConsulted(result)},
+    onResult:result=>{if(request===historyRequest.current)setConsulted(mergeHistoricalContinuation(previous,result))},
     number:normalizedCnj(p.process_number),source:options.source||'auto',start:options.start,end:options.end,page:options.page||1,
     onProgress:progress=>{if(request===historyRequest.current)setNotice('Consultando período '+progress.current+' de '+progress.total+'...')},
     fetchServer:async({number,source,start,end,page,signal})=>{
@@ -271,8 +273,9 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
     fetchBrowser:async({number,start,end,page,signal})=>browseOfficialDjenNumber({number,start,end,page,signal})
    });
    if(request!==historyRequest.current)return;
-   setConsulted(result);
-   setNotice(result.notice||'Consulta terminada; confira quais fontes responderam.');
+   const combined=mergeHistoricalContinuation(previous,result);
+   setConsulted(combined);
+   setNotice(combined.notice||'Consulta terminada; confira quais fontes responderam.');
   }catch(e){if(request===historyRequest.current)setNotice('Consulta judicial não confirmada: '+e.message)}finally{if(request===historyRequest.current)setConsultBusy(false)}
  };
  // Atalho vindo de Prazos, Agenda ou Audiências: abre a ação REAL do processo autorizado.
@@ -481,8 +484,8 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
       <label>Página DJEN<input type="number" min="1" max="100" required value={consultRange.page} onChange={e=>setConsultRange({...consultRange,page:Number(e.target.value)})}/></label>
      </div></fieldset><button type="submit" className="inf-btn primary" disabled={consultBusy}>{consultBusy?'Consultando...':'Consultar período'}</button><button type="button" className="inf-btn" disabled={consultBusy} onClick={()=>consult(selected,{start:'',end:'',source:'djen',page:1})}>Buscar histórico completo do DJEN</button>
      {consultBusy&&<button type="button" className="inf-btn" onClick={()=>consultController.current?.abort()}>Cancelar consulta</button>}
-     {consulted?.limited&&!consulted?.nextWindow&&<button type="button" className="inf-btn" disabled={consultBusy||consultRange.page>=100} onClick={()=>consult(selected,{...consultRange,page:Math.min(100,(Number(consultRange.page)||1)+1)})}>Próxima página DJEN</button>}
-     {consulted?.nextWindow&&<button type="button" className="inf-btn" disabled={consultBusy} onClick={()=>consult(selected,{...consultRange,start:consulted.nextWindow.start,source:'djen'})}>Continuar períodos pendentes</button>}
+     {consulted?.nextPage&&<button type="button" className="inf-btn" disabled={consultBusy} onClick={()=>consult(selected,{...consulted.nextPage,source:'djen',continueHistory:true})}>Próxima página DJEN</button>}
+     {consulted?.nextWindow&&!consulted?.nextPage&&<button type="button" className="inf-btn" disabled={consultBusy} onClick={()=>consult(selected,{...consultRange,start:consulted.nextWindow.start,page:1,source:'djen',continueHistory:true})}>Continuar períodos pendentes</button>}
     </form>
     {consulted&&<JudicialConsultationResult result={consulted}/>}
    </>}
