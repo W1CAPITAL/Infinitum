@@ -2,7 +2,7 @@
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import Link from 'next/link';
 import {Archive,CalendarDays,CheckCircle2,ChevronLeft,ChevronRight,Clock3,ExternalLink,FileText,Gavel,Plus,RefreshCw,Search,Users,X} from 'lucide-react';
-import {buildLexisEvents,filterAgendaEvents} from '../lib/lexis-operations.mjs';
+import {buildLexisEvents,filterAgendaEvents,classifyMonitoredHearing} from '../lib/lexis-operations.mjs';
 import {summarizeLexisReturns} from '../lib/lexis-return-kpis.mjs';
 import {filterLexisCompanyQueue,summarizeLexisCompanyQueue} from '../lib/lexis-company-queue.mjs';
 import {loadLexisCompanySources} from '../lib/lexis-company-data.mjs';
@@ -96,7 +96,7 @@ export default function LexisOperations({db,session,area='deadlines'}){
   if(area==='tasks'||area==='overdue')return filterLexisCompanyQueue(areaRows,{view:filter,today:brazilToday(),query:search});
   return areaRows.filter(x=>{
    if(filter==='todos')return true;
-   if(area==='audiencias')return filter==='futuras'?!!x.due_on&&x.due_on>=brazilToday()&&x.status!=='encerrado':x.status===filter;
+   if(area==='audiencias'){const future=!!x.due_on&&x.due_on>=brazilToday()&&x.status!=='encerrado';if(filter==='agendadas')return future&&x.hearing_class==='agendada';if(filter==='informadas')return future&&x.hearing_class==='informada';if(filter==='sessoes')return future&&x.hearing_class==='sessao';return filter==='futuras'?future:x.status===filter;}
    if(area==='deadlines'&&deadlineMode==='juridicos')return filterAgendaEvents([x],{today:brazilToday(),filter}).length===1;
    if(x.kind!=='retorno'||!x.process_id||x.status==='encerrado')return false;
    if(filter==='retornos')return true;
@@ -112,9 +112,10 @@ export default function LexisOperations({db,session,area='deadlines'}){
  const responsibleOptions=useMemo(()=>[...new Set(items.map(x=>x.responsible).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR')),[items]);
  const allHearings=useMemo(()=>items.filter(x=>x.kind==='audiencia'),[items]);
  const hearingMetrics=[
-  ['Registradas',allHearings.length,'todos'],
-  ['Futuras',allHearings.filter(x=>x.due_on&&x.due_on>=brazilToday()&&x.status!=='encerrado').length,'futuras'],
-  ['Sem data',allHearings.filter(x=>!x.due_on&&x.status!=='encerrado').length,'sem_data'],
+  ['Audiências agendadas',allHearings.filter(x=>x.hearing_class==='agendada'&&x.due_on>=brazilToday()).length,'agendadas'],
+  ['Compromissos futuros',allHearings.filter(x=>x.due_on&&x.due_on>=brazilToday()&&x.status!=='encerrado').length,'futuras'],
+  ['Notificações a verificar',allHearings.filter(x=>x.hearing_class==='informada'&&x.due_on>=brazilToday()).length,'informadas'],
+  ['Sessões de julgamento',allHearings.filter(x=>x.hearing_class==='sessao'&&x.due_on>=brazilToday()).length,'sessoes'],
   ['Passadas',allHearings.filter(x=>x.due_on&&x.due_on<brazilToday()&&x.status!=='encerrado').length,'vencido'],
   ['Canceladas',allHearings.filter(x=>x.status==='encerrado').length,'encerrado']
  ];
@@ -137,7 +138,7 @@ export default function LexisOperations({db,session,area='deadlines'}){
   ['Já atendidos hoje',audit.data?.todayTotal??null,'atendimentos_hoje'],
   ['Meus atendimentos hoje',audit.data?.personalToday??null,'meus_atendimentos']
  ];
- function chooseFilter(value){if(area==='audiencias'&&value==='vencido')setShowPast(true);if(area==='agenda'){setSelectedDay('');setView(value==='todos'?'month':'list');if(['hoje','proximos'].includes(value))setMonth(brazilToday().slice(0,7));}setFilter(value)}
+ function chooseFilter(value){if(area==='audiencias'&&['vencido','encerrado'].includes(value))setShowPast(true);if(area==='agenda'){setSelectedDay('');setView(value==='todos'?'month':'list');if(['hoje','proximos'].includes(value))setMonth(brazilToday().slice(0,7));}setFilter(value)}
  const save=async e=>{
   e.preventDefault();if(busy||!profile?.empresa_id)return;
   if(form.title.trim().length<3||form.title.length>250){setErrors(['O compromisso precisa ter título de 3 a 250 caracteres.']);return}
@@ -209,7 +210,7 @@ export default function LexisOperations({db,session,area='deadlines'}){
     <p>Retornos vencidos usam último/próximo retorno e somente processos com CNJ. Atendimentos realizados vêm da auditoria do CRM por dia e operador; são métricas diferentes. A Agenda filtra somente a lista pelo mês.</p></div>
    <div className="lx-toolbar"><label className="lx-search"><Search size={16}/><input aria-label="Buscar nos compromissos" placeholder="Buscar cliente, processo ou responsável" value={search} onChange={e=>setSearch(e.target.value)}/></label>
     <select aria-label="Situação" value={filter} onChange={e=>chooseFilter(e.target.value)}>
-      {area==='deadlines'&&deadlineMode==='juridicos'?<><option value="todos">Todos os prazos</option><option value="hoje">Hoje</option><option value="proximos">Próximos 7 dias</option><option value="vencido">Vencidos</option><option value="atencao">Atenção</option><option value="em_dia">Em dia</option><option value="encerrado">Concluídos</option></>:area==='agenda'?<><option value="todos">Todas as situações</option><option value="hoje">Hoje</option><option value="proximos">Próximos 7 dias</option>{Object.entries(statuses).map(([k,v])=><option key={k} value={k}>{v}</option>)}</>:area==='tasks'||area==='overdue'?<><option value="prioridades">Prioridades</option><option value="vencidos">Somente vencidos</option><option value="hoje">Para hoje</option><option value="proximos">Próximos 7 dias</option><option value="em_dia">Em dia</option><option value="sem_data">Sem data</option><option value="finalizados">Finalizados</option><option value="atendidos">Retornos atendidos</option><option value="todos">Todos os registros</option></>:<><option value="todos">Todas as situações</option>{area==='audiencias'?<><option value="futuras">Futuras</option>{Object.entries(statuses).filter(([k])=>k!=='atendido').map(([k,v])=><option key={k} value={k}>{k==='vencido'?'Passadas':v}</option>)}</>:<><option value="retornos">Retornos agendados</option><option value="hoje">Para hoje</option><option value="proximos">Próximos 7 dias</option><option value="atendimentos_hoje">Já atendidos hoje · auditoria</option><option value="meus_atendimentos">Meus atendimentos hoje · auditoria</option><option value="atendido">Agendamentos concluídos por data</option>{Object.entries(statuses).filter(([k])=>!['atendido','encerrado'].includes(k)).map(([k,v])=><option key={k} value={k}>{v}</option>)}</>}</>}
+      {area==='deadlines'&&deadlineMode==='juridicos'?<><option value="todos">Todos os prazos</option><option value="hoje">Hoje</option><option value="proximos">Próximos 7 dias</option><option value="vencido">Vencidos</option><option value="atencao">Atenção</option><option value="em_dia">Em dia</option><option value="encerrado">Concluídos</option></>:area==='agenda'?<><option value="todos">Todas as situações</option><option value="hoje">Hoje</option><option value="proximos">Próximos 7 dias</option>{Object.entries(statuses).map(([k,v])=><option key={k} value={k}>{v}</option>)}</>:area==='tasks'||area==='overdue'?<><option value="prioridades">Prioridades</option><option value="vencidos">Somente vencidos</option><option value="hoje">Para hoje</option><option value="proximos">Próximos 7 dias</option><option value="em_dia">Em dia</option><option value="sem_data">Sem data</option><option value="finalizados">Finalizados</option><option value="atendidos">Retornos atendidos</option><option value="todos">Todos os registros</option></>:<><option value="todos">Todas as situações</option>{area==='audiencias'?<><option value="futuras">Futuras</option><option value="agendadas">Audiências agendadas</option><option value="informadas">Notificações a verificar</option><option value="sessoes">Sessões de julgamento</option>{Object.entries(statuses).filter(([k])=>!['atendido','sem_data'].includes(k)).map(([k,v])=><option key={k} value={k}>{k==='vencido'?'Passadas':v}</option>)}</>:<><option value="retornos">Retornos agendados</option><option value="hoje">Para hoje</option><option value="proximos">Próximos 7 dias</option><option value="atendimentos_hoje">Já atendidos hoje · auditoria</option><option value="meus_atendimentos">Meus atendimentos hoje · auditoria</option><option value="atendido">Agendamentos concluídos por data</option>{Object.entries(statuses).filter(([k])=>!['atendido','encerrado'].includes(k)).map(([k,v])=><option key={k} value={k}>{v}</option>)}</>}</>}
      </select>
     {['agenda','tasks','overdue'].includes(area)&&<select aria-label="Tipo de compromisso" value={kindFilter} onChange={e=>setKindFilter(e.target.value)}><option value="todos">Todos os tipos</option>{Object.entries(kinds).filter(([k])=>area==='agenda'||k!=='audiencia').map(([k,v])=><option key={k} value={k}>{v}</option>)}</select>}
     <select aria-label="Responsável" value={responsibleFilter} onChange={e=>setResponsibleFilter(e.target.value)}><option value="todos">Todos os responsáveis</option>{responsibleOptions.map(name=><option key={name} value={name}>{name}</option>)}</select>
@@ -232,7 +233,7 @@ export default function LexisOperations({db,session,area='deadlines'}){
      {listing.length>PAGE_SIZE&&<ProgressiveListEnd shown={pageRows.length} total={listing.length} onMore={moreRows} disabled={loading}/>}
     {!loading&&!listing.length&&<p className="pr-list-empty">Nenhum registro corresponde aos filtros. Confira as fontes e altere o período quando necessário.</p>}
    </div>}
-   {area==='audiencias'&&<p className="inf-note">Audiências passadas não são prazos vencidos. Marque "Incluir audiências anteriores" para conferir eventos anteriores. As sem data ainda exigem confirmação oficial.</p>}
+   {area==='audiencias'&&<p className="inf-note">Audiências sem data e simples menções não entram no calendário. {validSources.hearings?sourceRows.hearings.filter(h=>classifyMonitoredHearing(h)==='pendente').length+' registros pendentes de confirmação foram excluídos da agenda. ':''}Notificações não verificadas e sessões de julgamento são identificadas separadamente. Marque "Incluir audiências anteriores" para consultar o histórico.</p>}
    {area==='deadlines'&&deadlineMode==='juridicos'&&<p className="inf-note">Prazos lançados na Agenda. Não são calculados automaticamente a partir de intimações; datas legadas não são tratadas como prazo judicial confirmado.</p>}
    {area==='deadlines'&&deadlineMode==='retornos'&&<p className="inf-note">Regra do LexisPredict: retorno vencido = próximo retorno anterior a hoje, sem atendimento na data combinada ou posterior, em processo ativo com CNJ. Datas antigas de proximo_prazo e compromissos manuais não são contabilizados. Confira tarefas manuais na Agenda.</p>}
   </section>
