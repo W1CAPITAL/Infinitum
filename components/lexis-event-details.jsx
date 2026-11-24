@@ -3,6 +3,7 @@ import {useEffect,useState} from 'react';
 import Link from 'next/link';
 import {CheckCircle2,ClipboardList,Edit3,ExternalLink,FileText,Gavel} from 'lucide-react';
 import PortfolioDialog from './portfolio-dialog';
+import {buildTaskEditPatch} from '../lib/lexis-operations.mjs';
 import {PROCESS_FIELDS,mapLexisProcess,normalizedCnj,validDay} from '../lib/lexis-shared-portfolio.mjs';
 
 const dateLabel=value=>value?String(value).slice(0,10).split('-').reverse().join('/'):'Não informada';
@@ -11,10 +12,11 @@ const safeSource=value=>{try{const url=new URL(value);return ['https:','http:'].
 const kinds={retorno:'Retorno',prazo:'Prazo',audiencia:'Audiência',tarefa:'Tarefa'};
 const recordLink=(id,action)=>'/processos?processo='+encodeURIComponent(String(id))+'&acao='+encodeURIComponent(action);
 
-export default function LexisEventDetails({event,db,profile,onClose,onSaved,onFinish,busy=false}){
+export default function LexisEventDetails({event,db,profile,onClose,onSaved,onFinish,onReopen,team=[],busy=false}){
  const empresaId=profile?.empresa_id;
  const [process,setProcess]=useState(null),[loading,setLoading]=useState(Boolean(event.process_id||event.process_number));
  const [notice,setNotice]=useState(''),[saving,setSaving]=useState(false),[manualEdit,setManualEdit]=useState(false);
+ const [taskEdit,setTaskEdit]=useState(false),[task,setTask]=useState({title:event.title||'',due_on:event.due_on||'',assignee_id:event.assignee_id||''});
  const [manual,setManual]=useState({
   title:event.title||'',due_on:event.due_on||'',kind:event.kind||'tarefa',
   priority:event.priority||'normal',responsible:event.responsible||'',notes:event.notes||''
@@ -65,9 +67,19 @@ export default function LexisEventDetails({event,db,profile,onClose,onSaved,onFi
   }catch(error){setNotice('Edição não concluída: '+String(error?.message||error))}
   finally{setSaving(false)}
  }
+ async function saveTask(e){
+  e.preventDefault();if(saving||busy||!event.task_id||!empresaId)return;
+  let patch;try{patch=buildTaskEditPatch(task,team,empresaId)}catch(error){setNotice(error.message);return}
+  setSaving(true);setNotice('');
+  try{
+   const {data,error}=await db.from('crm_tarefas').update({...patch,updated_at:new Date().toISOString()}).eq('id',event.task_id).eq('empresa_id',empresaId).select('id').maybeSingle();
+   if(error||!data?.id)throw Error(error?.message||'Banco não confirmou a alteração.');
+   setTaskEdit(false);await onSaved?.();
+  }catch(error){setNotice('Edição não concluída: '+String(error?.message||error))}finally{setSaving(false)}
+ }
  const cnj=normalizedCnj(process?.process_number);
  const source=safeSource(event.source_url);
- return <PortfolioDialog title={'Detalhes · '+(kinds[event.kind]||'Compromisso')} busy={saving} notice={notice} onClose={onClose}>
+ return <PortfolioDialog title={'Detalhes · '+(kinds[event.kind]||'Compromisso')} busy={saving||busy} notice={notice} onClose={onClose}>
   <section aria-label="Informações do compromisso">
    <h3>{event.title}</h3>
    <div className="lx-detail-meta">
@@ -105,10 +117,16 @@ export default function LexisEventDetails({event,db,profile,onClose,onSaved,onFi
   {!loading&&!process&&<p className="inf-note">Registro sem vínculo processual confirmado. Edição de cliente, atendimento e consulta precisam de um processo localizado na carteira autorizada.</p>}
   {event.task_id&&<section aria-label="Tarefa da organização">
    <p className="inf-note">Tarefa empresarial registrada no CRM do LexisPredict. A conclusão será gravada na mesma tarefa, sem criar cópia.</p>
-   {event.status!=='encerrado'&&<button type="button" className="inf-btn primary" disabled={busy||saving} onClick={()=>onFinish?.(event)}><CheckCircle2 size={14}/> Concluir tarefa</button>}
+   {event.status!=='encerrado'?<button type="button" className="inf-btn primary" disabled={busy||saving} onClick={()=>onFinish?.(event)}><CheckCircle2 size={14}/> Concluir tarefa</button>:<button type="button" className="inf-btn" disabled={busy||saving} onClick={()=>onReopen?.(event)}>Reabrir tarefa</button>}
+   {!taskEdit?<button type="button" className="inf-btn" disabled={busy||saving} onClick={()=>setTaskEdit(true)}><Edit3 size={14}/> Editar tarefa</button>:<form className="lx-form" onSubmit={saveTask}>
+    <label>Título<input required minLength={3} maxLength={250} value={task.title} onChange={e=>setTask({...task,title:e.target.value})}/></label>
+    <label>Data (opcional)<input type="date" value={task.due_on} onChange={e=>setTask({...task,due_on:e.target.value})}/></label>
+    <label>Responsável<select value={task.assignee_id} onChange={e=>setTask({...task,assignee_id:e.target.value})}><option value="">Sem responsável</option>{team.filter(m=>m.empresa_id===empresaId).map(m=><option key={m.id} value={task.assignee_id===m.auth_user_id?m.auth_user_id:m.id}>{m.nome}</option>)}</select></label>
+    <div className="lx-dialog-actions"><button type="submit" className="inf-btn primary" disabled={saving||busy}>Salvar tarefa</button><button type="button" className="inf-btn" disabled={saving||busy} onClick={()=>setTaskEdit(false)}>Cancelar</button></div>
+   </form>}
   </section>}
   {event.manual_id&&<section aria-label="Edição de compromisso manual">
-   {event.status!=='encerrado'&&<button type="button" className="inf-btn" disabled={busy||saving} onClick={()=>onFinish?.(event)}><CheckCircle2 size={14}/> Concluir compromisso</button>}
+   {event.status!=='encerrado'?<button type="button" className="inf-btn" disabled={busy||saving} onClick={()=>onFinish?.(event)}><CheckCircle2 size={14}/> Concluir compromisso</button>:<button type="button" className="inf-btn" disabled={busy||saving} onClick={()=>onReopen?.(event)}>Reabrir compromisso</button>}
    {!manualEdit?<button type="button" className="inf-btn" onClick={()=>setManualEdit(true)}><Edit3 size={14}/> Editar compromisso manual</button>:
     <form className="lx-form" onSubmit={saveManual}>
      <label>Título<input required minLength={3} maxLength={250} value={manual.title} onChange={e=>setManual({...manual,title:e.target.value})}/></label>

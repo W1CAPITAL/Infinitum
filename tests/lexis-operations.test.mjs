@@ -50,3 +50,20 @@ test('processo encerrado não conta como retorno vencido, data anterior de audi�
  assert.equal(items[0].status,'encerrado');
  assert.equal(items.find(i=>i.kind==='audiencia').status,'encerrado');
 });
+
+import {filterAgendaEvents,buildTaskEditPatch} from '../lib/lexis-operations.mjs';
+test('agenda filtra todos os tipos de compromisso e limita a data, sem restringir a retornos',()=>{
+ const items=[{id:'t',kind:'tarefa',status:'atencao',due_on:today,responsible:'Dra. Maria Silva'},{id:'r',kind:'retorno',status:'atendido',due_on:today},{id:'a',kind:'audiencia',status:'em_dia',due_on:'2026-11-20'},{id:'m',kind:'prazo',status:'vencido',due_on:'2026-11-09'},{id:'x',kind:'tarefa',status:'em_dia',due_on:'2026-12-01'}];
+ const options={today,start:'2026-11-01',end:'2026-11-30'};
+ assert.deepEqual(filterAgendaEvents(items,{...options,filter:'hoje'}).map(x=>x.id),['t']);
+ assert.deepEqual(filterAgendaEvents(items,{...options,filter:'todos',kind:'audiencia'}).map(x=>x.id),['a']);
+ assert.deepEqual(filterAgendaEvents(items,{...options,filter:'todos',selectedDay:today}).map(x=>x.id),['t','r']);
+ assert.deepEqual(filterAgendaEvents(items,{...options,filter:'vencido'}).map(x=>x.id),['m']);
+ assert.equal(filterAgendaEvents(items,{...options,filter:'todos'}).length,4);
+});
+test('edição de tarefa preserva autor e empresa, aceita data vazia e valida responsável da equipe',()=>{
+ const team=members.map(x=>({...x,empresa_id:'empresa-a'}));
+ assert.deepEqual(buildTaskEditPatch({title:' Revisar ',due_on:'',assignee_id:team[0].id,empresa_id:'outra'},team,'empresa-a'),{titulo:'Revisar',due_at:null,assignee_id:team[0].id});
+ assert.throws(()=>buildTaskEditPatch({title:'Revisar',due_on:'2026-02-30',assignee_id:team[0].id},team,'empresa-a'),/Data/);
+ assert.throws(()=>buildTaskEditPatch({title:'Revisar',assignee_id:'outra'},team,'empresa-a'),/Responsável/);
+});
