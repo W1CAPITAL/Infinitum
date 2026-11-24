@@ -424,10 +424,10 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
   <p>{company} · {area==='clients'?'Dados cadastrais, contato e histórico de atendimento.':'Processos, dados de clientes, atendimentos e consultas oficiais em uma só carteira.'}</p></div>
   <div className="reference-actions">{area==='cases'&&<button type="button" className="inf-btn primary" onClick={()=>{setPortfolioView('processos');startCreate()}} disabled={!portfolioReady||busy||loading}><Plus size={16}/> Novo processo</button>}<button type="button" className="inf-btn" onClick={load} disabled={loading}><RefreshCw size={16}/> Atualizar</button><Link href="/relatorios" className="inf-btn"><BarChart3 size={16}/> Relatórios</Link></div></header>
   {notice&&<div className="inf-note" role="status">{notice}</div>}
-  <div className="lx-toolbar" aria-label="Visão da carteira"><button className={'inf-btn '+(portfolioView==='processos'?'primary':'')} type="button" aria-pressed={portfolioView==='processos'} onClick={()=>setPortfolioView('processos')}>Processos e clientes vinculados</button><button className={'inf-btn '+(portfolioView==='historicos'?'primary':'')} type="button" aria-pressed={portfolioView==='historicos'} onClick={()=>setPortfolioView('historicos')}>Cadastros históricos</button></div>
+  <div className="inf-portfolio-desk"><div className="lx-toolbar inf-portfolio-view" aria-label="Visão da carteira"><button className={'inf-btn '+(portfolioView==='processos'?'primary':'')} type="button" aria-pressed={portfolioView==='processos'} onClick={()=>setPortfolioView('processos')}>Processos e clientes vinculados</button><button className={'inf-btn '+(portfolioView==='historicos'?'primary':'')} type="button" aria-pressed={portfolioView==='historicos'} onClick={()=>setPortfolioView('historicos')}>Cadastros históricos</button></div>
   {portfolioView==='historicos'?<InfinitumLegacyClients db={db} profile={profile} team={team}/>:<>
   <div className="inf-grid"><Summary title={area==='clients'?'Cadastros vinculados':'Processos carregados'} count={portfolioReady?rows.length:null} href={area==='clients'?'/clientes':'/processos'}/><Summary title="Resultados do filtro" count={portfolioReady?total:null} href="/processos"/><Summary title="Membros da organização" count={team.length} href="/relatorios"/></div>
-  <section className="inf-panel inf-portfolio-search"><h2><Search size={18}/> Localizar processo ou cliente</h2>
+  <section className="inf-portfolio-controls"><h2><Search size={18}/> Localizar processo ou cliente</h2>
    <form className="inf-row-end" style={{justifyContent:'flex-start',gap:10,flexWrap:'wrap'}} onSubmit={e=>{e.preventDefault();setPage(0);setSearch(draft.trim())}}>
     <select aria-label="Campo da pesquisa" value={type} onChange={e=>{setType(e.target.value);setPage(0);setSearch('');setDraft('')}}><option value="todos">Todos os campos</option><option value="cliente">Cliente</option><option value="numero">Número processual</option><option value="tribunal">Tribunal</option><option value="advogado">Advogado</option><option value="telefone">Telefone</option><option value="cpf">CPF</option><option value="email">E-mail</option></select>
     <input aria-label="Pesquisar em toda empresa" placeholder="Buscar cliente, CNJ, advogado ou contato" value={draft} onChange={e=>{setDraft(e.target.value);setSearch(e.target.value);setPage(0)}} style={{minWidth:220,flex:1}}/>
@@ -438,7 +438,7 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
    <label>Responsável <select value={responsibleFilter} onChange={e=>{setResponsibleFilter(e.target.value);setPage(0)}}><option value="todos">Todos</option><option value="sem_responsavel">Sem responsável registrado</option>{responsibleOptions.map(value=><option key={value} value={value}>{responsibleDisplay(value,team)}</option>)}</select></label>
   </section>
   {loading&&<p className="inf-note">Carregando todos os processos da organização em lotes automáticos...</p>}
-  <section className="inf-panel inf-portfolio-results"><div className="inf-work-list-heading"><h2>Carteira de processos</h2><span>{portfolioReady?total.toLocaleString('pt-BR')+' resultados':'Carregando carteira'}</span></div>
+  <section className="inf-portfolio-results"><div className="inf-work-list-heading"><h2>Carteira de processos</h2><span>{portfolioReady?total.toLocaleString('pt-BR')+' resultados':'Carregando carteira'}</span></div>
    <p>{area==='clients'?'Consulte os dados de contato e registre o atendimento. Cadastros sem identificação comum permanecem separados.':'Cada linha representa um processo real. Consulte o andamento oficial e gerencie a situação judicial.'}</p>
    <div className="inf-portfolio-table" role="region" aria-label="Carteira de processos" tabIndex={0}>
     <table><thead><tr><th scope="col">Cliente / Processo</th><th scope="col">Situação</th><th scope="col">Responsável</th><th scope="col">Próximo retorno</th><th scope="col">Ações</th></tr></thead><tbody>
@@ -465,7 +465,7 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
    </div>
    <ProgressiveListEnd shown={visibleRows.length} total={total} onMore={moreRows} disabled={loading}/>
   </section>
-  </>}
+  </>}</div>
   {creating&&<PortfolioDialog title="Cadastrar processo" busy={busy} notice={notice} onClose={closeAction}>
    <p>Cadastro na carteira compartilhada da empresa. A situação judicial será consultada posteriormente nas fontes oficiais.</p>
    <form onSubmit={saveCreate}><fieldset disabled={busy}><div className="inf-fields">
