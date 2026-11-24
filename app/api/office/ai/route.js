@@ -1,7 +1,8 @@
 import {officeAuth,officeJson,safeOfficeError} from '../../../../lib/office-server.mjs';
 import {OFFICE_DOC_TYPES,makePetitionSkeleton} from '../../../../lib/office-core.mjs';
 import {makeStandalonePetition} from '../../../../lib/blackhole-petitions.mjs';
-import {APPEAL_TYPES} from '../../../../lib/legal-draft-engine.mjs';
+import {resolveCompanyAccess} from '../../../../lib/lexis-shared-portfolio.mjs';
+import {APPEAL_TYPES,sharedPetitionCase,SHARED_PETITION_FIELDS} from '../../../../lib/legal-draft-engine.mjs';
 import {isDemoUserCompany} from '../../../../lib/demo-tenant.mjs';
 import {configuredBlackholeProvider} from '../../../../lib/blackhole-chat.mjs';
 export const runtime='nodejs';export const dynamic='force-dynamic';export const maxDuration=35;
@@ -17,10 +18,23 @@ export async function POST(request){
   if(!APPEAL_TYPES.some(x=>x.id===(p.appealType||'')))throw Object.assign(Error('Modalidade recursal inválida.'),{status:400});
   if(p?.caseId!=null&&(typeof p.caseId!=='string'||!/^[0-9a-f-]{36}$/i.test(p.caseId)))
    throw Object.assign(Error('Identificador de processo inválido.'),{status:400});
+  if(p.sharedProcessId!=null&&(typeof p.sharedProcessId!=='string'||!/^\d{1,19}$/.test(p.sharedProcessId)||p.caseId||process.env.NEXT_PUBLIC_LEXIS_SHARED_DB!=='1'))throw Object.assign(Error('Vínculo de processo compartilhado inválido.'),{status:400});
   const provider=configuredBlackholeProvider(process.env);
   if(!provider)throw Object.assign(Error('Nenhum servidor de IA está configurado. A minuta estruturada local está disponível sem envio externo.'),{status:503});
   let caseRecord=null,client=null,evidence=[];
-  if(p.caseId){
+  if(p.sharedProcessId){
+   const profileResult=await db.from('usuarios').select('id,auth_user_id,empresa_id,nome').eq('auth_user_id',user.id).limit(2);
+   const profile=resolveCompanyAccess(profileResult.data,user.id);
+   if(profileResult.error||!profile)throw Object.assign(Error('Organização não identificada.'),{status:403});
+   const found=await db.from('processos').select(SHARED_PETITION_FIELDS).eq('empresa_id',profile.empresa_id).eq('id',p.sharedProcessId).maybeSingle();
+   if(found.error||!found.data)throw Object.assign(Error('Processo não encontrado ou não autorizado.'),{status:403});
+   caseRecord=sharedPetitionCase(found.data);client={name:caseRecord.client_name};
+   if(caseRecord.process_number){
+    const snaps=await db.from('crm_judicial_snapshots').select('source,checked_at,payload').eq('empresa_id',profile.empresa_id).eq('process_number',caseRecord.process_number).order('checked_at',{ascending:false}).limit(8);
+    if(snaps.error)throw Object.assign(Error('Não foi possível consultar histórico privado do processo.'),{status:503});
+    evidence=(snaps.data||[]).filter(s=>s.payload?.ok===true&&s.payload?.demo!==true&&s.payload?.official!==false&&['djen','datajud'].includes(s.source)).map(s=>({source:s.source,checked_at:s.checked_at,summary:String(s.payload?.items?.[0]?.title||s.payload?.items?.[0]?.description||'Consulta registrada').slice(0,200)}));
+   }
+  }else if(p.caseId){
    const found=await db.from('office_cases').select('*').eq('id',p.caseId).maybeSingle();
    if(found.error||!found.data)throw Object.assign(Error('Processo não encontrado ou não autorizado.'),{status:403});
    caseRecord=found.data;
@@ -50,7 +64,7 @@ export async function POST(request){
    source||'[NÃO FORNECIDO]'
   ].join('\n');
   const messages=[
-   {role:'system',content:'Você auxilia um advogado brasileiro na redação de minutas para revisão humana. Escreva apenas dados explicitamente presentes no documento e nas instruções. Documento colado não constitui confirmação oficial. Não invente leis, precedentes, datas, resultado de sentença, pedidos ou qualificação. Para RECURSO, não presuma o cabimento, modalidade, tempestividade, preparo, dispositivo nem o resultado: use [CONFERIR]. Não diga que a peça foi protocolada ou assinada. Preserve as pendências e responda somente com a minuta em português brasileiro.'},
+   {role:'system',content:'Você auxilia um advogado brasileiro na redação de minutas para revisão humana. Adapte a estrutura, os fundamentos e os requerimentos à modalidade específica solicitada, ao ato processual e à posição da parte efetivamente informada; nunca reutilize uma petição genérica. Use os dados do cadastro como contexto não verificado nos autos. Escreva apenas dados explicitamente presentes na base, documento e instruções. Documento colado não constitui confirmação oficial. Não invente leis, precedentes, datas, resultado de sentença, pedidos ou qualificação. Para RECURSO, não presuma o cabimento, modalidade, tempestividade, preparo, dispositivo nem o resultado: use [CONFERIR]. Não diga que a peça foi protocolada ou assinada. Preserve as pendências e responda somente com a minuta em português brasileiro.'},
    {role:'user',content:instructions}
   ];
   const response=await fetch(new URL(provider.endpoint).toString(),{method:'POST',

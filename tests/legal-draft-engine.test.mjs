@@ -52,3 +52,21 @@ test('normalizacao exige numero CNJ com 20 digitos',()=>{
  assert.equal(normalizeReferenceCnj('08017604220238190065'),'0801760-42.2023.8.19.0065');
  assert.equal(normalizeReferenceCnj('12345'),null);
 });
+
+import {sharedPetitionCase,searchPetitionCases,petitionsForCnj} from '../lib/legal-draft-engine.mjs';
+test('carteira compartilhada mantém ID bigint como vínculo próprio e pesquisa CNJ e cliente',()=>{
+ const a=sharedPetitionCase({id:123,empresa_id:'a',cliente:'João da Silva',protocolo_ref:'0801760-42.2023.8.19.0065',tribunal:'TJRJ',advogado:'Dra. Maria'});
+ assert.equal(a.id,'shared:123');assert.equal(a.shared_process_id,'123');assert.equal(a.title,'João da Silva');
+ assert.equal(searchPetitionCases([a],'joao').length,1);assert.equal(searchPetitionCases([a],'08017604220238190065').length,1);
+ assert.equal(petitionsForCnj([a],'0801760-42.2023.8.19.0065').length,1);
+});
+test('minutas distintas usam contexto cadastrado sem inventar a posição da parte',()=>{
+ const caseRecord=sharedPetitionCase({id:123,empresa_id:'a',cliente:'João da Silva',protocolo_ref:'0801760-42.2023.8.19.0065',tribunal:'TJRJ',advogado:'Dra. Maria',observacoes:'Pendente comprovante bancário.'});
+ const m=createLegalDraft({kind:'manifestacao',caseRecord,instructions:'Juntar comprovante de pagamento'});
+ const c=createLegalDraft({kind:'contestacao',caseRecord,instructions:'Impugnar cálculo'});
+ const p=createLegalDraft({kind:'procuracao',caseRecord,instructions:'Representação judicial'});
+ assert.match(m.body,/João da Silva/);assert.match(m.body,/Dra\. Maria/);assert.match(m.body,/Juntar comprovante/);
+ assert.match(c.body,/IMPUGNAÇÃO ESPECÍFICA/);assert.match(m.body,/DO OBJETO DA MANIFESTAÇÃO/);
+ assert.doesNotMatch(p.body,/OAB \[UF\/NÚMERO\]$/m);assert.match(p.body,/OUTORGANTE/);
+ assert.equal(m.evidence.sharedProcessId,'123');
+});

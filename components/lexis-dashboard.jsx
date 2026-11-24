@@ -59,8 +59,8 @@ export default function LexisDashboard({db,session}){
    <Stat name="Retornos vencidos" value={s.overdueReturns} description="Próximo retorno passado, sem atendimento posterior" to="/prazos?status=vencido" Icon={Clock3} warning/>
    <Stat name="Retornos para hoje" value={s.returnsToday} description="Contatos previstos para a data de hoje" to="/prazos?status=hoje" Icon={Users}/>
    <Stat name="Tarefas vencidas" value={s.overdueTasks} description="Tarefas cadastradas ainda não concluídas" to="/vencidos" Icon={FileWarning} warning/>
-   <Stat name="Audiências futuras" value={valid.hearings?s.hearingsFuture:null} description="Com data, não canceladas" to="/audiencias" Icon={Gavel}/>
-   <Stat name="Audiências sem data" value={valid.hearings?s.hearingsUndated:null} description="Aguardando confirmação de data" to="/audiencias" Icon={CalendarDays}/>
+   <Stat name="Compromissos judiciais futuros" value={valid.hearings?s.hearingsFuture:null} description="Com data, não canceladas" to="/audiencias" Icon={Gavel}/>
+   <Stat name="Menções a verificar" value={valid.hearings?s.hearingsUndated:null} description="Fora da agenda até confirmação" to="/audiencias" Icon={CalendarDays}/>
   </section>
   <section className="lxd-panels">
    <article className="lxd-panel"><Head eyebrow="ACOMPANHAMENTO AO CLIENTE" title="Retornos e atendimentos" to="/prazos">Mesma regra da aba Prazos: próximo retorno comparado com o último atendimento do cliente.</Head>
@@ -82,8 +82,8 @@ export default function LexisDashboard({db,session}){
     {valid.processes?<><div className="lxd-rail"><i style={{width:(100*s.active/Math.max(1,s.processes))+'%'}}/></div><div className="lxd-pair"><span>Em andamento <strong>{n(s.active)}</strong></span><span>Encerrados ou arquivados <strong>{n(s.closed)}</strong></span></div>
     <p className="lxd-subtle"><CheckCircle2 size={15}/> {n(s.excludedNoCnj)} registros sem número CNJ de 20 dígitos foram excluídos dos indicadores.</p></>:<p className="lxd-subtle">Carteira indisponível nesta consulta.</p>}
    </article>
-   <article className="lxd-panel"><Head eyebrow="AUDIÊNCIAS MONITORADAS" title="Conferência de pautas" to="/audiencias">Registros sem data precisam de revisão, não representam eventos já vencidos.</Head>
-    {valid.hearings?<><div className="lxd-hearings">{[['Registradas',s.hearingsTotal],['Futuras',s.hearingsFuture],['Passadas',s.hearingsPast],['Sem data',s.hearingsUndated]].map(([label,value])=><div key={label}><strong>{n(value)}</strong><span>{label}</span></div>)}</div><p className="lxd-subtle">{n(s.hearingsCanceled)} canceladas ou suspensas; verificar realização das passadas nos autos.</p></>:<p className="lxd-subtle">Dados de audiências indisponíveis.</p>}
+   <article className="lxd-panel"><Head eyebrow="AUDIÊNCIAS MONITORADAS" title="Conferência de pautas" to="/audiencias">Menções não confirmadas ficam fora da agenda. Sessões e notificações são distinguidas na aba Audiências.</Head>
+    {valid.hearings?<><div className="lxd-hearings">{[['Com data',s.hearingsTotal],['Futuras',s.hearingsFuture],['Passadas',s.hearingsPast],['Menções a verificar',s.hearingsUndated]].map(([label,value])=><div key={label}><strong>{n(value)}</strong><span>{label}</span></div>)}</div><p className="lxd-subtle">{n(s.hearingsCanceled)} canceladas ou suspensas; verificar realização das passadas nos autos.</p></>:<p className="lxd-subtle">Dados de audiências indisponíveis.</p>}
    </article>
    <article className="lxd-panel"><Head eyebrow="DISTRIBUIÇÃO" title="Tribunais da carteira" to="/processos">Processos em andamento por tribunal informado.</Head>
     {!valid.processes&&<p className="lxd-subtle">Distribuição indisponível nesta consulta.</p>}

@@ -40,9 +40,9 @@ test('junta retornos, tarefas, audiências e compromissos sem assumir prazo lega
  assert.equal(items.find(x=>x.kind==='audiencia').source_url,'https://tribunal.example/s');
  assert.equal(items.find(x=>x.id==='task:t1').responsible,'Dra. Maria Silva');
 });
-test('audiência sem data permanece identificada sem ser confundida com retorno',()=>{
+test('menção de audiência sem data não cria compromisso judicial',()=>{
  const ev=buildLexisEvents({hearings:[{id:44,protocolo_ref:'0000123-45.2026.8.26.0001',cliente:'Sem data',data_evento:null,situacao:'pendente'}],today});
- assert.equal(ev.length,1);assert.equal(ev[0].kind,'audiencia');assert.equal(ev[0].status,'sem_data');assert.equal(ev[0].due_on,null);
+ assert.equal(ev.length,0);
 });
 test('processo encerrado não conta como retorno vencido, data anterior de audiência não vira futuro',()=>{
  const items=buildLexisEvents({processes:[{id:1,protocolo_ref:'0000123-45.2026.8.26.0001',cliente:'R',status_interno:'ENCERRADO',proximo_retorno:'2026-11-10'}],
@@ -66,4 +66,11 @@ test('edição de tarefa preserva autor e empresa, aceita data vazia e valida re
  assert.deepEqual(buildTaskEditPatch({title:' Revisar ',due_on:'',assignee_id:team[0].id,empresa_id:'outra'},team,'empresa-a'),{titulo:'Revisar',due_at:null,assignee_id:team[0].id});
  assert.throws(()=>buildTaskEditPatch({title:'Revisar',due_on:'2026-02-30',assignee_id:team[0].id},team,'empresa-a'),/Data/);
  assert.throws(()=>buildTaskEditPatch({title:'Revisar',assignee_id:'outra'},team,'empresa-a'),/Responsável/);
+});
+
+test('somente audiências datadas e designadas entram na agenda; notificações são distintas',()=>{
+ const base={protocolo_ref:'0000123-45.2026.8.26.0001',data_evento:'2026-12-09',tipo:'conciliacao'};
+ const rows=buildLexisEvents({today,hearings:[{...base,id:1,situacao:'data_pendente',data_evento:null},{...base,id:2,situacao:'cancelada',data_evento:null},{...base,id:3,situacao:'publicada',fonte:'DJEN',evidencia:'Designo audiência de conciliação para o dia 09/12/2026'},{...base,id:4,situacao:'informada',fonte:'NOTIFICACAO'},{...base,id:5,situacao:'publicada',evidencia:'A audiência poderá ser designada futuramente.'},{...base,id:6,tipo:'sessao_virtual',situacao:'publicada',fonte:'DJEN'}]});
+ assert.deepEqual(rows.map(x=>x.id).sort(),['hearing:3','hearing:4','hearing:6']);
+ assert.equal(rows.find(x=>x.id==='hearing:4').hearing_class,'informada');assert.equal(rows.find(x=>x.id==='hearing:6').hearing_class,'sessao');
 });

@@ -29,7 +29,7 @@ test('dashboard e prazos repetem a mesma regra de retorno, nunca prazo legado',(
  assert.equal(s.returnsNext7,k.next7);assert.equal(s.returnsAttended,k.attended);
  assert.equal(s.overdueTasks,1);
  assert.equal(s.hearingsPast,1);assert.equal(s.hearingsFuture,1);
- assert.equal(s.hearingsUndated,1);assert.equal(s.hearingsCanceled,1);
+ assert.equal(s.hearingsUndated,2);assert.equal(s.hearingsCanceled,0);assert.equal(s.hearingsTotal,2);
 });
 test('consulta paginada inclui mais de mil processos sem cortar KPIs',async()=>{
  const rows=Array.from({length:1205},(_,i)=>({id:i+1}));let calls=0;
