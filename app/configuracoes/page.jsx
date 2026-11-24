@@ -18,6 +18,7 @@ export default function SettingsPage(){
  const [newMemberEmail,setNewMemberEmail]=useState(''),[newMemberPassword,setNewMemberPassword]=useState(''),[memberSaving,setMemberSaving]=useState(false);
  const [currentPassword,setCurrentPassword]=useState(''),[newPassword,setNewPassword]=useState(''),[confirmPassword,setConfirmPassword]=useState(''),[showPassword,setShowPassword]=useState(false);
  const [theme,setTheme]=useState('infinitum');
+ const [settingsSection,setSettingsSection]=useState('aparencia');
  const [saving,setSaving]=useState(''),[message,setMessage]=useState(''),[error,setError]=useState('');
  const [colors,setColors]=useState(()=>appearanceDefaults(CRM_THEMES[0]));
  const [backgroundFile,setBackgroundFile]=useState(null),[backgroundPreview,setBackgroundPreview]=useState(''),[backgroundUrl,setBackgroundUrl]=useState(''),[removeBackground,setRemoveBackground]=useState(false);
@@ -219,9 +220,10 @@ export default function SettingsPage(){
   <main className="reference-dashboard settings-dashboard">
    <header className="reference-header"><div><div className="reference-overline">PROJECTW1SC · PREFERÊNCIAS DA CONTA</div><h1>Configurações</h1><p>Escolha entre as duas aparências oficiais do Infinitum e mantenha a mesma organização, navegação e funcionalidades em todas as abas.</p></div><div className="reference-actions"><a className="reference-outline" href="/"><ChevronLeft size={17}/> Voltar ao início</a></div></header>
    {(error||message)&&<div role={error?'alert':'status'} className={'settings-feedback '+(error?'bad':'good')}>{error||message}<button type="button" onClick={()=>{setError('');setMessage('')}} aria-label="Fechar aviso">×</button></div>}
-   <section className="reference-panel settings-panel" aria-label="Seleção de tema"><div className="settings-section-heading"><span className="settings-section-icon"><Palette size={21}/></span><div><h2>Visual do CRM</h2><p>O Light é o padrão. O Dark reproduz a identidade noturna cósmica. Ambos preservam as mesmas abas, rotas, quadros e recursos.</p></div></div><div className="settings-theme-grid">{CRM_THEMES.map(t=><button key={t.id} type="button" className={'settings-theme-option '+(theme===t.id?'selected':'')} aria-pressed={theme===t.id} onClick={()=>selectTheme(t.id)} disabled={saving==='theme'}><span className="settings-theme-preview" style={{background:t.page,borderColor:t.border}}><span className="settings-theme-nav" style={{background:t.nav}}/><span className="settings-theme-preview-content"><i style={{background:t.surface,borderColor:t.border}}/><i style={{background:t.tint,borderColor:t.border}}/><i style={{background:t.accent,borderColor:t.border}}/></span></span><span className="settings-theme-option-label">{t.label}{theme===t.id&&<Check size={15}/>}</span><span className="settings-theme-option-description">{t.description}</span></button>)}</div><div className="settings-hint"><ShieldCheck size={16}/> A preferência é salva na conta e neste dispositivo. A mudança é aplicada sem recarregar a página.</div></section>
-   <div className="settings-grid">
-    <section className="reference-panel settings-panel">
+   <div className="inf-settings-desk"><nav className="inf-settings-nav" aria-label="Configurações">{[['aparencia','Aparência',Palette],['perfil','Meu perfil',UserRound],['seguranca','Segurança',LockKeyhole],...(user.email?.toLowerCase()===ADMIN_EMAIL?[['acesso','Gestão de acesso',Users]]:[])].map(([id,label,Icon])=><button key={id} type="button" aria-pressed={settingsSection===id} onClick={()=>setSettingsSection(id)}><Icon size={19}/><span>{label}</span></button>)}</nav><div className="inf-settings-content">
+   <section hidden={settingsSection!=='aparencia'} className="reference-panel settings-panel" aria-label="Seleção de tema"><div className="settings-section-heading"><span className="settings-section-icon"><Palette size={21}/></span><div><h2>Visual do CRM</h2><p>Escolha o ambiente claro ou escuro. Ambos preservam a mesma navegação e os mesmos recursos.</p></div></div><div className="settings-theme-grid">{CRM_THEMES.map(t=><button key={t.id} type="button" className={'settings-theme-option '+(theme===t.id?'selected':'')} aria-pressed={theme===t.id} onClick={()=>selectTheme(t.id)} disabled={saving==='theme'}><span className="settings-theme-preview" style={{background:t.page,borderColor:t.border}}><span className="settings-theme-nav" style={{background:t.nav}}/><span className="settings-theme-preview-content"><i style={{background:t.surface,borderColor:t.border}}/><i style={{background:t.tint,borderColor:t.border}}/><i style={{background:t.accent,borderColor:t.border}}/></span></span><span className="settings-theme-option-label">{t.label}{theme===t.id&&<Check size={15}/>}</span><span className="settings-theme-option-description">{t.description}</span></button>)}</div><div className="settings-hint"><ShieldCheck size={16}/> A preferência é salva na conta e neste dispositivo. A mudança é aplicada sem recarregar a página.</div></section>
+   <div className="settings-grid" hidden={!["perfil","seguranca"].includes(settingsSection)}>
+    <section hidden={settingsSection!=='perfil'} className="reference-panel settings-panel">
      <div className="settings-section-heading"><span className="settings-section-icon"><UserRound size={21}/></span><div><h2>Meu perfil</h2><p>Seu nome e sua foto serão exibidos no menu do CRM.</p></div></div>
      <form onSubmit={saveProfile} className="settings-form">
       <div className="settings-avatar-edit">
@@ -233,7 +235,7 @@ export default function SettingsPage(){
       <button className="reference-primary" type="submit" disabled={saving==='profile'}><Save size={16}/>{saving==='profile'?'Salvando...':'Salvar perfil'}</button>
      </form>
     </section>
-    <section className="reference-panel settings-panel">
+    <section hidden={settingsSection!=='seguranca'} className="reference-panel settings-panel">
      <div className="settings-section-heading"><span className="settings-section-icon"><LockKeyhole size={21}/></span><div><h2>Alterar senha</h2><p>Proteja o acesso à carteira e aos dados privados.</p></div></div>
      <form onSubmit={updatePassword} className="settings-form">
       <label>Senha atual<input type={showPassword?'text':'password'} autoComplete="current-password" required value={currentPassword} onChange={e=>setCurrentPassword(e.target.value)}/></label>
@@ -245,7 +247,7 @@ export default function SettingsPage(){
      </form>
     </section>
    </div>
-   {user.email?.toLowerCase()===ADMIN_EMAIL&&<section className="reference-panel settings-panel" aria-label="Gestão de acesso">
+   {user.email?.toLowerCase()===ADMIN_EMAIL&&<section hidden={settingsSection!=='acesso'} className="reference-panel settings-panel" aria-label="Gestão de acesso">
     <div className="settings-section-heading"><span className="settings-section-icon"><Users size={21}/></span><div><h2>Adicionar usuário ao CRM</h2><p>Crie uma conta individual com acesso aos mesmos clientes, processos, tarefas e relatórios. Os dados continuam na mesma base.</p></div></div>
     <form className="settings-form" onSubmit={createMember}>
      <label>E-mail da nova pessoa<input type="email" required autoComplete="off" value={newMemberEmail} onChange={e=>setNewMemberEmail(e.target.value)} placeholder="exemplo@empresa.com"/></label>
@@ -254,6 +256,7 @@ export default function SettingsPage(){
      <button className="reference-primary" type="submit" disabled={memberSaving}><Users size={16}/>{memberSaving?'Criando acesso...':'Criar usuário com acesso completo'}</button>
     </form>
    </section>}
+   </div></div>
   </main>
  </CrmShell>;
 }
