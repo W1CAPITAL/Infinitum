@@ -5,6 +5,7 @@ import Link from 'next/link';
 import {Activity,Archive,BarChart3,CalendarDays,CheckCircle2,ChevronLeft,ChevronRight,ClipboardList,Download,Edit3,FileText,Gavel,History,Plus,Printer,RefreshCw,Search,ShieldCheck,Users} from 'lucide-react';
 import {mapLexisProcess,resolveCompanyAccess,portfolioUpdate,PROCESS_FIELDS,normalizedCnj,validDay,dailyAttendanceSummary} from '../lib/lexis-shared-portfolio.mjs';
 import {fetchCompanyRows} from '../lib/lexis-company-data.mjs';
+import ProgressiveListEnd from './progressive-list-end';
 import {consultHistoricalCase} from '../lib/judicial-history-client.mjs';
 import {browseOfficialDjenNumber} from '../lib/blackhole-public-djen-browser.mjs';
 import {periodBounds} from '../lib/report.mjs';
@@ -184,8 +185,8 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
   });
  },[rows,search,type,activeFilter]);
  const total=filteredRows.length;
- const visibleRows=filteredRows.slice(page*PAGE,(page+1)*PAGE);
- const lastTotalPages=Math.max(1,Math.ceil(total/PAGE));
+ const visibleRows=filteredRows.slice(0,(page+1)*PAGE);
+ const moreRows=useCallback(()=>setPage(p=>p+1),[]);
  const loadHistory=useCallback(async(row,request)=>{
   setHistory([]);setOfficialHistory([]);setHistoryErrors([]);setHistoryLoading(true);
   try{
@@ -311,8 +312,8 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
     db.from('processos').select('id',{count:'exact',head:true}).eq('empresa_id',profile.empresa_id),
     db.rpc('infinitum_resumo_equipe_v2')
    ]);
-   if(r.error||caseCount.error)throw Error(r.error?.message||caseCount.error?.message);
-   setAttendance(r.data||[]);setReportTotal(caseCount.count??0);setTeamStats(teamData.error?[]:(teamData.data||[]));
+   if(caseCount.error)throw Error(caseCount.error.message);
+   setAttendance(r);setReportTotal(caseCount.count??0);setTeamStats(teamData.error?[]:(teamData.data||[]));
    if(teamData.error)setNotice('Detalhamento de equipe indisponível: '+teamData.error.message);
   }catch(e){setNotice('Relatório indisponível: '+e.message)}
   finally{setReportBusy(false)}
@@ -447,9 +448,7 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
     </div>
    </article>)}
    {!visibleRows.length&&!loading&&<p>Nenhum registro encontrado com os filtros atuais.</p>}</div>
-   <div className="inf-row-end"><button type="button" className="inf-btn" disabled={page<=0||loading} onClick={()=>setPage(x=>Math.max(0,x-1))}><ChevronLeft size={16}/> Anterior</button>
-   <span>Mostrando {total? page*PAGE+1:0}–{Math.min(total,(page+1)*PAGE)} de {total} resultados · {rows.length} processos carregados</span>
-   <button type="button" className="inf-btn" disabled={page+1>=lastTotalPages||loading} onClick={()=>setPage(x=>x+1)}>Próxima <ChevronRight size={16}/></button></div>
+   <ProgressiveListEnd shown={visibleRows.length} total={total} onMore={moreRows} disabled={loading}/>
   </section>
   {area==='clients'&&<InfinitumLegacyClients db={db} profile={profile} team={team}/>}
   {editing&&<PortfolioDialog title={'Editar '+(mode==='cliente'?'cliente':'processo')} busy={busy} notice={notice} onClose={closeAction}>
