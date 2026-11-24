@@ -34,3 +34,24 @@ test('nunca usa navegador alternativo para escapar bloqueio 429',async()=>{
   fetchBrowser:async()=>{browserCalls++;throw Error('unexpected')}});
  assert.equal(browserCalls,0);assert.equal(result.partial,true);assert.equal(result.ok,false);
 });
+
+test('DJEN não pula páginas de um mês nem reutiliza o número de página no mês seguinte',async()=>{
+ const {consultHistoricalCase}=await import('../lib/judicial-history-client.mjs');
+ const requests=[];
+ const fetchServer=async args=>{requests.push([args.start,args.page]);return {ok:true,items:[{id:args.start+args.page,source:'DJEN',date:args.start}],limited:args.start==='2026-01-01'&&args.page===1}};
+ const a=await consultHistoricalCase({number:'1001218-36.2026.5.02.0040',start:'2026-01-01',end:'2026-02-28',source:'djen',fetchServer});
+ assert.deepEqual(requests,[['2026-01-01',1]]);
+ assert.deepEqual(a.nextPage,{start:'2026-01-01',end:'2026-02-28',page:2});
+ assert.equal(a.partial,true);
+ assert.equal(a.windowsChecked,0);
+ const b=await consultHistoricalCase({number:'1001218-36.2026.5.02.0040',...a.nextPage,source:'djen',fetchServer});
+ assert.deepEqual(requests,[['2026-01-01',1],['2026-01-01',2],['2026-02-01',1]]);
+ assert.equal(b.partial,false);
+});
+test('continuação preserva resultados DataJud e DJEN anteriores sem duplicação',async()=>{
+ const {mergeHistoricalContinuation}=await import('../lib/judicial-history-client.mjs');
+ const a={items:[{id:'1',source:'DataJud',date:'2026-01-01'},{id:'2',source:'DJEN',date:'2026-01-02'}],sourceStatus:{datajud:'ok',djen:'ok'},sourceErrors:{datajud:null},ok:true};
+ const b={items:[a.items[1],{id:'3',source:'DJEN',date:'2026-01-03'}],sourceStatus:{datajud:'not_checked',djen:'ok'},sourceErrors:{},ok:true};
+ const c=mergeHistoricalContinuation(a,b);
+ assert.equal(c.items.length,3);assert.equal(c.sourceStatus.datajud,'ok');assert.equal(c.found,true);
+});
