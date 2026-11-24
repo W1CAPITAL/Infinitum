@@ -36,6 +36,16 @@ function Trend({days}){
     <small>{day(x.day)}</small></div>)}</div>}
  </article>;
 }
+function AnalysisPanel({analysis}){
+ if(!analysis)return <article className="lxd-panel"><h2>Auditorias e trabalho analítico</h2><p className="lxd-subtle">Indicadores analíticos indisponíveis nesta consulta.</p></article>;
+ const metrics=[['Registros analíticos',analysis.totalRegistros],['Processos analisados',analysis.processosAnalisados],['Processos com trabalho',analysis.processosComTrabalho],['Trabalho interno no período',analysis.atendidosInternamenteNoPeriodo],['Auditoria sistêmica',analysis.auditoriaSistemica],['Auditoria documental',analysis.auditoriaDocumental],['Triagem de réplica e provas',analysis.triagemReplicaProvas],['Dossiês individuais',analysis.dossiesIndividuais],['Investigações',analysis.investigacoesExternas],['Projetos',analysis.projetos],['Tarefas concluídas · histórico',analysis.tarefasConcluidas],['Tarefas concluídas · período',analysis.tarefasConcluidasPeriodo],['Contatos declarados · período',analysis.contatosDeclaradosPeriodo]];
+ return <section className="lxd-panel" aria-label="Auditorias e trabalho analítico">
+  <div className="lxd-heading"><div><span>SUPERVISÃO · REGISTROS REAIS</span><h2>Auditorias, análises e tarefas</h2><p>Registros históricos e do período, separados de atendimentos ao cliente.</p></div></div>
+  <div className="lxi-productivity">{metrics.map(([label,value])=><div key={label}><span>{label}</span><strong>{number(value)}</strong></div>)}</div>
+  <h3>Tarefas registradas por responsável</h3>
+  {analysis.tarefasPorPessoa.length?<div className="lxd-lines">{analysis.tarefasPorPessoa.map((row,i)=><div key={row.nome+'-'+i}><strong>{row.nome}</strong><p>Histórico: {number(row.total)} · Período: {number(row.periodo)}</p></div>)}</div>:<p className="lxd-subtle">Sem detalhamento de responsáveis nesta consulta.</p>}
+ </section>;
+}
 export default function LexisIntelligenceWorkspace({db,session,mode='report'}){
  const [period,setPeriod]=useState('mes'),[version,setVersion]=useState(0);
  const [state,setState]=useState({loading:true,data:null,error:''});
@@ -109,6 +119,7 @@ export default function LexisIntelligenceWorkspace({db,session,mode='report'}){
      <Ranked title="Tribunais" description="Distribuição conforme tribunal registrado." rows={model.tribunals}/>
     </>}
    </section>
+   {mode==='supervision'&&<AnalysisPanel analysis={model.analysis}/>}
    {result?.report?.equipe?.pessoas&&<section className="lxi-team report-completo-shell" aria-label="Produtividade por colaborador">
     <TeamReport data={result.report.equipe} currentUserId={session.user.id}/>
    </section>}
