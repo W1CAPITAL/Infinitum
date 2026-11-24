@@ -109,3 +109,16 @@ test('relatório real usa o agregado histórico de tarefas autenticado por respo
  assert.equal(summarizeLexisSnapshots(result).headline.atividades,3);
  assert.equal(data.equipe.pessoas[0].atividades.registrosTotal,12);
 });
+
+test('supervisão expõe auditorias e tarefas por responsável sem somar como atendimentos',()=>{
+ const supervision={...sampleSupervision,analises:{totalRegistros:42,processosAnalisados:20,auditoriaSistemica:10,triagemReplicaProvas:0,tarefasConcluidas:1527,tarefasConcluidasPeriodo:51,tarefasPorPessoa:[{nome:'Maria',total:120,periodo:12}]}};
+ const result=summarizeLexisSnapshots({supervision,report:sampleReport});
+ assert.equal(result.analysis.totalRegistros,42);
+ assert.equal(result.analysis.triagemReplicaProvas,0);
+ assert.equal(result.analysis.auditoriaDocumental,null);
+ assert.equal(result.analysis.tarefasConcluidas,1527);
+ assert.deepEqual(result.analysis.tarefasPorPessoa,[{nome:'Maria',total:120,periodo:12}]);
+ assert.equal(result.headline.atendimentos,52);
+ assert.equal(summarizeLexisSnapshots({supervision:sampleSupervision}).analysis,null);
+ assert.match(toLexisIntelligenceCsv(result,'mes'),/"Processos analisados";"20"/);
+});
