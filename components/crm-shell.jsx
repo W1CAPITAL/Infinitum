@@ -121,7 +121,7 @@ export default function CrmShell({active='Painel jurídico',email='',onNavigate,
     onPointerLeave={()=>{if(!sidebarPinned)setSidebarExpanded(false)}}
     onFocusCapture={()=>setSidebarExpanded(true)}
     onBlurCapture={event=>{if(!sidebarPinned&&!event.currentTarget.contains(event.relatedTarget))setSidebarExpanded(false)}}>
-   <div className="app-identity"><Link href="/" className="pr-brand" aria-label="INFINITUM — Painel jurídico"><img className="pr-brand-symbol" src="/branding/infinitum-symbol-preto.svg" alt="" width="46" height="24"/><strong className="pr-brand-name">INFINITUM</strong><small className="pr-brand-sub">W1 CAPITAL / LEGAL</small></Link>
+   <div className="app-identity"><Link prefetch={false} href="/" className="pr-brand" aria-label="INFINITUM — Painel jurídico"><img className="pr-brand-symbol" src="/branding/infinitum-symbol-preto.svg" alt="" width="46" height="24"/><strong className="pr-brand-name">INFINITUM</strong><small className="pr-brand-sub">W1 CAPITAL / LEGAL</small></Link>
     <button type="button" className="app-sidebar-toggle" aria-label={sidebarPinned?'Recolher menu lateral':'Fixar menu lateral'} aria-expanded={sidebarExpanded} aria-pressed={sidebarPinned} title={sidebarPinned?'Recolher menu':'Fixar menu aberto'} onClick={toggleSidebar}>{menuExpanded?<PanelLeftClose size={19}/>:<PanelLeftOpen size={19}/>}</button>
     <Link className="app-brand-link" href="/" aria-label="INFINITUM — Painel jurídico" title="Ir ao painel jurídico" prefetch={false}>
      <img className="app-brand-compact" src="/branding/blackhole-symbol.svg" alt="" width="54" height="58"/>
@@ -145,10 +145,10 @@ export default function CrmShell({active='Painel jurídico',email='',onNavigate,
       }} ><span className="inf-nav-icon"><Icon size={19} aria-hidden="true"/></span><span className="inf-nav-text"><strong>{item.name}</strong>{(pathname===item.path||currentArea?.key===item.key)&&<small className="inf-nav-description">{item.description}</small>}</span>{item.key==='vencidos'&&overdueCount>0&&<b className="inf-nav-count">{overdueCount}</b>}</Link>;
     })}</section>})}
    </nav>
-   <div className="inf-sidebar-shortcuts"><span>ACESSO RÁPIDO</span><Link href="/processos"><BriefcaseBusiness size={16}/> Carteira</Link><Link href="/tarefas?status=hoje"><ClipboardList size={16}/> Minha rotina</Link><Link href="/report"><BarChart3 size={16}/> Relatórios</Link></div>
+   <div className="inf-sidebar-shortcuts"><span>ACESSO RÁPIDO</span><Link prefetch={false} href="/processos"><BriefcaseBusiness size={16}/> Carteira</Link><Link prefetch={false} href="/tarefas?status=hoje"><ClipboardList size={16}/> Minha rotina</Link><Link prefetch={false} href="/report"><BarChart3 size={16}/> Relatórios</Link></div>
    <footer className="app-nav-footer">
     <div className="app-private"><span>Operação privada com trilha de auditoria.</span></div>
-    <Link href="/configuracoes" className="inf-signature-profile" title="Configurações do perfil"><span className="inf-profile-avatar">{avatarUrl?<img src={avatarUrl} alt=""/>:(profile.display_name||email||'W').charAt(0).toUpperCase()}</span><span><strong>{profile.display_name||'Meu perfil'}</strong><small>{email}</small></span><ArrowUpRight size={14}/></Link>
+    <Link prefetch={false} href="/configuracoes" className="inf-signature-profile" title="Configurações do perfil"><span className="inf-profile-avatar">{avatarUrl?<img src={avatarUrl} alt=""/>:(profile.display_name||email||'W').charAt(0).toUpperCase()}</span><span><strong>{profile.display_name||'Meu perfil'}</strong><small>{email}</small></span><ArrowUpRight size={14}/></Link>
     <div className="app-account-actions">
      {onPassword?<button onClick={onPassword} type="button"><KeyRound size={14}/> Alterar senha</button>:<a href="/?senha=1"><KeyRound size={14}/> Alterar senha</a>}
      <button onClick={onSignOut} type="button"><LogOut size={14}/> Sair</button>
