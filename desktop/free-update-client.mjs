@@ -8,19 +8,23 @@ import {
 } from './release-trust.mjs';
 
 const MANIFEST_LIMIT=12000;
-const TIMEOUT=18000;
+export const MANIFEST_TIMEOUT_MS=18000;
+export const INSTALLER_TIMEOUT_MS=60*60*1000;
 const REDIRECT_LIMIT=7;
 const HEADERS={'User-Agent':'W1-Capital-Killa-Launcher/1.0',
  Accept:'application/octet-stream, application/json'};
-export async function fetchTrustedResponse(start,fetchImpl=fetch){
+export async function fetchTrustedResponse(start,fetchImpl=fetch,{timeoutMs=MANIFEST_TIMEOUT_MS}={}){
+ if(!Number.isSafeInteger(timeoutMs)||timeoutMs<1||timeoutMs>INSTALLER_TIMEOUT_MS)throw Error('Prazo de transferência inválido.');
+ const signal=AbortSignal.timeout(timeoutMs);
  let url=start;
  for(let i=0;i<=REDIRECT_LIMIT;i++){
   if(!trustedHttpsUrl(url))throw Error('Redirecionamento fora das origens oficiais do GitHub.');
   const response=await fetchImpl(url,{method:'GET',redirect:'manual',
-   headers:HEADERS,signal:AbortSignal.timeout(TIMEOUT)});
+   headers:HEADERS,signal});
   if([301,302,303,307,308].includes(response.status)){
    const location=response.headers.get('location');
    if(!location)throw Error('Redirecionamento sem destino verificado.');
+   await response.body?.cancel().catch(()=>{});
    url=new URL(location,url).href;
    continue;
   }
@@ -72,7 +76,7 @@ export async function downloadVerifiedInstaller({app,manifest,onProgress=()=>{},
  let handle=null,count=0;
  const sha=createHash('sha512');
  try{
-  const response=await fetchTrustedResponse(manifest.asset.url,fetchImpl);
+  const response=await fetchTrustedResponse(manifest.asset.url,fetchImpl,{timeoutMs:INSTALLER_TIMEOUT_MS});
   if(!response?.body)throw Error('Instalador oficial não disponível.');
   handle=await open(temp,'wx',0o600);
   for await(const chunk of response.body){
@@ -132,6 +136,7 @@ export function createFreeUpdater({app,publicKey,onState=()=>{},fetchImpl=fetch}
  const tell=state=>onState(state);
  return Object.freeze({
   async check(){
+   lastManifest=null;lastPath=null;
    tell({phase:'checking',signed:true,downloaded:false,
     message:'Verificando versões aprovadas pela W1 Capital, sem Vercel.'});
    const response=await fetchTrustedResponse(LATEST_SIGNED_MANIFEST,fetchImpl);
@@ -152,12 +157,12 @@ export function createFreeUpdater({app,publicKey,onState=()=>{},fetchImpl=fetch}
     }
     throw error;
    }
-   lastManifest=manifest;
    tell({phase:'downloading',signed:true,downloaded:false,updateVersion:manifest.version,
     percent:0,message:'Baixando versão aprovada. SHA-512 e assinatura Ed25519 serão verificados.'});
-   lastPath=await downloadVerifiedInstaller({app,manifest,fetchImpl,
+   const verifiedPath=await downloadVerifiedInstaller({app,manifest,fetchImpl,
     onProgress:percent=>tell({phase:'downloading',signed:true,downloaded:false,
      percent,updateVersion:manifest.version,message:'Baixando pacote oficial da W1 Capital.'})});
+   lastManifest=manifest;lastPath=verifiedPath;
    tell({phase:'downloaded',signed:true,downloaded:true,percent:100,
     updateVersion:manifest.version,
     message:'Atualização W1 Capital autenticada. Instalação local disponível.'});

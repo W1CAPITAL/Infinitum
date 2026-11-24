@@ -135,7 +135,7 @@ async function applyVerifiedUpdate(){
    app.quit();
   }catch{
    pushLauncher({phase:'error',downloaded:false,
-    message:'A integridade do pacote falhou ou o Windows bloqueou a instalação. Nenhum arquivo novo foi autorizado.'});
+    message:'Não foi possível iniciar o instalador verificado. Confira as permissões ou baixe novamente pelo canal oficial.'});
   }
   return launcherState;
  }
@@ -153,7 +153,7 @@ async function checkForSignedUpdates(){
     await applyVerifiedUpdate();
   }).catch(()=>{
    pushLauncher({phase:'offline',downloaded:false,
-    message:'Não foi possível autenticar uma release W1 Capital. Nenhum programa foi executado. Você pode abrir a versão instalada.'});
+    message:'Não foi possível verificar ou baixar a release W1 Capital. Nenhum programa foi executado. Você pode abrir a versão instalada.'});
   }).finally(()=>{updateCheck=null});
   await updateCheck;
   return launcherState;

@@ -9,11 +9,13 @@ const ids={installed:document.getElementById('installed-version'),title:document
 const TITLES={loading:'Iniciando launcher',checking:'Buscando atualização segura',
  ready:'Aplicativo atualizado',available:'Atualização disponível',
  downloading:'Baixando atualização',downloaded:'Atualização pronta para instalar',
- installing:'Instalando e reiniciando',opening:'Iniciando o INFINITUM',
+ installing:'Executando instalador verificado',opening:'Iniciando o INFINITUM',
  unsigned:'Instalação piloto sem assinatura',offline:'Sem conexão para atualizar',
  error:'Não foi possível verificar a atualização'};
+let latestState=null;
 function render(value){
- if(!value||typeof value!=='object')return;
+ if(!value||typeof value!=='object'||typeof value.phase!=='string')return;
+ latestState=value;
  const phase=String(value.phase||'error'),percent=Number(value.percent)||0;
  ids.installed.textContent='Versão instalada: '+String(value.version||'0.0.0');
  if(ids.auto)ids.auto.checked=value.autoInstall!==false;
@@ -34,7 +36,7 @@ function connect(id,api,{renderResult=true}={}){
   try{const result=await api();if(renderResult&&result&&typeof result==='object')render(result)}
   catch{
    ids.message.textContent='Operação não concluída. Confira a instalação ou conexão.';
-  }finally{if(id!=='install'&&id!=='launch')ids[id].disabled=false}
+  }finally{if(latestState)render(latestState);if(!['install','launch','check'].includes(id))ids[id].disabled=false}
  });
 }
 const bridge=window.killaLauncher;

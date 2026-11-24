@@ -8,7 +8,7 @@ import {CRM_THEMES,resolveTheme} from '../lib/crm-themes.mjs';
 import {getClient} from '../lib/supabase-client';
 import {DEMO_GUEST_EMAIL} from '../lib/demo-tenant.mjs';
 
-import {applyAppearanceToDocument} from '../lib/appearance-settings.mjs';
+import {applyAppearanceToDocument,safeAppearance} from '../lib/appearance-settings.mjs';
 
 function preferredTheme(){try{
  const stored=localStorage.getItem('projectw1sc.crm-theme'),selected=resolveTheme(stored);
@@ -60,7 +60,8 @@ export default function CrmShell({active='Painel jurídico',email='',onNavigate,
   async function refreshProfile(){
    const current=++request;
    const {data,error}=await db.auth.getUser();
-   if(!alive||current!==request||error||!data?.user)return;
+   if(!alive||current!==request)return;
+   if(error||!data?.user){setProfile({display_name:'',avatar_path:''});setAvatarUrl('');appearanceRef.current={colors:{},backgroundUrl:''};if(previousPhotoUrl)URL.revokeObjectURL(previousPhotoUrl);previousPhotoUrl='';return}
    const user=data.user,metadata=user.user_metadata||{};
    setProfile({display_name:String(metadata.display_name||metadata.full_name||''),avatar_path:String(metadata.avatar_path||'')});
    const {data:{session}}=await db.auth.getSession();
@@ -76,15 +77,17 @@ export default function CrmShell({active='Painel jurídico',email='',onNavigate,
    previousPhotoUrl=photoUrl;previousBackgroundUrl=backgroundUrl;setAvatarUrl(photoUrl);
    const savedTheme=resolveTheme(user.user_metadata?.crm_theme||preferredTheme());
    try{localStorage.setItem('projectw1sc.crm-theme',savedTheme)}catch{}
-   appearanceRef.current={colors:{},backgroundUrl:''};
-   applyAppearanceToDocument(document.documentElement,CRM_THEMES.find(t=>t.id===savedTheme),{},'');
+   const palette=CRM_THEMES.find(t=>t.id===savedTheme);
+   const colors=safeAppearance(metadata.crm_colors||{},palette);
+   appearanceRef.current={colors,backgroundUrl:''};
+   applyAppearanceToDocument(document.documentElement,palette,colors,'');
 
   }
-  function scheduleRefresh(){if(refreshTimer)window.clearTimeout(refreshTimer);refreshTimer=window.setTimeout(refreshProfile,0)}
+  function scheduleRefresh(){if(refreshTimer)window.clearTimeout(refreshTimer);refreshTimer=window.setTimeout(()=>{refreshProfile().catch(()=>{})},0)}
   const {data:{subscription}}=db.auth.onAuthStateChange(()=>{scheduleRefresh()});
   window.addEventListener('projectw1sc:profile-change',scheduleRefresh);
   window.addEventListener('projectw1sc:appearance-change',scheduleRefresh);
-  refreshProfile();
+  refreshProfile().catch(()=>{});
   return()=>{alive=false;if(refreshTimer)window.clearTimeout(refreshTimer);if(previousPhotoUrl)URL.revokeObjectURL(previousPhotoUrl);if(previousBackgroundUrl)URL.revokeObjectURL(previousBackgroundUrl);subscription.unsubscribe();window.removeEventListener('projectw1sc:profile-change',scheduleRefresh);window.removeEventListener('projectw1sc:appearance-change',scheduleRefresh)};
  },[]);
   const sidebarRef=useRef(null);
@@ -92,7 +95,8 @@ export default function CrmShell({active='Painel jurídico',email='',onNavigate,
  useEffect(()=>{
   function syncTheme(){
    const selected=preferredTheme();
-   applyAppearanceToDocument(document.documentElement,CRM_THEMES.find(t=>t.id===selected),{},'');
+   const palette=CRM_THEMES.find(t=>t.id===selected);
+   applyAppearanceToDocument(document.documentElement,palette,safeAppearance(appearanceRef.current.colors,palette),'');
 
   }
   window.addEventListener('projectw1sc:theme-change',syncTheme);

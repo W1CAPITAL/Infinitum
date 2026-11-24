@@ -2,13 +2,13 @@
 @media screen{
 html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome.inf-editorial-shell{
  --v2-sidebar:264px;--v2-rail:68px;
- --ed-nav:#211b23;--ed-nav-text:#f4edf3;--ed-nav-muted:#c5b7c4;
- --ed-canvas:#f0eeeb;--ed-paper:#fff;--ed-ink:#222127;--ed-muted:#625c65;--ed-line:#ded9df;
- --ed-brand:#792840;--ed-tint:#f5e8ed;--ed-on-brand:#fff;--ed-focus:#9c4260;
+ --ed-nav:var(--ui-nav,#211b23);--ed-nav-text:var(--ui-nav-ink,#f4edf3);--ed-nav-muted:#c5b7c4;
+ --ed-canvas:var(--ui-page,#f0eeeb);--ed-paper:var(--ui-surface,#fff);--ed-ink:var(--ui-ink,#222127);--ed-muted:var(--ui-muted,#625c65);--ed-line:var(--ui-border,#ded9df);
+ --ed-brand:var(--ui-accent,#792840);--ed-tint:var(--ui-tint,#f5e8ed);--ed-on-brand:var(--ui-accent-ink,#fff);--ed-focus:#9c4260;
  --studio-edge:var(--ed-canvas);--studio-frame:var(--ed-canvas);--studio-ink:var(--ed-ink);--studio-surface:var(--ed-paper);--studio-border:var(--ed-line);--studio-nav-muted:var(--ed-nav-muted);--studio-nav-text:var(--ed-nav-text);
 }
 html[data-crm-theme="infinitum"][data-crm-mode="dark"] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome.inf-editorial-shell{
- --ed-nav:#17141b;--ed-nav-text:#f5edf4;--ed-nav-muted:#c8b9c7;--ed-canvas:#17171c;--ed-paper:#23232b;--ed-ink:#f5f0f4;--ed-muted:#c2bac4;--ed-line:#42404a;--ed-brand:#f0acc4;--ed-tint:#402b3a;--ed-on-brand:#27151e;--ed-focus:#f0acc4;
+ --ed-nav:var(--ui-nav,#17141b);--ed-nav-text:var(--ui-nav-ink,#f5edf4);--ed-nav-muted:#c8b9c7;--ed-canvas:var(--ui-page,#17171c);--ed-paper:var(--ui-surface,#23232b);--ed-ink:var(--ui-ink,#f5f0f4);--ed-muted:var(--ui-muted,#c2bac4);--ed-line:var(--ui-border,#42404a);--ed-brand:var(--ui-accent,#f0acc4);--ed-tint:var(--ui-tint,#402b3a);--ed-on-brand:var(--ui-accent-ink,#27151e);--ed-focus:#f0acc4;
 }
 html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome.inf-editorial-shell .app-sidebar{background:linear-gradient(165deg,#38212f 0%,var(--ed-nav) 32%)!important;border:0!important;border-radius:0!important;padding:18px 12px 10px!important;box-shadow:none!important;gap:4px!important;overflow:hidden!important;}
 html[data-crm-theme="infinitum"][data-crm-mode] .app-shell.blackhole-studio-shell.inf-workspace-v2.inf-signature-shell.inf-studio-chrome.inf-editorial-shell .app-sidebar .app-identity{min-height:68px!important;padding:0 2px 14px!important;border-bottom:1px solid #ffffff20!important;margin-bottom:8px!important;}

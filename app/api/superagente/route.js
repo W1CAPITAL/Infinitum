@@ -1,8 +1,7 @@
 import {NextResponse} from 'next/server';
 import {GET as consultOfficialProcess} from '../processos/consulta/route.js';
 import {requestedOfficialQuery,reportOfficialQuery} from '../../../lib/superagent-official-query.mjs';
-import {createClient} from '@supabase/supabase-js';
-import {checkCrmAccess} from '../../../lib/crm-access.mjs';
+import {officeAuth,safeOfficeError} from '../../../lib/office-server.mjs';
 import {buildSuperAgentReview,targetCNJ} from '../../../lib/superagent-core.mjs';
 import {formatProcessNumber} from '../../../lib/processos-oficiais.mjs';
 import {planRemoteEngines} from '../../../lib/infinitum-agent-policy.mjs';
@@ -15,13 +14,8 @@ export const runtime='nodejs';export const dynamic='force-dynamic';
 const json=(body,status=200)=>NextResponse.json(body,{status,headers:{'Cache-Control':'no-store,private'}});
 export async function POST(request){
  try{
+  const {db}=await officeAuth(request);
   const token=(request.headers.get('authorization')||'').replace(/^Bearer\s+/i,'').trim();
-  if(!token)return json({ok:false,error:'Faça login no CRM.'},401);
-  const url=process.env.NEXT_PUBLIC_SUPABASE_URL,key=process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-  if(!url||!key)return json({ok:false,error:'Conexão Supabase indisponível.'},503);
-  const db=createClient(url,key,{auth:{persistSession:false,autoRefreshToken:false},global:{headers:{Authorization:'Bearer '+token}}});
-  const {data:{user},error}=await db.auth.getUser(token);
-  if(error||!user||!await checkCrmAccess(db,user))return json({ok:false,error:'Conta sem acesso à carteira.'},403);
   const body=await request.json();
   let prompt;try{prompt=validateBlackholePrompt(body?.prompt)}catch(e){return json({ok:false,error:e.message},400)}
   const core=planPredictLmLegalCores({prompt});
@@ -96,5 +90,5 @@ export async function POST(request){
   const review=buildSuperAgentReview(prompt,{processes:p.data||[],snapshots:snaps.data||[],clients:c.data||[],leads:l.data||[]});
   return json({ok:true,reply:offlineBlackholeReply(prompt,{review}),review,predictLmLocalCore,model:'motor-de-evidencias',isGenerativeModel:false,
    notice:provider?'Modelo externo não utilizado porque não houve consentimento de envio.':'Modelo generativo não configurado; resposta do motor local verificável. Nenhuma ação externa foi executada.'});
- }catch(e){return json({ok:false,error:e.message||'Falha do superagente.'},502)}
+ }catch(e){return safeOfficeError(e)}
 }
