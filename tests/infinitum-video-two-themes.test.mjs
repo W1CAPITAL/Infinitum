@@ -22,20 +22,18 @@ test('Infinitum Light e Dark são selecionáveis e a opção Light é o padrão'
 });
 
 
-test('paletas seguem as referencias Light perolado/rose e Dark plum/rose-gold',()=>{
+test('paletas sólidas premium usam os mesmos fundos em CSS e preferências',()=>{
  const light=CRM_THEMES.find(t=>t.mode==='light'),dark=CRM_THEMES.find(t=>t.mode==='dark');
- assert.equal(light.page,'#fbf7f8');
- assert.equal(light.accent,'#8d6686');
- assert.equal(light.nav,'#f4edf3');
- assert.equal(light.border,'#e5d8e3');
- assert.equal(dark.page,'#110d14');
- assert.equal(dark.surface,'#211a24');
- assert.equal(dark.accent,'#d5a48e');
- assert.equal(dark.nav,'#140f17');
- const css=read('app/infinitum-dual-themes.css');
- assert.match(css,/rgba\(190,150,184/);
- assert.match(css,/rgba\(194,132,155/);
- assert.doesNotMatch(css,/#89684f|#d7aa80|#100e0e/);
+ assert.equal(light.page,'#f5f7fa');assert.equal(light.nav,'#161b22');assert.equal(light.surface,'#ffffff');assert.equal(light.accent,'#6f2232');
+ assert.equal(dark.page,'#111418');assert.equal(dark.nav,'#161b22');assert.equal(dark.surface,'#1c222b');
+ const css=read('app/infinitum-workspace-v2.css');
+ assert.match(css,/--v2-canvas:var\(--ui-page\)/);
+ assert.match(css,/--v2-nav:var\(--ui-nav\)/);
+ const surfaces=read('app/infinitum-solid-backgrounds.css');
+ assert.match(surfaces,/background-image:none!important/);
+ assert.match(surfaces,/\.app-sidebar::before/);
+ assert.match(surfaces,/\.app-content\[data-route\]/);
+ assert.match(read('app/layout.jsx'),/import '\.\/infinitum-solid-backgrounds\.css'/);
 });
 
 test('as duas paletas têm contraste AA em texto, navegação, acento e etiquetas',()=>{
