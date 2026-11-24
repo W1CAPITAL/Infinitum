@@ -31,7 +31,7 @@ export default function LexisOperations({db,session,area='deadlines'}){
  const [profile,setProfile]=useState(null),[team,setTeam]=useState([]),[sourceRows,setSourceRows]=useState({processes:[],hearings:[],tasks:[],manual:[]});
  const audit=useLexisAttendanceAudit(db,profile?.empresa_id,session.user.id);
  const [errors,setErrors]=useState([]),[loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[search,setSearch]=useState('');
- const [month,setMonth]=useState(brazilToday().slice(0,7)),[filter,setFilter]=useState('todos'),[showPast,setShowPast]=useState(false),[view,setView]=useState('month');
+ const [month,setMonth]=useState(brazilToday().slice(0,7)),[filter,setFilter]=useState(area==='tasks'?'prioridades':area==='overdue'?'vencidos':'todos'),[showPast,setShowPast]=useState(false),[view,setView]=useState('month');
  const [validSources,setValidSources]=useState({processes:false,hearings:false,tasks:false,manual:false});
  const [page,setPage]=useState(0);
  useEffect(()=>{setPage(0)},[area,search,filter,month,showPast,view]);
@@ -80,7 +80,6 @@ export default function LexisOperations({db,session,area='deadlines'}){
  const areaRows=useMemo(()=>{
   let filtered=items;
   if(area==='tasks'||area==='overdue')filtered=queueItems;
-  if(area==='overdue')filtered=filtered.filter(x=>x.status==='vencido');
   if(area==='audiencias')filtered=filtered.filter(x=>x.kind==='audiencia');
   if(area==='deadlines')filtered=filtered.filter(x=>x.kind==='retorno'&&x.process_id!=null&&x.status!=='encerrado');
   if(area==='agenda'&&filter==='todos')filtered=filtered.filter(x=>x.due_on&&x.due_on>=rangeStart&&x.due_on<=rangeEnd);
@@ -90,8 +89,7 @@ export default function LexisOperations({db,session,area='deadlines'}){
   return filtered;
  },[items,queueItems,area,search,showPast,rangeStart,rangeEnd,filter]);
  const listing=useMemo(()=>{
-  if(area==='tasks')return filterLexisCompanyQueue(areaRows,{view:filter,today:brazilToday(),query:search});
-  if(area==='overdue')return filterLexisCompanyQueue(areaRows,{view:filter==='todos'?'vencidos':filter,today:brazilToday(),query:search});
+  if(area==='tasks'||area==='overdue')return filterLexisCompanyQueue(areaRows,{view:filter,today:brazilToday(),query:search});
   return areaRows.filter(x=>{
    if(filter==='todos')return true;
    if(area==='audiencias')return filter==='futuras'?!!x.due_on&&x.due_on>=brazilToday()&&x.status!=='encerrado':x.status===filter;
@@ -164,7 +162,7 @@ export default function LexisOperations({db,session,area='deadlines'}){
  const PAGE_SIZE=60;
  const pageRows=listing.slice(0,(page+1)*PAGE_SIZE);
  const moreRows=useCallback(()=>setPage(p=>p+1),[]);
- const subtitles={agenda:'Compromissos e audiências da organização, em uma única visão.',deadlines:'Retornos ao cliente com número CNJ e histórico de atendimento registrado.',audiencias:'Audiências registradas pelo LexisPredict e suas fontes.',tasks:'Tarefas, retornos e compromissos de toda a organização.',overdue:'Pendências vencidas da carteira empresarial.'};
+ const subtitles={agenda:'Compromissos e audiências da organização, em uma única visão.',deadlines:'Retornos ao cliente com número CNJ e histórico de atendimento registrado.',audiencias:'Audiências registradas pelo LexisPredict e suas fontes.',tasks:'Tarefas, retornos e compromissos de toda a organização.',overdue:'Pendências vencidas por padrão; os demais filtros permitem consultar toda a fila da empresa.'};
  const titles={agenda:'Agenda',deadlines:'Prazos e retornos',audiencias:'Audiências',tasks:'Tarefas da organização',overdue:'Vencidos'};
  if(!profile&&!loading)return <main className="inf-studio lx-workspace"><p role="alert" className="inf-note error">{errors[0]||'Acesso não autorizado.'}</p></main>;
  return <main className="inf-studio lx-workspace" data-lexis-operation={area}>
