@@ -1,3 +1,2 @@
-'use client';
-import OfficeConsole from '../../components/office-console';
-export default function Page(){return <OfficeConsole area="deadlines"/>}
+import {redirect} from 'next/navigation';
+export default async function Page({searchParams}){const p=await searchParams;const status=typeof p?.status==='string'?p.status:'';const returns=['vencido','vencidos','hoje','proximos','atendimentos_hoje','meus_atendimentos','atendido','retornos'];if(returns.includes(status))redirect('/tarefas?tipo=retorno&status='+encodeURIComponent(status));redirect('/agenda?tipo=prazo')}

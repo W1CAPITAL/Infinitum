@@ -115,10 +115,13 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
   if(area==='audiencias')loadHearings();
  },[area,profile,loadDeadlinesFromProcessos,loadHearings]);
 
+ const [portfolioView,setPortfolioView]=useState('processos');
  const [page,setPage]=useState(0),[type,setType]=useState('todos'),[draft,setDraft]=useState(''),[search,setSearch]=useState('');
  useEffect(()=>{if(typeof window==='undefined'||!['cases','clients'].includes(area))return;
-  const cnj=new URLSearchParams(window.location.search).get('buscar');
-  if(cnj){setType('numero');setSearch(cnj);setDraft(cnj);setActiveFilter('todos');setPage(0)}
+  const params=new URLSearchParams(window.location.search);
+  if(params.get('visao')==='clientes')setPortfolioView('historicos');
+  const cnj=params.get('buscar');
+  if(cnj){setPortfolioView('processos');setType('numero');setSearch(cnj);setDraft(cnj);setActiveFilter('todos');setPage(0)}
  },[area]);
  const [selected,setSelected]=useState(null),[history,setHistory]=useState([]),[attendNote,setAttendNote]=useState(''),[nextDate,setNextDate]=useState('');
  const [confirmed,setConfirmed]=useState(false),[consulted,setConsulted]=useState(null);
@@ -417,10 +420,12 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
  }
 
  return <main className="inf-studio lx-shared" data-lexis-shared="portfolio">
-  <header className="reference-header"><div><div className="reference-overline">INFINITUM · GESTÃO DA ORGANIZAÇÃO</div><h1>{area==='clients'?'Clientes':area==='cases'?'Processos':'Carteira da organização'}</h1>
-  <p>{company} · {area==='clients'?'Dados cadastrais, contato e histórico de atendimento.':'Carteira judicial: situação interna, consultas oficiais e peças vinculadas.'}</p></div>
-  <div className="reference-actions">{area==='cases'&&<button type="button" className="inf-btn primary" onClick={startCreate} disabled={!portfolioReady||busy||loading}><Plus size={16}/> Novo processo</button>}<button type="button" className="inf-btn" onClick={load} disabled={loading}><RefreshCw size={16}/> Atualizar</button><Link href="/relatorios" className="inf-btn"><BarChart3 size={16}/> Relatórios</Link></div></header>
+  <header className="reference-header"><div><div className="reference-overline">INFINITUM · GESTÃO DA ORGANIZAÇÃO</div><h1>{area==='clients'?'Clientes':area==='cases'?'Carteira de processos':'Carteira da organização'}</h1>
+  <p>{company} · {area==='clients'?'Dados cadastrais, contato e histórico de atendimento.':'Processos, dados de clientes, atendimentos e consultas oficiais em uma só carteira.'}</p></div>
+  <div className="reference-actions">{area==='cases'&&<button type="button" className="inf-btn primary" onClick={()=>{setPortfolioView('processos');startCreate()}} disabled={!portfolioReady||busy||loading}><Plus size={16}/> Novo processo</button>}<button type="button" className="inf-btn" onClick={load} disabled={loading}><RefreshCw size={16}/> Atualizar</button><Link href="/relatorios" className="inf-btn"><BarChart3 size={16}/> Relatórios</Link></div></header>
   {notice&&<div className="inf-note" role="status">{notice}</div>}
+  <div className="lx-toolbar" aria-label="Visão da carteira"><button className={'inf-btn '+(portfolioView==='processos'?'primary':'')} type="button" aria-pressed={portfolioView==='processos'} onClick={()=>setPortfolioView('processos')}>Processos e clientes vinculados</button><button className={'inf-btn '+(portfolioView==='historicos'?'primary':'')} type="button" aria-pressed={portfolioView==='historicos'} onClick={()=>setPortfolioView('historicos')}>Cadastros históricos</button></div>
+  {portfolioView==='historicos'?<InfinitumLegacyClients db={db} profile={profile} team={team}/>:<>
   <div className="inf-grid"><Summary title={area==='clients'?'Cadastros vinculados':'Processos carregados'} count={portfolioReady?rows.length:null} href={area==='clients'?'/clientes':'/processos'}/><Summary title="Resultados do filtro" count={portfolioReady?total:null} href="/processos"/><Summary title="Membros da organização" count={team.length} href="/relatorios"/></div>
   <section className="inf-panel"><h2><Search size={18}/> Buscar em toda a organização</h2>
    <form className="inf-row-end" style={{justifyContent:'flex-start',gap:10,flexWrap:'wrap'}} onSubmit={e=>{e.preventDefault();setPage(0);setSearch(draft.trim())}}>
@@ -437,8 +442,9 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
    <p>{area==='clients'?'Consulte os dados de contato e registre o atendimento. Cadastros sem identificação comum permanecem separados.':'Cada linha representa um processo real. Consulte o andamento oficial e gerencie a situação judicial.'}</p>
    <div className="office-records">{visibleRows.map(p=><article className="office-record lx-process-record" key={p.id}>
     <div className="inf-row-end" style={{justifyContent:'space-between',gap:12,flexWrap:'wrap'}}><div><strong>{p.client_name||'Cliente não identificado'}</strong><p>{area==='clients'?[p.phone||'Telefone não informado',p.email||'E-mail não informado',p.cpf||'CPF não informado'].join(' · '):[p.process_number||'Sem número CNJ',p.tribunal||'Tribunal não informado',p.advogado||'Advogado não informado'].join(' · ')}</p>
-     <small className="lx-process-meta">{area==='clients'?<><span className={'lx-status lx-status--'+classifyLexisReturn(p,todayBrazil()).status}>{classifyLexisReturn(p,todayBrazil()).label}</span> · Último atendimento: {DATE_LABEL(p.last_attendance)} · Próximo retorno: {DATE_LABEL(p.next_attendance)} · Responsável: <strong>{responsibleDisplay(p.last_responsible,team)}</strong></>:<><span className={'lx-status lx-status--'+processStatus(p.status_detail).key}>{processStatus(p.status_detail).label}</span> · Prazo cadastrado: {DATE_LABEL(p.next_deadline)} · {p.court_status||'Andamento judicial não informado'}</>}</small></div>
+     <small className="lx-process-meta">{area==='clients'?<><span className={'lx-status lx-status--'+classifyLexisReturn(p,todayBrazil()).status}>{classifyLexisReturn(p,todayBrazil()).label}</span> · Último atendimento: {DATE_LABEL(p.last_attendance)} · Próximo retorno: {DATE_LABEL(p.next_attendance)} · Responsável: <strong>{responsibleDisplay(p.last_responsible,team)}</strong></>:<><span className={'lx-status lx-status--'+processStatus(p.status_detail).key}>{processStatus(p.status_detail).label}</span> · Próximo retorno: {DATE_LABEL(p.next_attendance)} · Último atendimento: {DATE_LABEL(p.last_attendance)} · Responsável: <strong>{responsibleDisplay(p.last_responsible,team)}</strong> · {p.court_status||'Andamento judicial não informado'}</>}</small></div>
     </div>
+    {area==='cases'&&<small className="lx-process-meta">{[p.phone,p.email].filter(Boolean).join(' · ')||'Contato não informado'}</small>}
     <div className="inf-row-end lx-process-toolbar" style={{justifyContent:'flex-start',gap:6,flexWrap:'wrap'}}>
      {area==='clients'?<><button type="button" className="inf-btn" aria-haspopup="dialog" onClick={()=>startEdit(p,'cliente')}><Edit3 size={14}/> Editar cliente</button><button type="button" className="inf-btn primary" aria-haspopup="dialog" onClick={()=>attend(p)}><ClipboardList size={14}/> Registrar atendimento</button>{p.process_number&&<Link className="inf-btn" href={'/processos?buscar='+encodeURIComponent(p.process_number)}>Ver processo vinculado</Link>}</>:<>
      <button type="button" className="inf-btn" aria-haspopup="dialog" onClick={()=>startEdit(p,'processo')}><FileText size={14}/> Editar processo</button>
@@ -446,13 +452,13 @@ export default function LexisSharedOffice({area='dashboard',db,session}){
      <button className="inf-btn" onClick={()=>consult(p)} disabled={busy||consultBusy||!normalizedCnj(p.process_number)}><Gavel size={14}/> Consultar</button>
      {p.status!=='encerrado'&&<button className="inf-btn" onClick={()=>changeStatus(p,'encerrado')} disabled={busy}><CheckCircle2 size={14}/> Encerrar</button>}
      {p.status!=='em_andamento'&&<button className="inf-btn" onClick={()=>changeStatus(p,'em_andamento')} disabled={busy}><Activity size={14}/> Em andamento</button>}
-     {p.status!=='excluido'&&<button className="inf-btn" onClick={()=>changeStatus(p,'excluido')} disabled={busy}><Archive size={14}/> Excluir da vista</button>}<details><summary>Cliente vinculado</summary><div className="inf-row-end"><button type="button" className="inf-btn" onClick={()=>startEdit(p,'cliente')}><Edit3 size={14}/> Editar cliente</button><button type="button" className="inf-btn" onClick={()=>attend(p)}><ClipboardList size={14}/> Registrar atendimento</button></div></details></>}
+     {p.status!=='excluido'&&<button className="inf-btn" onClick={()=>changeStatus(p,'excluido')} disabled={busy}><Archive size={14}/> Excluir da vista</button>}<div className="inf-row-end"><button type="button" className="inf-btn" onClick={()=>startEdit(p,'cliente')}><Edit3 size={14}/> Editar cliente</button><button type="button" className="inf-btn" onClick={()=>attend(p)}><ClipboardList size={14}/> Registrar atendimento</button></div></>}
     </div>
    </article>)}
    {!visibleRows.length&&!loading&&<p>{portfolioReady?"Nenhum registro encontrado com os filtros atuais.":"Carteira indisponível. Atualize para tentar novamente."}</p>}</div>
    <ProgressiveListEnd shown={visibleRows.length} total={total} onMore={moreRows} disabled={loading}/>
   </section>
-  {area==='clients'&&<InfinitumLegacyClients db={db} profile={profile} team={team}/>}
+  </>}
   {creating&&<PortfolioDialog title="Cadastrar processo" busy={busy} notice={notice} onClose={closeAction}>
    <p>Cadastro na carteira compartilhada da empresa. A situação judicial será consultada posteriormente nas fontes oficiais.</p>
    <form onSubmit={saveCreate}><fieldset disabled={busy}><div className="inf-fields">

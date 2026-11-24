@@ -56,27 +56,27 @@ export default function LexisDashboard({db,session}){
   {s&&<><section className="lxd-stats" aria-label="Indicadores da carteira">
    <Stat name="Processos com CNJ" value={s.processes} description="Somente processos com número CNJ" to="/processos" Icon={Scale}/>
    <Stat name="Processos ativos com CNJ" value={s.active} description="Desconsidera encerrados" to="/processos" Icon={Activity}/>
-   <Stat name="Retornos vencidos" value={s.overdueReturns} description="Próximo retorno passado, sem atendimento posterior" to="/prazos?status=vencido" Icon={Clock3} warning/>
-   <Stat name="Retornos para hoje" value={s.returnsToday} description="Contatos previstos para a data de hoje" to="/prazos?status=hoje" Icon={Users}/>
+   <Stat name="Retornos vencidos" value={s.overdueReturns} description="Próximo retorno passado, sem atendimento posterior" to="/tarefas?tipo=retorno&status=vencido" Icon={Clock3} warning/>
+   <Stat name="Retornos para hoje" value={s.returnsToday} description="Contatos previstos para a data de hoje" to="/tarefas?tipo=retorno&status=hoje" Icon={Users}/>
    <Stat name="Tarefas vencidas" value={s.overdueTasks} description="Tarefas cadastradas ainda não concluídas" to="/vencidos" Icon={FileWarning} warning/>
    <Stat name="Compromissos judiciais futuros" value={valid.hearings?s.hearingsFuture:null} description="Com data, não canceladas" to="/audiencias" Icon={Gavel}/>
    <Stat name="Menções a verificar" value={valid.hearings?s.hearingsUndated:null} description="Fora da agenda até confirmação" to="/audiencias" Icon={CalendarDays}/>
   </section>
   <section className="lxd-panels">
-   <article className="lxd-panel"><Head eyebrow="ACOMPANHAMENTO AO CLIENTE" title="Retornos e atendimentos" to="/prazos">Mesma regra da aba Prazos: próximo retorno comparado com o último atendimento do cliente.</Head>
+   <article className="lxd-panel"><Head eyebrow="ACOMPANHAMENTO AO CLIENTE" title="Retornos e atendimentos" to="/tarefas?tipo=retorno">Regra dos retornos: próximo retorno comparado com o último atendimento do cliente.</Head>
     <div className="lxd-overdue"><span>Retornos vencidos (com CNJ)</span><strong>{n(s.overdueReturns)}</strong></div>
     <div className="lxd-lines">
-     <Link href="/prazos?status=hoje">Para hoje <b>{n(s.returnsToday)}</b><ArrowRight size={14}/></Link>
-     <Link href="/prazos?status=proximos">Nos próximos 7 dias <b>{n(s.returnsNext7)}</b><ArrowRight size={14}/></Link>
-     <Link href="/prazos?status=atendimentos_hoje">Já atendidos hoje · auditoria <b>{audit.data?n(audit.data.todayTotal):audit.loading?'…':'—'}</b><ArrowRight size={14}/></Link>
-     <Link href="/prazos?status=meus_atendimentos">Meus atendimentos hoje <b>{audit.data?n(audit.data.personalToday):audit.loading?'…':'—'}</b><ArrowRight size={14}/></Link>
-     <Link href="/prazos">Agendamentos concluídos por data <b>{n(s.returnsAttended)}</b><ArrowRight size={14}/></Link>
-     <Link href="/prazos">Agendamentos em processos ativos <b>{n(s.returnsScheduled)}</b><ArrowRight size={14}/></Link>
+     <Link href="/tarefas?tipo=retorno&status=hoje">Para hoje <b>{n(s.returnsToday)}</b><ArrowRight size={14}/></Link>
+     <Link href="/tarefas?tipo=retorno&status=proximos">Nos próximos 7 dias <b>{n(s.returnsNext7)}</b><ArrowRight size={14}/></Link>
+     <Link href="/tarefas?tipo=retorno&status=atendimentos_hoje">Já atendidos hoje · auditoria <b>{audit.data?n(audit.data.todayTotal):audit.loading?'…':'—'}</b><ArrowRight size={14}/></Link>
+     <Link href="/tarefas?tipo=retorno&status=meus_atendimentos">Meus atendimentos hoje <b>{audit.data?n(audit.data.personalToday):audit.loading?'…':'—'}</b><ArrowRight size={14}/></Link>
+     <Link href="/tarefas?tipo=retorno&status=atendido">Agendamentos concluídos por data <b>{n(s.returnsAttended)}</b><ArrowRight size={14}/></Link>
+     <Link href="/tarefas?tipo=retorno">Agendamentos em processos ativos <b>{n(s.returnsScheduled)}</b><ArrowRight size={14}/></Link>
     </div>
     <p className="lxd-subtle">Atendimentos auditados por operador são contabilizados pela consulta Lexis de auditoria, separados dos retornos concluídos por comparação de datas. Datas legadas de proximo_prazo não são consideradas vencidas.</p>
    </article>
    <article className="lxd-panel"><Head eyebrow="PRÓXIMOS COMPROMISSOS" title="Agenda da organização" to="/agenda">{s.upcoming7==null?"Total indisponível: parte das fontes não respondeu. Lista parcial abaixo.":n(s.upcoming7)+" compromissos datados nos próximos sete dias, incluindo hoje."}</Head>
-    {s.upcoming.length?s.upcoming.slice(0,6).map(x=><Link className="lxd-row" href={x.kind==='audiencia'?'/audiencias':x.kind==='prazo'?'/prazos':'/agenda'} key={x.id}><time>{date(x.due_on)}</time><span><strong>{x.title}</strong><small>{labels[x.kind]} · {x.responsible||'Sem responsável'}</small></span><ArrowRight size={14}/></Link>):<p className="lxd-subtle">{s.upcoming7==null?"Nenhum compromisso nas fontes disponíveis.":"Nenhum compromisso datado."}</p>}
+    {s.upcoming.length?s.upcoming.slice(0,6).map(x=><Link className="lxd-row" href={x.kind==='audiencia'?'/audiencias':x.kind==='prazo'?'/agenda?tipo=prazo':'/agenda'} key={x.id}><time>{date(x.due_on)}</time><span><strong>{x.title}</strong><small>{labels[x.kind]} · {x.responsible||'Sem responsável'}</small></span><ArrowRight size={14}/></Link>):<p className="lxd-subtle">{s.upcoming7==null?"Nenhum compromisso nas fontes disponíveis.":"Nenhum compromisso datado."}</p>}
    </article>
    <article className="lxd-panel"><Head eyebrow="PANORAMA" title="Situação dos processos" to="/processos">Distribuição da carteira por situação interna.</Head>
     {valid.processes?<><div className="lxd-rail"><i style={{width:(100*s.active/Math.max(1,s.processes))+'%'}}/></div><div className="lxd-pair"><span>Em andamento <strong>{n(s.active)}</strong></span><span>Encerrados ou arquivados <strong>{n(s.closed)}</strong></span></div>
