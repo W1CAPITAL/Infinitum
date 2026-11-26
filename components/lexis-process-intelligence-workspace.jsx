@@ -2,6 +2,8 @@
 import {useCallback,useEffect,useMemo,useState} from 'react';
 import Link from 'next/link';
 import ProgressiveListEnd from './progressive-list-end';
+import MonthlyNotices,{downloadNoticesXlsx} from './infinitum-monthly-notices';
+import {publicationDay,brazilDay} from '../lib/infinitum-monthly-notices.mjs';
 import {Activity,AlertTriangle,ArrowRight,BookOpen,CheckCircle2,Clock3,Download,ExternalLink,FileSearch,Filter,PauseCircle,RefreshCw,Search,ShieldCheck,Users} from 'lucide-react';
 import {
  loadLexisProcessIntelligence,classifyFasesProvas,sortTriageRows,formatFasesDate,
@@ -19,16 +21,16 @@ function exportDownload(text,name){
  const blob=new Blob([text],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');
  a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
-function FasesWorkspace({cases,loading,error,refresh,stale}){
+function FasesWorkspace({cases,loading,error,refresh,stale,onBack}){
  const available=!loading&&!error||stale;
  const [query,setQuery]=useState(''),[type,setType]=useState('todos'),[source,setSource]=useState('todos'),[category,setCategory]=useState('todos'),[priority,setPriority]=useState('todos'),[limit,setLimit]=useState(60);
  const moreRows=useCallback(()=>setLimit(n=>n+60),[]);
  const all=useMemo(()=>sortTriageRows(classifyFasesProvas(cases)),[cases]);
  const rows=useMemo(()=>all.filter(r=>(type==='todos'||r.tipo===type)&&(source==='todos'||r.nivel===source)&&(category==='todos'||r.categoria===category)&&(priority==='todos'||r.prioridade===priority)&&(!query.trim()||[r.cliente,r.cnj,r.advogado,r.fase,r.acao,r.evidencia,r.escritorio].join(' ').toLocaleLowerCase('pt-BR').includes(query.trim().toLocaleLowerCase('pt-BR')))),[all,type,source,category,priority,query]);
  const counts=useMemo(()=>({replica:all.filter(x=>x.tipo==='replica').length,provas:all.filter(x=>x.tipo==='provas').length,official:all.filter(x=>x.nivel==='tribunal').length,high:all.filter(x=>x.prioridade==='alta').length}),[all]);
- const download=()=>exportDownload(exportFasesCsv(rows),'infinitum-fases-provas-'+new Date().toISOString().slice(0,10)+'.csv');
+ const download=()=>downloadNoticesXlsx(rows.map(r=>({client:r.cliente,cnj:r.cnj,date:publicationDay(r.dataMovimento),phase:r.fase,summary:r.evidencia,action:r.acao,deadline:'Conferir publicação',lawyer:r.advogado,link:r.fonte.startsWith('DJEN')?r.linkDjen:''})),'fases-provas-'+brazilDay());
  return <main className="lxp-shell" data-lexis-fases-provas>
-  <header className="lxp-hero"><div><small>INFINITUM · INTELIGÊNCIA PROCESSUAL</small><h1>Réplica, provas e perícias</h1><p>Localize referências a réplicas, provas, documentos e perícias na carteira inteira. Cada ocorrência mostra se veio do último registro DataJud/DJEN ou de uma anotação interna.</p></div><ShieldCheck size={30}/></header>
+  <header className="lxp-hero"><div><small>INFINITUM · INTELIGÊNCIA PROCESSUAL</small><h1>Réplica, provas e perícias</h1><button className="lxp-button" onClick={onBack}>Voltar às intimações do mês</button><p>Localize referências a réplicas, provas, documentos e perícias na carteira inteira. Cada ocorrência mostra se veio do último registro DataJud/DJEN ou de uma anotação interna.</p></div><ShieldCheck size={30}/></header>
   <div className="lxp-stats">
    <Stat icon={BookOpen} label="Ocorrências" value={available?all.length:null} description="Referências encontradas na carteira"/>
    <Stat icon={FileSearch} label="Réplica" value={available?counts.replica:null} description="Registros relacionados à contestação"/>
@@ -43,7 +45,7 @@ function FasesWorkspace({cases,loading,error,refresh,stale}){
    {stale&&<p className="lxp-notice">A última consulta completa foi preservada; a atualização atual não foi concluída.</p>}
   </Panel>
   <Panel>
-   <div className="lxp-toolbar"><div><h2>Filtrar e exportar</h2><p>{number(rows.length)} de {number(all.length)} ocorrências</p></div><DownloadButton onClick={download} disabled={!rows.length}>Baixar CSV</DownloadButton></div>
+   <div className="lxp-toolbar"><div><h2>Filtrar e exportar</h2><p>{number(rows.length)} de {number(all.length)} ocorrências</p></div><DownloadButton onClick={download} disabled={!rows.length}>Baixar XLSX</DownloadButton></div>
    <div className="lxp-filters">
     <label className="lxp-search"><Search size={16}/><input value={query} onChange={e=>{setQuery(e.target.value);setLimit(60)}} placeholder="Buscar cliente, CNJ, advogado ou providência"/></label>
     <label>Etapa<select value={type} onChange={e=>{setType(e.target.value);setLimit(60)}}><option value="todos">Réplica e provas</option><option value="replica">Somente réplica</option><option value="provas">Somente provas</option></select></label>
@@ -144,6 +146,7 @@ function ParadosWorkspace({cases,companyId,userId,loading,error,refresh,stale}){
 export default function LexisProcessIntelligenceWorkspace({db,session,mode='fases'}){
  const [state,setState]=useState({loading:true,cases:[],companyId:'',error:'',stale:false});
  const [retry,setRetry]=useState(0);
+ const [fasesView,setFasesView]=useState('recentes');
  const [loadedFor,setLoadedFor]=useState('');
  const refresh=()=>setRetry(x=>x+1);
  const load=useCallback(async()=>{
@@ -157,5 +160,5 @@ export default function LexisProcessIntelligenceWorkspace({db,session,mode='fase
  const current=loadedFor===session?.user?.id?state:{...state,cases:[],companyId:'',stale:false,loading:!state.error};
  return mode==='parados'
   ?<ParadosWorkspace cases={current.cases} companyId={current.companyId} userId={session?.user?.id} loading={state.loading} error={state.error} refresh={refresh} stale={current.stale}/>
-  :<FasesWorkspace cases={current.cases} loading={current.loading} error={state.error} refresh={refresh} stale={current.stale}/>;
+  :fasesView==='recentes'?<MonthlyNotices key={session?.user?.id} db={db} companyId={current.companyId} cases={current.cases} loading={current.loading} error={state.error} refresh={refresh} stale={current.stale} onBack={()=>setFasesView('fases')}/>:<FasesWorkspace cases={current.cases} loading={current.loading} error={state.error} refresh={refresh} stale={current.stale} onBack={()=>setFasesView('recentes')}/>;
 }
