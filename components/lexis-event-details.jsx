@@ -3,6 +3,7 @@ import {useEffect,useState} from 'react';
 import Link from 'next/link';
 import {CheckCircle2,ClipboardList,Edit3,ExternalLink,FileText,Gavel} from 'lucide-react';
 import PortfolioDialog from './portfolio-dialog';
+import HearingClock from './infinitum-hearing-clock';
 import {buildTaskEditPatch} from '../lib/lexis-operations.mjs';
 import {PROCESS_FIELDS,mapLexisProcess,normalizedCnj,validDay} from '../lib/lexis-shared-portfolio.mjs';
 
@@ -83,10 +84,11 @@ export default function LexisEventDetails({event,db,profile,onClose,onSaved,onFi
   <section aria-label="Informações do compromisso">
    <h3>{event.title}</h3>
    <div className="lx-detail-meta">
-    <span>{dateLabel(event.due_on)}{event.hour?' · '+event.hour:''}</span>
+    <span>{dateLabel(event.due_on)}{event.kind!=='audiencia'&&event.hour?' · '+event.hour:''}</span>
     <span>Situação: {event.status_label||event.status||'Não informada'}</span>
     <span>Responsável: {event.responsible||'Não informado'}</span>
    </div>
+   {event.kind==='audiencia'&&<HearingClock clock={event.hearing_clock} endClock={event.hearing_end_clock}/>}
    {event.notes&&<p>{event.notes}</p>}
    {source&&<p><a href={source} target="_blank" rel="noopener noreferrer" className="inf-btn"><ExternalLink size={14}/> Conferir fonte oficial</a></p>}
   </section>

@@ -3,6 +3,8 @@ import {useCallback,useEffect,useMemo,useState} from 'react';
 import Link from 'next/link';
 import {CalendarDays,RefreshCw,ShieldCheck} from 'lucide-react';
 import {hearingCandidates} from '../lib/judicial-triage.mjs';
+import {hearingClock} from '../lib/infinitum-hearing-clock.mjs';
+import HearingClock from './infinitum-hearing-clock';
 import {todayBrazil} from '../lib/tarefas.mjs';
 import {withAuthDeadline} from '../lib/auth-deadline.mjs';
 export default function BlackholeOfficialHearings({db}){
@@ -27,7 +29,8 @@ export default function BlackholeOfficialHearings({db}){
   {error&&<p className="inf-note error" role="alert">{error}</p>}
   {!rows.length?<p className="inf-note">{busy?'Consultando os registros...':'Nenhuma audiência futura identificada nos registros já consultados. Isso não prova ausência de audiência no tribunal.'}</p>:
    <div className="office-records">{rows.map((a,i)=><article key={a.process_number+'-'+a.date+'-'+i} className="office-record">
-    <strong>{a.type} · {a.date.split('-').reverse().join('/')} · {a.time||'horário a conferir'}</strong>
+    <strong>{a.type} · {a.date.split('-').reverse().join('/')}</strong>
+    <HearingClock clock={hearingClock({date:a.date,time:a.time,cnj:a.process_number,evidence:a.evidence||a.title})}/>
     <p>CNJ: {a.process_number} · Fonte: {a.source}</p>
     <p>{a.evidence||a.title}</p>
     {a.link&&<a href={a.link} target="_blank" rel="noopener noreferrer">Abrir fonte oficial</a>}
